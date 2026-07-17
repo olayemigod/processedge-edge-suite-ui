@@ -5,3 +5,7 @@ __pycache__/
 node_modules/
 *.log
 .DS_Store
+
+# Generated Frappe frontend artifacts
+/edgesuite_ui/public/dist/
+/edgesuite_ui/public/node_modules
