@@ -69,6 +69,13 @@ grep -E 'edgeui(_compat)?\.bundle\.(js|css)' sites/assets/assets.json
 
 The same app can be installed on RetailEdge or another product site without installing CoreEdge.
 
+## Continuous integration
+
+Pull requests and pushes to `main` run Python/Ruff contract checks and a reproducible frontend
+syntax and bundle validation. The manual `workflow_dispatch` trigger additionally provisions a
+clean Frappe v16 bench containing only Frappe and EdgeSuite UI, then builds, migrates, and tests
+the app. CI never requires repository credentials or commits generated frontend assets.
+
 ## Product integration
 
 Load `edgeui.bundle.js` before the product bundle, then mount the product-owned root component:

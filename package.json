@@ -4,7 +4,14 @@
   "private": true,
   "description": "Independent EdgeSuite UI runtime for ProcessEdge Frappe applications.",
   "license": "MIT",
+  "scripts": {
+    "check": "node scripts/check-frontend.mjs",
+    "test": "npm run check"
+  },
   "dependencies": {
     "vue": "^3.4.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0"
   }
 }
