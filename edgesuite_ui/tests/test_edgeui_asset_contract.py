@@ -12,6 +12,11 @@ def _javascript_source() -> str:
 	return "\n".join(path.read_text(encoding="utf-8") for path in sorted(JS_ROOT.rglob("*.js")))
 
 
+def test_frappe_app_discovery_markers_are_present():
+	for marker in ("hooks.py", "modules.txt", "patches.txt"):
+		assert (PACKAGE_ROOT / marker).is_file()
+
+
 def test_runtime_exports_the_compatibility_contract():
 	source = _javascript_source()
 
@@ -52,8 +57,18 @@ def test_frappe_hooks_include_local_runtime_assets():
 	for asset in ("edgeui.bundle.js", "edgeui.bundle.css", "edgeui_compat.bundle.css"):
 		assert f'"{asset}"' in hooks
 
-	assert (CSS_ROOT / "edgeui.bundle.css").exists()
-	assert (CSS_ROOT / "edgeui_compat.bundle.css").exists()
+	assert (JS_ROOT / "edgeui.bundle.js").is_file()
+	assert (CSS_ROOT / "edgeui.bundle.css").is_file()
+	assert (CSS_ROOT / "edgeui_compat.bundle.css").is_file()
+
+
+def test_bundle_entrypoint_uses_frappe_bundle_naming_and_local_modules():
+	entrypoint = (JS_ROOT / "edgeui.bundle.js").read_text(encoding="utf-8")
+
+	assert (JS_ROOT / "edgeui" / "components.js").is_file()
+	assert (JS_ROOT / "edgeui" / "runtime.js").is_file()
+	assert '"./edgeui/components"' in entrypoint
+	assert '"./edgeui/runtime"' in entrypoint
 
 
 def test_migrated_product_compatibility_surface_is_present():
