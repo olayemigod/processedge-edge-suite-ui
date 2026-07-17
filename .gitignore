@@ -8,4 +8,4 @@ node_modules/
 
 # Generated Frappe frontend artifacts
 /edgesuite_ui/public/dist/
-/edgesuite_ui/public/node_modules/
+/edgesuite_ui/public/node_modules
