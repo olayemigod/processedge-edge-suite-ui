@@ -14,26 +14,45 @@ It is intentionally separated from CoreEdge. Product applications such as VetEdg
 - `window.EdgeSuiteUI` is the canonical browser namespace.
 - `window.EdgeUI` is retained as a temporary compatibility alias during migration.
 
-## Initial package layout
+## Foundation included
 
-```text
-edgesuite_ui/
-  hooks.py
-  public/
-    css/edgeui.bundle.css
-    js/edgeui.bundle.js
-  tests/
-docs/
+Version `0.1.0` provides:
+
+- An installable Frappe app with locally served JS and CSS bundles.
+- A Vue runtime exposed through `window.EdgeSuiteUI`.
+- The compatible `window.EdgeUI` alias and `createEdgeApp(rootComponent, props)` contract.
+- Component and optional adapter registries.
+- Initial shared components: app shell, page and dashboard layouts, page header, stat card, status badge, action bar, filter bar, and loading/empty/error states.
+- Design tokens and responsive base styles.
+- Regression tests that block imports from CoreEdge and product repositories.
+
+## Installation during development
+
+```bash
+cd $PATH_TO_YOUR_BENCH
+bench get-app https://github.com/olayemigod/processedge-edge-suite-ui.git --branch agent/edgeui-foundation
+bench --site vetedge.local install-app edgesuite_ui
+bench build --app edgesuite_ui
+bench --site vetedge.local clear-cache
 ```
 
-## Initial migration sequence
+The same app can be installed on RetailEdge or another product site without installing CoreEdge.
 
-1. Establish the standalone runtime and asset contract in this repository.
-2. Port the current shared components from CoreEdge without product or platform coupling.
-3. Install EdgeSuite UI beside VetEdge and migrate one VetEdge page as the reference integration.
+## Product integration
+
+Load `edgeui.bundle.js` before the product bundle, then mount the product-owned root component:
+
+```javascript
+const app = window.EdgeSuiteUI.createEdgeApp(ProductPage, props);
+app.mount(targetElement);
+```
+
+See [`docs/integration-contract.md`](docs/integration-contract.md) for the complete boundary and fallback rules.
+
+## Migration sequence
+
+1. Establish the standalone runtime and asset contract in this repository. **Completed in v0.1 foundation.**
+2. Port the remaining shared components from CoreEdge without product or platform coupling.
+3. Install EdgeSuite UI beside VetEdge and migrate the Stock Expiry Monitor as the reference integration.
 4. Migrate RetailEdge pages.
-5. Remove the legacy EdgeUI asset delivery from CoreEdge after all consumers have moved.
-
-## Status
-
-Foundation implementation is in progress.
+5. Remove legacy EdgeUI asset delivery from CoreEdge after all consumers have moved.
