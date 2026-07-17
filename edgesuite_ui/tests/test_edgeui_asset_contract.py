@@ -103,7 +103,7 @@ def test_python_and_package_metadata_are_valid():
 def test_generated_frontend_paths_are_ignored():
 	gitignore = (REPOSITORY_ROOT / ".gitignore").read_text(encoding="utf-8").splitlines()
 	assert "/edgesuite_ui/public/dist/" in gitignore
-	assert "/edgesuite_ui/public/node_modules/" in gitignore
+	assert "/edgesuite_ui/public/node_modules" in gitignore
 
 
 def test_runtime_namespace_is_canonical_with_temporary_alias():
