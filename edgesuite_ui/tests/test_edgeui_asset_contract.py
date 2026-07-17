@@ -4,7 +4,7 @@ from edgesuite_ui import __version__
 
 PACKAGE_ROOT = Path(__file__).resolve().parents[1]
 JS_ROOT = PACKAGE_ROOT / "public" / "js"
-CSS_BUNDLE = PACKAGE_ROOT / "public" / "css" / "edgeui.bundle.css"
+CSS_ROOT = PACKAGE_ROOT / "public" / "css"
 HOOKS = PACKAGE_ROOT / "hooks.py"
 
 
@@ -23,11 +23,14 @@ def test_runtime_exports_the_compatibility_contract():
 		"EdgeAppShell",
 		"EdgePageLayout",
 		"EdgePageHeader",
+		"EdgeFilterBar",
 		"EdgeStatCard",
 		"EdgeStatusBadge",
 		"EdgeEmptyState",
 		"EdgeLoadingState",
 		"EdgeErrorState",
+		"EdgeNotificationBell",
+		"EdgeNotificationDrawer",
 	):
 		assert required_symbol in source
 
@@ -46,6 +49,23 @@ def test_runtime_version_matches_python_package_version():
 
 def test_frappe_hooks_include_local_runtime_assets():
 	hooks = HOOKS.read_text(encoding="utf-8")
-	assert '"edgeui.bundle.js"' in hooks
-	assert '"edgeui.bundle.css"' in hooks
-	assert CSS_BUNDLE.exists()
+	for asset in ("edgeui.bundle.js", "edgeui.bundle.css", "edgeui_compat.bundle.css"):
+		assert f'"{asset}"' in hooks
+
+	assert (CSS_ROOT / "edgeui.bundle.css").exists()
+	assert (CSS_ROOT / "edgeui_compat.bundle.css").exists()
+
+
+def test_migrated_product_compatibility_surface_is_present():
+	source = _javascript_source()
+	for prop_or_event in (
+		"menuItems",
+		"activeRoute",
+		"tenantName",
+		"branchName",
+		"userName",
+		'emit("navigate"',
+		'emit("mark-all-read"',
+		'emit("update:filter"',
+	):
+		assert prop_or_event in source
