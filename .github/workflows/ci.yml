@@ -1,0 +1,106 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Fast validation
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+          cache: pip
+      - name: Install validation dependencies
+        run: python -m pip install --upgrade pytest ruff
+      - name: Compile Python
+        run: python -m compileall -q edgesuite_ui
+      - name: Ruff
+        run: ruff check .
+      - name: Validate package, Frappe markers, assets, runtime, and boundaries
+        run: python -m pytest -q edgesuite_ui/tests/test_edgeui_asset_contract.py
+
+  frontend:
+    name: Frontend validation
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Check JavaScript and compile bundle in memory
+        run: npm test
+
+  frappe-v16:
+    name: Frappe v16 integration
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    services:
+      mariadb:
+        image: mariadb:11.4
+        env:
+          MARIADB_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+      - name: Install bench prerequisites
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libmariadb-dev pkg-config redis-tools
+          python -m pip install --upgrade frappe-bench
+      - name: Create clean Frappe v16 bench
+        run: |
+          bench init --frappe-branch version-16 --python "$(command -v python)" --skip-assets frappe-bench
+          cd frappe-bench
+          bench set-config -g db_host 127.0.0.1
+          bench set-config -g redis_cache redis://127.0.0.1:6379
+          bench set-config -g redis_queue redis://127.0.0.1:6379
+          bench set-config -g redis_socketio redis://127.0.0.1:6379
+          bench get-app --skip-assets "$GITHUB_WORKSPACE"
+      - name: Create site and install EdgeSuite UI only
+        working-directory: frappe-bench
+        run: |
+          bench new-site ci.localhost --db-host 127.0.0.1 --mariadb-root-password root --admin-password admin --no-mariadb-socket
+          bench --site ci.localhost install-app edgesuite_ui
+          bench build --app edgesuite_ui
+          bench --site ci.localhost migrate
+          bench --site ci.localhost run-tests --app edgesuite_ui
