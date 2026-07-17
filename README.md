@@ -49,7 +49,6 @@ git -C apps/edgesuite_ui pull --ff-only origin agent/edgeui-foundation
 test -d apps/edgesuite_ui/edgesuite_ui
 grep -qxF edgesuite_ui sites/apps.txt || printf '%s\n' edgesuite_ui >> sites/apps.txt
 
-bench setup requirements --app edgesuite_ui
 bench build --app edgesuite_ui
 bench --site vetedge.local install-app edgesuite_ui
 bench --site vetedge.local migrate
