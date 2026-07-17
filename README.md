@@ -28,12 +28,44 @@ Version `0.1.0` provides:
 
 ## Installation during development
 
+For a fresh installation:
+
 ```bash
-cd $PATH_TO_YOUR_BENCH
+cd ~/frappe-bench
 bench get-app https://github.com/olayemigod/processedge-edge-suite-ui.git --branch agent/edgeui-foundation
 bench --site vetedge.local install-app edgesuite_ui
 bench build --app edgesuite_ui
 bench --site vetedge.local clear-cache
+```
+
+If `bench get-app` cloned the repository but stopped during the asset build, recover without touching the VetEdge worktree:
+
+```bash
+cd ~/frappe-bench
+
+git -C apps/edgesuite_ui status --short
+git -C apps/edgesuite_ui pull --ff-only origin agent/edgeui-foundation
+
+test -d apps/edgesuite_ui/edgesuite_ui
+grep -qxF edgesuite_ui sites/apps.txt || printf '%s\n' edgesuite_ui >> sites/apps.txt
+
+bench setup requirements --app edgesuite_ui
+bench build --app edgesuite_ui
+bench --site vetedge.local install-app edgesuite_ui
+bench --site vetedge.local migrate
+bench --site vetedge.local clear-cache
+bench clear-website-cache
+```
+
+The `grep` guard makes registration idempotent, so it will not add a duplicate line to `sites/apps.txt`. If `git status` reports local EdgeSuite UI changes, review or commit them before pulling. Do not switch the VetEdge branch while its worktree has uncommitted changes; the EdgeSuite UI build and installation do not require a VetEdge checkout.
+
+Validate the installed app and asset contract:
+
+```bash
+bench --site vetedge.local list-apps
+bench --site vetedge.local run-tests --app edgesuite_ui
+test -f sites/assets/assets.json
+grep -E 'edgeui(_compat)?\.bundle\.(js|css)' sites/assets/assets.json
 ```
 
 The same app can be installed on RetailEdge or another product site without installing CoreEdge.
