@@ -1,0 +1,26 @@
+[project]
+name = "edgesuite_ui"
+authors = [
+    { name = "ProcessEdge Solutions", email = "processedgeng@gmail.com" }
+]
+description = "Independent EdgeSuite UI runtime and component library for ProcessEdge Frappe applications."
+requires-python = ">=3.14"
+readme = "README.md"
+dynamic = ["version"]
+dependencies = []
+
+[build-system]
+requires = ["flit_core >=3.4,<4"]
+build-backend = "flit_core.buildapi"
+
+[tool.ruff]
+line-length = 110
+target-version = "py314"
+
+[tool.ruff.lint]
+select = ["F", "E", "W", "I", "UP", "B", "RUF"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "tab"
+docstring-code-format = true
