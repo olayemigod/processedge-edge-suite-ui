@@ -1,4 +1,4 @@
-import * as Vue from "vue";
+import Vue from "./vue-bridge";
 
 function assertName(name, kind) {
   if (typeof name !== "string" || !name.trim()) {
