@@ -7,5 +7,5 @@ app_license = "mit"
 
 # EdgeSuite UI is loaded locally on every product site. It does not require
 # CoreEdge or any remote platform service to render product pages.
-app_include_css = ["edgeui.bundle.css", "edgeui_compat.bundle.css"]
+app_include_css = ["edgeui.bundle.css", "edgeui_compat.bundle.css", "edgeui_product_menu.css"]
 app_include_js = ["edgeui.bundle.js"]
