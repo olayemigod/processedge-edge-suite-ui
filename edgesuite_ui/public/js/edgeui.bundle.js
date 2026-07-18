@@ -1,7 +1,7 @@
 import { baseComponents } from "./edgeui/components";
 import { createEdgeSuiteRuntime, exposeEdgeSuiteRuntime } from "./edgeui/runtime";
 
-export const EDGE_SUITE_UI_VERSION = "0.1.1";
+export const EDGE_SUITE_UI_VERSION = "0.1.0";
 
 const runtime = createEdgeSuiteRuntime({
   version: EDGE_SUITE_UI_VERSION,
