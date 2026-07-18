@@ -29,6 +29,7 @@ def test_runtime_exports_the_compatibility_contract():
 		"createEdgeApp",
 		"components",
 		"EdgeAppShell",
+		"EdgeIcon",
 		"EdgePageLayout",
 		"EdgePageHeader",
 		"EdgeFilterBar",
@@ -57,21 +58,31 @@ def test_runtime_version_matches_python_package_version():
 
 def test_frappe_hooks_include_local_runtime_assets():
 	hooks = HOOKS.read_text(encoding="utf-8")
-	for asset in ("edgeui.bundle.js", "edgeui.bundle.css", "edgeui_compat.bundle.css"):
+	for asset in (
+		"edgeui.bundle.js",
+		"edgeui.bundle.css",
+		"edgeui_compat.bundle.css",
+		"edgeui_product_menu.css",
+		"edgeui_professional.css",
+	):
 		assert f'"{asset}"' in hooks
 
-	assert (JS_ROOT / "edgeui.bundle.js").is_file()
-	assert (CSS_ROOT / "edgeui.bundle.css").is_file()
-	assert (CSS_ROOT / "edgeui_compat.bundle.css").is_file()
+	for path in (
+		JS_ROOT / "edgeui.bundle.js",
+		CSS_ROOT / "edgeui.bundle.css",
+		CSS_ROOT / "edgeui_compat.bundle.css",
+		CSS_ROOT / "edgeui_product_menu.css",
+		CSS_ROOT / "edgeui_professional.css",
+	):
+		assert path.is_file()
 
 
 def test_bundle_entrypoint_uses_frappe_bundle_naming_and_local_modules():
 	entrypoint = (JS_ROOT / "edgeui.bundle.js").read_text(encoding="utf-8")
 
-	assert (JS_ROOT / "edgeui" / "components.js").is_file()
-	assert (JS_ROOT / "edgeui" / "runtime.js").is_file()
-	assert '"./edgeui/components"' in entrypoint
-	assert '"./edgeui/runtime"' in entrypoint
+	for module in ("components", "icons", "professional_components", "runtime"):
+		assert (JS_ROOT / "edgeui" / f"{module}.js").is_file()
+		assert f'"./edgeui/{module}"' in entrypoint
 
 
 def test_migrated_product_compatibility_surface_is_present():
