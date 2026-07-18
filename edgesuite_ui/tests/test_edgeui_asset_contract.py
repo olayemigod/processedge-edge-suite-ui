@@ -43,6 +43,19 @@ def test_runtime_exports_the_compatibility_contract():
 		assert required_symbol in source
 
 
+def test_runtime_owns_and_exposes_the_vue_bridge():
+	bridge = (JS_ROOT / "edgeui" / "vue-bridge.js").read_text(encoding="utf-8")
+	runtime = (JS_ROOT / "edgeui" / "runtime.js").read_text(encoding="utf-8")
+	entrypoint = (JS_ROOT / "edgeui.bundle.js").read_text(encoding="utf-8")
+
+	assert 'from "../../../../node_modules/vue/dist/vue.runtime.esm-bundler.js"' in bridge
+	assert "target.Vue = target.Vue || Vue" in bridge
+	assert 'import Vue from "./vue-bridge"' in runtime
+	assert 'import { exposeVueBridge } from "./edgeui/vue-bridge"' in entrypoint
+	assert "exposeVueBridge(globalThis)" in entrypoint
+	assert "coreedge" not in bridge.lower()
+
+
 def test_runtime_does_not_import_platform_or_product_apps():
 	source = _javascript_source().lower()
 
