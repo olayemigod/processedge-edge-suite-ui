@@ -1,9 +1,12 @@
 import { baseComponents } from "./edgeui/components";
+import { applyFrappeCompatibility } from "./edgeui/frappe_compat";
 import { modalComponents } from "./edgeui/modal_components";
 import { professionalComponents } from "./edgeui/professional_components";
 import { createEdgeSuiteRuntime, exposeEdgeSuiteRuntime } from "./edgeui/runtime";
 
-export const EDGE_SUITE_UI_VERSION = "0.2.0";
+export const EDGE_SUITE_UI_VERSION = "0.2.1";
+
+applyFrappeCompatibility(professionalComponents);
 
 const components = Object.freeze({
   ...baseComponents,
@@ -21,6 +24,7 @@ if (typeof globalThis !== "undefined") {
 }
 
 export * from "./edgeui/components";
+export * from "./edgeui/frappe_compat";
 export * from "./edgeui/icons";
 export * from "./edgeui/modal_components";
 export * from "./edgeui/product_menu";
