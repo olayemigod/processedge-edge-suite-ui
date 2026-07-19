@@ -17,6 +17,18 @@ def test_professional_shell_groups_navigation_and_uses_svg_icons():
 	assert "item.icon)" not in component
 
 
+def test_professional_shell_is_safe_across_product_vue_bundles():
+	component = (APP_ROOT / "public/js/edgeui/professional_components.js").read_text(encoding="utf-8")
+	assert 'import { defineComponent, h } from "vue"' in component
+	assert "onMounted" not in component
+	assert "ref(" not in component
+	assert "watch(" not in component
+	assert "data()" in component
+	assert "mounted()" in component
+	assert "this.collapsedSections" in component
+	assert 'emits: ["navigate"]' in component
+
+
 def test_professional_design_has_spacing_responsive_and_native_sidebar_contracts():
 	styles = (APP_ROOT / "public/css/edgeui_professional.css").read_text(encoding="utf-8")
 	for expected in (
