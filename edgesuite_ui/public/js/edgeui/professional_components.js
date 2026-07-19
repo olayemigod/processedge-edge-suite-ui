@@ -1,4 +1,4 @@
-import { defineComponent, h, onMounted, ref, watch } from "vue";
+import { defineComponent, h } from "vue";
 
 import { edgeIconMarkup, productInitials } from "./icons";
 
@@ -63,6 +63,11 @@ export const EdgeIcon = defineComponent({
   },
 });
 
+// EdgeAppShell intentionally uses the Options API. The component is distributed
+// from a standalone Frappe app and may be installed into a consuming product app
+// that owns a different Vue bundle. Options API state, watchers, and lifecycle
+// hooks are therefore executed by the consuming app's Vue runtime, preventing
+// split-runtime reactivity and lifecycle failures.
 export const EdgeAppShell = defineComponent({
   name: "EdgeAppShell",
   props: {
@@ -82,87 +87,110 @@ export const EdgeAppShell = defineComponent({
     sectionStateKey: { type: String, default: "" },
   },
   emits: ["navigate"],
-  setup(props, { slots, emit }) {
-    const mobileSidebarOpen = ref(false);
-    const collapsedSections = ref(new Set());
-
-    function storageKey() {
-      if (props.sectionStateKey) return props.sectionStateKey;
-      const product = String(props.product || props.title || "edgesuite")
+  data() {
+    return {
+      mobileSidebarOpen: false,
+      collapsedSections: new Set(),
+    };
+  },
+  mounted() {
+    this.restoreSectionState();
+  },
+  watch: {
+    activeRoute() {
+      this.ensureActiveSectionExpanded();
+    },
+    product() {
+      this.restoreSectionState();
+    },
+    menuItems: {
+      deep: true,
+      handler() {
+        this.restoreSectionState();
+      },
+    },
+  },
+  methods: {
+    storageKey() {
+      if (this.sectionStateKey) return this.sectionStateKey;
+      const product = String(this.product || this.title || "edgesuite")
         .trim()
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, "-");
       return `edgeui:${product || "edgesuite"}:sidebar-sections`;
-    }
+    },
 
-    function activeGroupKey(groups = normalizedGroups(props.menuItems)) {
+    activeGroupKey(groups = normalizedGroups(this.menuItems)) {
       const activeGroup = groups.find((group) =>
-        group.items.some((item) => item?.route === props.activeRoute),
+        group.items.some((item) => item?.route === this.activeRoute),
       );
       return activeGroup?.key || "";
-    }
+    },
 
-    function persistSectionState() {
-      if (!props.rememberSectionState || typeof window === "undefined") return;
+    persistSectionState() {
+      if (!this.rememberSectionState || typeof window === "undefined") return;
       try {
-        window.localStorage?.setItem(storageKey(), JSON.stringify([...collapsedSections.value]));
+        window.localStorage?.setItem(
+          this.storageKey(),
+          JSON.stringify([...this.collapsedSections]),
+        );
       } catch (_error) {
         // Browser storage may be disabled. Sidebar behaviour must still work in memory.
       }
-    }
+    },
 
-    function restoreSectionState() {
-      const groups = normalizedGroups(props.menuItems);
+    restoreSectionState() {
+      const groups = normalizedGroups(this.menuItems);
       const defaults = new Set(
         groups.filter((group) => group.defaultCollapsed).map((group) => String(group.key)),
       );
       let restored = defaults;
 
-      if (props.rememberSectionState && typeof window !== "undefined") {
+      if (this.rememberSectionState && typeof window !== "undefined") {
         try {
-          const stored = JSON.parse(window.localStorage?.getItem(storageKey()) || "[]");
+          const stored = JSON.parse(window.localStorage?.getItem(this.storageKey()) || "[]");
           if (Array.isArray(stored)) restored = new Set(stored.map(String));
         } catch (_error) {
           restored = defaults;
         }
       }
 
-      const activeKey = activeGroupKey(groups);
+      const activeKey = this.activeGroupKey(groups);
       if (activeKey) restored.delete(String(activeKey));
-      collapsedSections.value = restored;
-    }
+      this.collapsedSections = restored;
+    },
 
-    function ensureActiveSectionExpanded() {
-      const activeKey = activeGroupKey();
-      if (!activeKey || !collapsedSections.value.has(String(activeKey))) return;
-      const next = new Set(collapsedSections.value);
+    ensureActiveSectionExpanded() {
+      const activeKey = this.activeGroupKey();
+      if (!activeKey || !this.collapsedSections.has(String(activeKey))) return;
+      const next = new Set(this.collapsedSections);
       next.delete(String(activeKey));
-      collapsedSections.value = next;
-      persistSectionState();
-    }
+      this.collapsedSections = next;
+      this.persistSectionState();
+    },
 
-    function isSectionCollapsed(group) {
-      return props.collapsibleSections && collapsedSections.value.has(String(group.key));
-    }
+    isSectionCollapsed(group) {
+      return this.collapsibleSections && this.collapsedSections.has(String(group.key));
+    },
 
-    function toggleSection(group) {
-      if (!props.collapsibleSections) return;
+    toggleSection(group) {
+      if (!this.collapsibleSections) return;
       const key = String(group.key);
-      const next = new Set(collapsedSections.value);
+      const next = new Set(this.collapsedSections);
       if (next.has(key)) next.delete(key);
       else next.add(key);
-      collapsedSections.value = next;
-      persistSectionState();
-    }
+      this.collapsedSections = next;
+      this.persistSectionState();
+    },
 
-    function navigate(route) {
+    navigate(route) {
       if (!route) return;
-      mobileSidebarOpen.value = false;
-      emit("navigate", route);
-    }
+      this.mobileSidebarOpen = false;
+      this.$emit("navigate", route);
+    },
 
-    function renderMenuItem(item) {
-      const active = item?.route === props.activeRoute;
+    renderMenuItem(item) {
+      const active = item?.route === this.activeRoute;
       return h(
         "button",
         {
@@ -170,7 +198,7 @@ export const EdgeAppShell = defineComponent({
           type: "button",
           title: item?.description || item?.label || "",
           "aria-current": active ? "page" : undefined,
-          onClick: () => navigate(item?.route),
+          onClick: () => this.navigate(item?.route),
         },
         [
           h(EdgeIcon, { name: item?.icon || "list", size: "sm" }),
@@ -185,199 +213,197 @@ export const EdgeAppShell = defineComponent({
             : null,
         ],
       );
-    }
+    },
+  },
+  render() {
+    const slots = this.$slots;
+    const groups = normalizedGroups(this.menuItems);
+    const contextChips = [
+      this.tenantName ? { icon: "building", value: this.tenantName } : null,
+      this.branchName ? { icon: "layers", value: this.branchName } : null,
+    ].filter(Boolean);
 
-    onMounted(restoreSectionState);
-    watch(() => props.activeRoute, ensureActiveSectionExpanded);
-    watch(
-      () => props.product,
-      () => restoreSectionState(),
-    );
-
-    return () => {
-      const groups = normalizedGroups(props.menuItems);
-      const contextChips = [
-        props.tenantName ? { icon: "building", value: props.tenantName } : null,
-        props.branchName ? { icon: "layers", value: props.branchName } : null,
-      ].filter(Boolean);
-
-      const builtInSidebar =
-        props.showSidebar && groups.length
-          ? h(
-              "aside",
-              {
-                class: [
-                  "edge-app-shell__sidebar",
-                  "edge-sidebar",
-                  mobileSidebarOpen.value ? "is-open" : "",
-                ],
-                "aria-label": props.sidebarTitle,
-              },
-              [
-                h("div", { class: "edge-sidebar__brand" }, [
-                  slotValue(
-                    slots,
-                    "brand",
-                    h("span", { class: "edge-sidebar__mark", "aria-hidden": "true" }, [
-                      h(EdgeIcon, {
-                        name: props.product === "eduedge" ? "graduation" : "grid",
-                        size: "md",
-                      }),
-                    ]),
-                  ),
-                  h("span", { class: "edge-sidebar__brand-copy" }, [
-                    h("strong", props.title || props.product || "EdgeSuite"),
-                    props.subtitle ? h("small", props.subtitle) : null,
-                  ]),
-                ]),
-                h(
-                  "nav",
-                  { class: "edge-sidebar__nav" },
-                  groups.map((group, index) => {
-                    const collapsed = isSectionCollapsed(group);
-                    const sectionId = `edge-sidebar-section-${String(group.key || index)
-                      .toLowerCase()
-                      .replace(/[^a-z0-9]+/g, "-")}`;
-                    return h(
-                      "section",
-                      {
-                        class: [
-                          "edge-sidebar__section",
-                          collapsed ? "is-collapsed" : "is-expanded",
-                        ],
-                        key: group.key || group.label,
-                      },
-                      [
-                        h(
-                          "button",
-                          {
-                            class: "edge-sidebar__section-toggle",
-                            type: "button",
-                            "aria-expanded": collapsed ? "false" : "true",
-                            "aria-controls": sectionId,
-                            disabled: !props.collapsibleSections,
-                            onClick: () => toggleSection(group),
-                          },
-                          [
-                            group.icon ? h(EdgeIcon, { name: group.icon, size: "xs" }) : null,
-                            h("span", group.label),
-                            props.collapsibleSections
-                              ? h(EdgeIcon, {
-                                  name: "chevron-down",
-                                  size: "xs",
-                                  label: collapsed ? `Expand ${group.label}` : `Collapse ${group.label}`,
-                                })
-                              : null,
-                          ],
-                        ),
-                        h(
-                          "div",
-                          {
-                            id: sectionId,
-                            class: "edge-sidebar__items",
-                            hidden: collapsed,
-                          },
-                          group.items.map(renderMenuItem),
-                        ),
-                      ],
-                    );
-                  }),
-                ),
-                props.userName
-                  ? h("div", { class: "edge-sidebar__user" }, [
-                      h("span", { class: "edge-sidebar__avatar" }, productInitials(props.userName)),
-                      h("span", { class: "edge-sidebar__user-copy" }, [
-                        h("strong", props.userName),
-                        h("small", props.branchName || props.tenantName || props.product || "EdgeSuite"),
-                      ]),
-                    ])
-                  : null,
-              ],
-            )
-          : null;
-
-      const topbar = slots.topbar
-        ? h("div", { class: "edge-app-shell__topbar" }, slots.topbar())
-        : h("header", { class: "edge-topbar edge-app-shell__topbar" }, [
-            builtInSidebar
-              ? h(
-                  "button",
-                  {
-                    class: "edge-sidebar-toggle",
-                    type: "button",
-                    "aria-label": mobileSidebarOpen.value
-                      ? "Close product navigation"
-                      : "Open product navigation",
-                    "aria-expanded": mobileSidebarOpen.value ? "true" : "false",
-                    onClick: () => {
-                      mobileSidebarOpen.value = !mobileSidebarOpen.value;
-                    },
-                  },
-                  [h(EdgeIcon, { name: mobileSidebarOpen.value ? "close" : "menu", size: "sm" })],
-                )
-              : null,
-            h("div", { class: "edge-topbar__brand" }, [
-              h("span", { class: "edge-topbar__mark", "aria-hidden": "true" }, [
-                h(EdgeIcon, {
-                  name: props.product === "eduedge" ? "graduation" : "grid",
-                  size: "sm",
-                }),
-              ]),
-              h("span", { class: "edge-topbar__title-copy" }, [
-                h("strong", props.title || props.product || "EdgeSuite"),
-                props.subtitle ? h("small", props.subtitle) : null,
-              ]),
-            ]),
-            h(
-              "div",
-              { class: "edge-topbar-context", "aria-label": "Active context" },
-              contextChips.map((chip) =>
-                h("span", { class: "edge-context-chip", key: chip.value }, [
-                  h(EdgeIcon, { name: chip.icon, size: "xs" }),
-                  h("span", chip.value),
-                ]),
-              ),
-            ),
-            h("div", { class: "edge-topbar-actions" }, slotValue(slots, "notifications", [])),
-          ]);
-
-      return h(
-        "div",
-        {
-          class: [
-            "edge-app-shell",
+    const builtInSidebar =
+      this.showSidebar && groups.length
+        ? h(
+            "aside",
             {
-              "edge-app-shell--compact": props.compact,
-              "edge-sidebar-open": mobileSidebarOpen.value,
+              class: [
+                "edge-app-shell__sidebar",
+                "edge-sidebar",
+                this.mobileSidebarOpen ? "is-open" : "",
+              ],
+              "aria-label": this.sidebarTitle,
             },
-          ],
-          "data-edge-product": props.product || undefined,
-        },
-        [
-          topbar,
-          h("div", { class: "edge-shell-body" }, [
-            slots.sidebar
-              ? h("aside", { class: "edge-app-shell__sidebar edge-sidebar" }, slots.sidebar())
-              : builtInSidebar,
-            mobileSidebarOpen.value && builtInSidebar
-              ? h("button", {
-                  class: "edge-sidebar-backdrop",
+            [
+              h("div", { class: "edge-sidebar__brand" }, [
+                slotValue(
+                  slots,
+                  "brand",
+                  h("span", { class: "edge-sidebar__mark", "aria-hidden": "true" }, [
+                    h(EdgeIcon, {
+                      name: this.product === "eduedge" ? "graduation" : "grid",
+                      size: "md",
+                    }),
+                  ]),
+                ),
+                h("span", { class: "edge-sidebar__brand-copy" }, [
+                  h("strong", this.title || this.product || "EdgeSuite"),
+                  this.subtitle ? h("small", this.subtitle) : null,
+                ]),
+              ]),
+              h(
+                "nav",
+                { class: "edge-sidebar__nav" },
+                groups.map((group, index) => {
+                  const collapsed = this.isSectionCollapsed(group);
+                  const sectionId = `edge-sidebar-section-${String(group.key || index)
+                    .toLowerCase()
+                    .replace(/[^a-z0-9]+/g, "-")}`;
+                  return h(
+                    "section",
+                    {
+                      class: [
+                        "edge-sidebar__section",
+                        collapsed ? "is-collapsed" : "is-expanded",
+                      ],
+                      key: group.key || group.label,
+                    },
+                    [
+                      h(
+                        "button",
+                        {
+                          class: "edge-sidebar__section-toggle",
+                          type: "button",
+                          "aria-expanded": collapsed ? "false" : "true",
+                          "aria-controls": sectionId,
+                          disabled: !this.collapsibleSections,
+                          onClick: () => this.toggleSection(group),
+                        },
+                        [
+                          group.icon ? h(EdgeIcon, { name: group.icon, size: "xs" }) : null,
+                          h("span", group.label),
+                          this.collapsibleSections
+                            ? h(EdgeIcon, {
+                                name: "chevron-down",
+                                size: "xs",
+                                label: collapsed
+                                  ? `Expand ${group.label}`
+                                  : `Collapse ${group.label}`,
+                              })
+                            : null,
+                        ],
+                      ),
+                      h(
+                        "div",
+                        {
+                          id: sectionId,
+                          class: "edge-sidebar__items",
+                          hidden: collapsed,
+                        },
+                        group.items.map((item) => this.renderMenuItem(item)),
+                      ),
+                    ],
+                  );
+                }),
+              ),
+              this.userName
+                ? h("div", { class: "edge-sidebar__user" }, [
+                    h("span", { class: "edge-sidebar__avatar" }, productInitials(this.userName)),
+                    h("span", { class: "edge-sidebar__user-copy" }, [
+                      h("strong", this.userName),
+                      h(
+                        "small",
+                        this.branchName || this.tenantName || this.product || "EdgeSuite",
+                      ),
+                    ]),
+                  ])
+                : null,
+            ],
+          )
+        : null;
+
+    const topbar = slots.topbar
+      ? h("div", { class: "edge-app-shell__topbar" }, slots.topbar())
+      : h("header", { class: "edge-topbar edge-app-shell__topbar" }, [
+          builtInSidebar
+            ? h(
+                "button",
+                {
+                  class: "edge-sidebar-toggle",
                   type: "button",
-                  "aria-label": "Close product navigation",
+                  "aria-label": this.mobileSidebarOpen
+                    ? "Close product navigation"
+                    : "Open product navigation",
+                  "aria-expanded": this.mobileSidebarOpen ? "true" : "false",
                   onClick: () => {
-                    mobileSidebarOpen.value = false;
+                    this.mobileSidebarOpen = !this.mobileSidebarOpen;
                   },
-                })
-              : null,
-            h(
-              "main",
-              { class: "edge-app-shell__main edge-shell-main" },
-              slotValue(slots, "default"),
-            ),
+                },
+                [h(EdgeIcon, { name: this.mobileSidebarOpen ? "close" : "menu", size: "sm" })],
+              )
+            : null,
+          h("div", { class: "edge-topbar__brand" }, [
+            h("span", { class: "edge-topbar__mark", "aria-hidden": "true" }, [
+              h(EdgeIcon, {
+                name: this.product === "eduedge" ? "graduation" : "grid",
+                size: "sm",
+              }),
+            ]),
+            h("span", { class: "edge-topbar__title-copy" }, [
+              h("strong", this.title || this.product || "EdgeSuite"),
+              this.subtitle ? h("small", this.subtitle) : null,
+            ]),
           ]),
+          h(
+            "div",
+            { class: "edge-topbar-context", "aria-label": "Active context" },
+            contextChips.map((chip) =>
+              h("span", { class: "edge-context-chip", key: chip.value }, [
+                h(EdgeIcon, { name: chip.icon, size: "xs" }),
+                h("span", chip.value),
+              ]),
+            ),
+          ),
+          h("div", { class: "edge-topbar-actions" }, slotValue(slots, "notifications", [])),
+        ]);
+
+    return h(
+      "div",
+      {
+        class: [
+          "edge-app-shell",
+          {
+            "edge-app-shell--compact": this.compact,
+            "edge-sidebar-open": this.mobileSidebarOpen,
+          },
         ],
-      );
-    };
+        "data-edge-product": this.product || undefined,
+      },
+      [
+        topbar,
+        h("div", { class: "edge-shell-body" }, [
+          slots.sidebar
+            ? h("aside", { class: "edge-app-shell__sidebar edge-sidebar" }, slots.sidebar())
+            : builtInSidebar,
+          this.mobileSidebarOpen && builtInSidebar
+            ? h("button", {
+                class: "edge-sidebar-backdrop",
+                type: "button",
+                "aria-label": "Close product navigation",
+                onClick: () => {
+                  this.mobileSidebarOpen = false;
+                },
+              })
+            : null,
+          h(
+            "main",
+            { class: "edge-app-shell__main edge-shell-main" },
+            slotValue(slots, "default"),
+          ),
+        ]),
+      ],
+    );
   },
 });
 
