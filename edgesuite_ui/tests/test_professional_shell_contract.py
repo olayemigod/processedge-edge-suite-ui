@@ -44,6 +44,14 @@ def test_professional_design_has_spacing_responsive_and_native_sidebar_contracts
 		assert expected in styles
 
 
+def test_primary_actions_keep_accessible_text_contrast():
+	styles = (APP_ROOT / "public/css/edgeui_action_contrast.css").read_text(encoding="utf-8")
+	hooks = (APP_ROOT / "hooks.py").read_text(encoding="utf-8")
+	assert ".edge-button--primary" in styles
+	assert "color: #fff" in styles
+	assert "edgeui_action_contrast.css" in hooks
+
+
 def test_icon_library_is_independent_and_has_brand_relevant_icons():
 	icons = (APP_ROOT / "public/js/edgeui/icons.js").read_text(encoding="utf-8")
 	for expected in (
