@@ -3,8 +3,9 @@ import { applyFrappeCompatibility } from "./edgeui/frappe_compat";
 import { modalComponents } from "./edgeui/modal_components";
 import { professionalComponents } from "./edgeui/professional_components";
 import { createEdgeSuiteRuntime, exposeEdgeSuiteRuntime } from "./edgeui/runtime";
+import { installSharedShellEnhancements } from "./edgeui/shell_enhancements";
 
-export const EDGE_SUITE_UI_VERSION = "0.2.1";
+export const EDGE_SUITE_UI_VERSION = "0.3.0";
 
 applyFrappeCompatibility(professionalComponents);
 
@@ -21,6 +22,7 @@ const runtime = createEdgeSuiteRuntime({
 
 if (typeof globalThis !== "undefined") {
   exposeEdgeSuiteRuntime(runtime, globalThis);
+  installSharedShellEnhancements(runtime);
 }
 
 export * from "./edgeui/components";
@@ -30,4 +32,5 @@ export * from "./edgeui/modal_components";
 export * from "./edgeui/product_menu";
 export * from "./edgeui/professional_components";
 export * from "./edgeui/runtime";
+export * from "./edgeui/shell_enhancements";
 export default runtime;
