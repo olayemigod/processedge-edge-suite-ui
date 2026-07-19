@@ -5,6 +5,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 BUNDLE = ROOT / "edgesuite_ui" / "public" / "js" / "edgeui.bundle.js"
 SHELL = ROOT / "edgesuite_ui" / "public" / "js" / "edgeui" / "shell_enhancements.js"
+CONTEXT_IDENTITY = ROOT / "edgesuite_ui" / "public" / "js" / "edgeui" / "context_identity.js"
 STYLES = ROOT / "edgesuite_ui" / "public" / "css" / "edgeui_shell_enhancements.css"
 HOOKS = ROOT / "edgesuite_ui" / "hooks.py"
 
@@ -14,14 +15,16 @@ def read(path: Path) -> str:
 
 
 def test_shared_shell_enhancements_are_exported_and_loaded():
-	for path in (SHELL, STYLES):
+	for path in (SHELL, CONTEXT_IDENTITY, STYLES):
 		assert path.exists(), path
 
 	bundle = read(BUNDLE)
 	hooks = read(HOOKS)
 	assert 'EDGE_SUITE_UI_VERSION = "0.3.0"' in bundle
 	assert "installSharedShellEnhancements(runtime)" in bundle
+	assert "installContextIdentityResolver()" in bundle
 	assert 'export * from "./edgeui/shell_enhancements"' in bundle
+	assert 'export * from "./edgeui/context_identity"' in bundle
 	assert "edgeui_shell_enhancements.css" in hooks
 
 
@@ -38,6 +41,21 @@ def test_identity_contract_separates_tenant_and_product_branding():
 		"product_subtitle",
 		".edge-topbar__brand",
 		".edge-sidebar__brand",
+	):
+		assert contract in content
+
+
+def test_context_identity_tracks_active_company_without_product_specific_observers():
+	content = read(CONTEXT_IDENTITY)
+	for contract in (
+		"identity.companies",
+		"resolveCompany",
+		"edge-topbar-context",
+		"identity.tenant_name = company.label",
+		"identity.tenant_logo = company.logo",
+		"data-edge-tenant-chip",
+		"edgesuite-context-changed",
+		"MutationObserver",
 	):
 		assert contract in content
 
