@@ -1,6 +1,7 @@
 import { baseComponents } from "./edgeui/components";
 import { applyFrappeCompatibility } from "./edgeui/frappe_compat";
 import { modalComponents } from "./edgeui/modal_components";
+import { modalPortalComponents } from "./edgeui/modal_portal";
 import { professionalComponents } from "./edgeui/professional_components";
 import { createEdgeSuiteRuntime, exposeEdgeSuiteRuntime } from "./edgeui/runtime";
 
@@ -12,6 +13,7 @@ const components = Object.freeze({
   ...baseComponents,
   ...professionalComponents,
   ...modalComponents,
+  ...modalPortalComponents,
 });
 
 const runtime = createEdgeSuiteRuntime({
@@ -27,6 +29,7 @@ export * from "./edgeui/components";
 export * from "./edgeui/frappe_compat";
 export * from "./edgeui/icons";
 export * from "./edgeui/modal_components";
+export * from "./edgeui/modal_portal";
 export * from "./edgeui/product_menu";
 export * from "./edgeui/professional_components";
 export * from "./edgeui/runtime";
