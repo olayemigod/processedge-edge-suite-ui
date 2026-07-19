@@ -25,6 +25,7 @@ def test_professional_shell_is_safe_across_product_vue_bundles():
 	assert "watch(" not in component
 	assert "data()" in component
 	assert "mounted()" in component
+	assert "beforeUnmount()" in component
 	assert "this.collapsedSections" in component
 	assert 'emits: ["navigate"]' in component
 
@@ -39,9 +40,41 @@ def test_professional_design_has_spacing_responsive_and_native_sidebar_contracts
 		"@media (max-width: 47.99rem)",
 		'[data-title="EduEdge"]',
 		".sidebar-item-icon svg",
-		"box-shadow: inset 3px 0 0",
 	):
 		assert expected in styles
+
+
+def test_flat_shell_hides_native_sidebar_and_removes_elevation():
+	styles = (APP_ROOT / "public/css/edgeui_flat_chrome.css").read_text(encoding="utf-8")
+	hooks = (APP_ROOT / "hooks.py").read_text(encoding="utf-8")
+	for expected in (
+		"--edge-shadow-xs: none",
+		"box-shadow: none !important",
+		"edge-suite-native-sidebar-hidden",
+		".body-sidebar-container",
+		".edge-notification-bell",
+		".edge-user-avatar-button",
+		".edge-user-menu",
+	):
+		assert expected in styles
+	assert "edgeui_flat_chrome.css" in hooks
+
+
+def test_shell_provides_notifications_profile_menu_and_user_images():
+	component = (APP_ROOT / "public/js/edgeui/professional_components.js").read_text(encoding="utf-8")
+	for expected in (
+		"EdgeNotificationBell",
+		"get_notification_logs",
+		"mark_all_as_read",
+		"edge-suite-native-sidebar-hidden",
+		"userImage",
+		"bootInfo.image",
+		"edge-user-avatar__image",
+		"My profile",
+		"User settings",
+		"Log out",
+	):
+		assert expected in component
 
 
 def test_primary_actions_keep_accessible_text_contrast():
@@ -60,6 +93,8 @@ def test_icon_library_is_independent_and_has_brand_relevant_icons():
 		"assessment",
 		"settings",
 		"shield",
+		"bell",
+		"user",
 		"edgeIconMarkup",
 		"frappe?.utils?.icon",
 	):
