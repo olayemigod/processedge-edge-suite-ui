@@ -58,14 +58,19 @@ def test_runtime_version_matches_python_package_version():
 
 def test_frappe_hooks_include_local_runtime_assets():
 	hooks = HOOKS.read_text(encoding="utf-8")
-	for asset in (
+
+	for bundled_asset in (
 		"edgeui.bundle.js",
 		"edgeui.bundle.css",
 		"edgeui_compat.bundle.css",
-		"edgeui_product_menu.css",
-		"edgeui_professional.css",
 	):
-		assert f'"{asset}"' in hooks
+		assert f'"{bundled_asset}"' in hooks
+
+	for static_asset in (
+		"/assets/edgesuite_ui/css/edgeui_product_menu.css",
+		"/assets/edgesuite_ui/css/edgeui_professional.css",
+	):
+		assert f'"{static_asset}"' in hooks
 
 	for path in (
 		JS_ROOT / "edgeui.bundle.js",
@@ -75,6 +80,14 @@ def test_frappe_hooks_include_local_runtime_assets():
 		CSS_ROOT / "edgeui_professional.css",
 	):
 		assert path.is_file()
+
+
+def test_plain_css_hooks_use_app_scoped_static_asset_urls():
+	hooks = HOOKS.read_text(encoding="utf-8")
+	assert '"edgeui_product_menu.css"' not in hooks
+	assert '"edgeui_professional.css"' not in hooks
+	assert '"/assets/edgesuite_ui/css/edgeui_product_menu.css"' in hooks
+	assert '"/assets/edgesuite_ui/css/edgeui_professional.css"' in hooks
 
 
 def test_bundle_entrypoint_uses_frappe_bundle_naming_and_local_modules():
