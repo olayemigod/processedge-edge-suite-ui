@@ -2,6 +2,7 @@ import { baseComponents } from "./edgeui/components";
 import { installContextIdentityResolver } from "./edgeui/context_identity";
 import { applyFrappeCompatibility } from "./edgeui/frappe_compat";
 import { modalComponents } from "./edgeui/modal_components";
+import { suppressNativeNotificationRuntime } from "./edgeui/notification_runtime";
 import { professionalComponents } from "./edgeui/professional_components";
 import { createEdgeSuiteRuntime, exposeEdgeSuiteRuntime } from "./edgeui/runtime";
 import { installSharedShellEnhancements } from "./edgeui/shell_enhancements";
@@ -24,6 +25,7 @@ const runtime = createEdgeSuiteRuntime({
 if (typeof globalThis !== "undefined") {
   exposeEdgeSuiteRuntime(runtime, globalThis);
   installSharedShellEnhancements(runtime);
+  suppressNativeNotificationRuntime(runtime);
   installContextIdentityResolver();
 }
 
@@ -32,6 +34,7 @@ export * from "./edgeui/context_identity";
 export * from "./edgeui/frappe_compat";
 export * from "./edgeui/icons";
 export * from "./edgeui/modal_components";
+export * from "./edgeui/notification_runtime";
 export * from "./edgeui/product_menu";
 export * from "./edgeui/professional_components";
 export * from "./edgeui/runtime";
