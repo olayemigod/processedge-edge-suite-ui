@@ -30,8 +30,11 @@ jobs:
         run: python -m compileall -q edgesuite_ui
       - name: Ruff
         run: ruff check .
-      - name: Validate package, Frappe markers, assets, runtime, and boundaries
-        run: python -m pytest -q edgesuite_ui/tests/test_edgeui_asset_contract.py
+      - name: Validate package, runtime, shell, and boundaries
+        run: |
+          python -m pytest -q \
+            edgesuite_ui/tests/test_edgeui_asset_contract.py \
+            edgesuite_ui/tests/test_shell_enhancement_contract.py
 
   frontend:
     name: Frontend validation
