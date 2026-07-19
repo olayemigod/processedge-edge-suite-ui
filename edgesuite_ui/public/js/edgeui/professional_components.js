@@ -1,5 +1,6 @@
 import { defineComponent, h } from "vue";
 
+import { EdgeNotificationBell } from "./components";
 import { edgeIconMarkup, productInitials } from "./icons";
 
 function slotValue(slots, name, fallback = null) {
@@ -44,6 +45,45 @@ function normalizedGroups(menuItems = []) {
   return groups.filter((group) => group.items.length);
 }
 
+function shellRegistry() {
+  if (!(globalThis.__edgeSuiteShellRegistry instanceof Map)) {
+    globalThis.__edgeSuiteShellRegistry = new Map();
+  }
+  return globalThis.__edgeSuiteShellRegistry;
+}
+
+function normalizedProduct(value) {
+  return String(value || "edgesuite")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "") || "edgesuite";
+}
+
+function syncShellBodyClasses() {
+  if (typeof document === "undefined" || !document.body) return;
+  const registry = shellRegistry();
+  const active = [...registry.entries()].filter(([, entry]) => entry?.count > 0);
+
+  document.body.classList.toggle("edge-suite-shell-active", active.length > 0);
+  document.body.classList.toggle(
+    "edge-suite-native-sidebar-hidden",
+    active.some(([, entry]) => entry?.hideNativeSidebar),
+  );
+
+  for (const className of [...document.body.classList]) {
+    if (className.startsWith("edge-suite-product-")) document.body.classList.remove(className);
+  }
+  active.forEach(([product]) => document.body.classList.add(`edge-suite-product-${product}`));
+}
+
+function stripMarkup(value) {
+  return String(value || "")
+    .replace(/<[^>]*>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 export const EdgeIcon = defineComponent({
   name: "EdgeIcon",
   props: {
@@ -63,11 +103,8 @@ export const EdgeIcon = defineComponent({
   },
 });
 
-// EdgeAppShell intentionally uses the Options API. The component is distributed
-// from a standalone Frappe app and may be installed into a consuming product app
-// that owns a different Vue bundle. Options API state, watchers, and lifecycle
-// hooks are therefore executed by the consuming app's Vue runtime, preventing
-// split-runtime reactivity and lifecycle failures.
+// Options API is intentional. Product apps can consume this component through
+// their own Vue bundle without relying on EdgeSuite UI's Vue runtime instance.
 export const EdgeAppShell = defineComponent({
   name: "EdgeAppShell",
   props: {
@@ -80,8 +117,13 @@ export const EdgeAppShell = defineComponent({
     tenantName: { type: String, default: "" },
     branchName: { type: String, default: "" },
     userName: { type: String, default: "" },
+    userImage: { type: String, default: "" },
     sidebarTitle: { type: String, default: "Product navigation" },
     showSidebar: { type: Boolean, default: true },
+    showNotifications: { type: Boolean, default: true },
+    showUserMenu: { type: Boolean, default: true },
+    hideNativeSidebar: { default: null },
+    notificationLimit: { type: Number, default: 12 },
     collapsibleSections: { type: Boolean, default: true },
     rememberSectionState: { type: Boolean, default: true },
     sectionStateKey: { type: String, default: "" },
@@ -91,16 +133,37 @@ export const EdgeAppShell = defineComponent({
     return {
       mobileSidebarOpen: false,
       collapsedSections: new Set(),
+      profileMenuOpen: false,
+      notificationsOpen: false,
+      notificationLoading: false,
+      notificationError: "",
+      notificationLogs: [],
+      unreadCount: 0,
+      registeredProduct: "",
     };
   },
   mounted() {
     this.restoreSectionState();
+    this.registerShell();
+    document.addEventListener("click", this.onDocumentClick);
+    document.addEventListener("keydown", this.onDocumentKeydown);
+    this.bindRealtimeNotifications();
+    this.loadNotificationCount();
+  },
+  beforeUnmount() {
+    this.unregisterShell();
+    document.removeEventListener("click", this.onDocumentClick);
+    document.removeEventListener("keydown", this.onDocumentKeydown);
+    this.unbindRealtimeNotifications();
   },
   watch: {
     activeRoute() {
       this.ensureActiveSectionExpanded();
+      this.closeTopbarMenus();
     },
-    product() {
+    product(newProduct, oldProduct) {
+      this.unregisterShell(oldProduct);
+      this.registerShell(newProduct);
       this.restoreSectionState();
     },
     menuItems: {
@@ -113,11 +176,7 @@ export const EdgeAppShell = defineComponent({
   methods: {
     storageKey() {
       if (this.sectionStateKey) return this.sectionStateKey;
-      const product = String(this.product || this.title || "edgesuite")
-        .trim()
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "-");
-      return `edgeui:${product || "edgesuite"}:sidebar-sections`;
+      return `edgeui:${normalizedProduct(this.product || this.title)}:sidebar-sections`;
     },
 
     activeGroupKey(groups = normalizedGroups(this.menuItems)) {
@@ -135,7 +194,7 @@ export const EdgeAppShell = defineComponent({
           JSON.stringify([...this.collapsedSections]),
         );
       } catch (_error) {
-        // Browser storage may be disabled. Sidebar behaviour must still work in memory.
+        // Browser storage may be unavailable. In-memory state remains usable.
       }
     },
 
@@ -183,10 +242,246 @@ export const EdgeAppShell = defineComponent({
       this.persistSectionState();
     },
 
+    shouldHideNativeSidebar() {
+      if (this.hideNativeSidebar !== null && this.hideNativeSidebar !== undefined) {
+        return Boolean(this.hideNativeSidebar);
+      }
+      return normalizedProduct(this.product) === "eduedge";
+    },
+
+    registerShell(product = this.product) {
+      if (typeof document === "undefined") return;
+      const key = normalizedProduct(product);
+      const registry = shellRegistry();
+      const current = registry.get(key) || { count: 0, hideNativeSidebar: false };
+      registry.set(key, {
+        count: current.count + 1,
+        hideNativeSidebar: current.hideNativeSidebar || this.shouldHideNativeSidebar(),
+      });
+      this.registeredProduct = key;
+      syncShellBodyClasses();
+    },
+
+    unregisterShell(product = this.registeredProduct || this.product) {
+      if (typeof document === "undefined") return;
+      const key = normalizedProduct(product);
+      const registry = shellRegistry();
+      const current = registry.get(key);
+      if (current) {
+        if (current.count <= 1) registry.delete(key);
+        else registry.set(key, { ...current, count: current.count - 1 });
+      }
+      if (this.registeredProduct === key) this.registeredProduct = "";
+      syncShellBodyClasses();
+    },
+
     navigate(route) {
       if (!route) return;
       this.mobileSidebarOpen = false;
+      this.closeTopbarMenus();
       this.$emit("navigate", route);
+    },
+
+    currentUserId() {
+      return globalThis.frappe?.session?.user || "";
+    },
+
+    currentUserInfo() {
+      const frappe = globalThis.frappe || {};
+      const user = this.currentUserId();
+      const bootInfo = frappe.boot?.user_info?.[user] || {};
+      const edgeIdentity = frappe.boot?.eduedge_ui_identity?.user || {};
+      return {
+        id: user,
+        name:
+          this.userName ||
+          edgeIdentity.full_name ||
+          bootInfo.fullname ||
+          bootInfo.full_name ||
+          frappe.session?.user_fullname ||
+          user,
+        email: edgeIdentity.email || bootInfo.email || frappe.session?.user_email || user,
+        image:
+          this.userImage ||
+          edgeIdentity.image ||
+          edgeIdentity.user_image ||
+          bootInfo.image ||
+          bootInfo.user_image ||
+          frappe.boot?.user?.user_image ||
+          "",
+      };
+    },
+
+    closeTopbarMenus() {
+      this.profileMenuOpen = false;
+      this.notificationsOpen = false;
+    },
+
+    toggleProfileMenu() {
+      this.profileMenuOpen = !this.profileMenuOpen;
+      if (this.profileMenuOpen) this.notificationsOpen = false;
+    },
+
+    async toggleNotifications() {
+      this.notificationsOpen = !this.notificationsOpen;
+      if (this.notificationsOpen) {
+        this.profileMenuOpen = false;
+        await this.loadNotifications();
+      }
+    },
+
+    onDocumentClick(event) {
+      const target = event?.target;
+      if (!target?.closest?.(".edge-user-menu-wrap")) this.profileMenuOpen = false;
+      if (!target?.closest?.(".edge-notification-menu-wrap")) this.notificationsOpen = false;
+    },
+
+    onDocumentKeydown(event) {
+      if (event?.key === "Escape") this.closeTopbarMenus();
+    },
+
+    bindRealtimeNotifications() {
+      const realtime = globalThis.frappe?.realtime;
+      realtime?.on?.("notification", this.handleRealtimeNotification);
+      realtime?.on?.("indicator_hide", this.handleNotificationIndicatorHide);
+    },
+
+    unbindRealtimeNotifications() {
+      const realtime = globalThis.frappe?.realtime;
+      realtime?.off?.("notification", this.handleRealtimeNotification);
+      realtime?.off?.("indicator_hide", this.handleNotificationIndicatorHide);
+    },
+
+    handleRealtimeNotification() {
+      this.loadNotificationCount();
+      if (this.notificationsOpen) this.loadNotifications();
+    },
+
+    handleNotificationIndicatorHide() {
+      this.unreadCount = 0;
+    },
+
+    async loadNotificationCount() {
+      if (!this.showNotifications || !this.currentUserId() || !globalThis.frappe?.call) return;
+      try {
+        const response = await globalThis.frappe.call("frappe.client.get_count", {
+          doctype: "Notification Log",
+          filters: {
+            for_user: this.currentUserId(),
+            read: 0,
+          },
+        });
+        this.unreadCount = Number(response?.message || 0);
+      } catch (_error) {
+        // Notifications must never prevent the product shell from rendering.
+      }
+    },
+
+    async loadNotifications() {
+      if (!globalThis.frappe?.call) return;
+      this.notificationLoading = true;
+      this.notificationError = "";
+      try {
+        const response = await globalThis.frappe.call(
+          "frappe.desk.doctype.notification_log.notification_log.get_notification_logs",
+          { limit: this.notificationLimit },
+        );
+        this.notificationLogs = response?.message?.notification_logs || [];
+        await this.loadNotificationCount();
+      } catch (error) {
+        this.notificationError =
+          error?.message || "Notifications could not be loaded. Please try again.";
+      } finally {
+        this.notificationLoading = false;
+      }
+    },
+
+    async markAllNotificationsRead() {
+      if (!globalThis.frappe?.call) return;
+      try {
+        await globalThis.frappe.call(
+          "frappe.desk.doctype.notification_log.notification_log.mark_all_as_read",
+        );
+        this.notificationLogs = this.notificationLogs.map((item) => ({ ...item, read: 1 }));
+        this.unreadCount = 0;
+      } catch (error) {
+        this.notificationError =
+          error?.message || "Notifications could not be marked as read.";
+      }
+    },
+
+    notificationTarget(item) {
+      if (item?.link) return item.link;
+      if (item?.document_type && item?.document_name) {
+        const slug = String(item.document_type)
+          .trim()
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-");
+        return `/app/${slug}/${encodeURIComponent(item.document_name)}`;
+      }
+      return "";
+    },
+
+    async openNotification(item) {
+      if (!item) return;
+      if (!item.read && item.name && globalThis.frappe?.call) {
+        try {
+          await globalThis.frappe.call(
+            "frappe.desk.doctype.notification_log.notification_log.mark_as_read",
+            { docname: item.name },
+          );
+          item.read = 1;
+          this.unreadCount = Math.max(0, this.unreadCount - 1);
+        } catch (_error) {
+          // The destination should still open if the read-state update fails.
+        }
+      }
+      const target = this.notificationTarget(item);
+      if (target) this.openInNewTab(target);
+      this.notificationsOpen = false;
+    },
+
+    formatNotificationTime(value) {
+      const formatter = globalThis.frappe?.datetime?.prettyDate;
+      if (typeof formatter === "function") {
+        try {
+          return formatter(value);
+        } catch (_error) {
+          // Use the raw timestamp below.
+        }
+      }
+      return String(value || "");
+    },
+
+    openInNewTab(route) {
+      const value = String(route || "").trim();
+      if (!value) return;
+      const allowed =
+        value.startsWith("/") ||
+        value.startsWith("https://") ||
+        value.startsWith("http://");
+      if (!allowed) return;
+      globalThis.open?.(value, "_blank", "noopener,noreferrer");
+    },
+
+    openProfile() {
+      const user = this.currentUserId();
+      if (user) this.openInNewTab(`/app/user/${encodeURIComponent(user)}`);
+      this.profileMenuOpen = false;
+    },
+
+    openUserSettings() {
+      this.openInNewTab("/app/user-settings");
+      this.profileMenuOpen = false;
+    },
+
+    logout() {
+      this.profileMenuOpen = false;
+      if (typeof globalThis.frappe?.app?.logout === "function") {
+        globalThis.frappe.app.logout();
+        return;
+      }
+      globalThis.location?.assign?.("/api/method/logout");
     },
 
     renderMenuItem(item) {
@@ -214,7 +509,201 @@ export const EdgeAppShell = defineComponent({
         ],
       );
     },
+
+    renderNotificationPanel() {
+      if (!this.notificationsOpen) return null;
+      const content = this.notificationLoading
+        ? h("div", { class: "edge-topbar-menu__state", role: "status" }, "Loading notifications…")
+        : this.notificationError
+          ? h("div", { class: "edge-topbar-menu__state edge-topbar-menu__state--error" }, [
+              h("span", this.notificationError),
+              h(
+                "button",
+                {
+                  type: "button",
+                  class: "edge-topbar-menu__link",
+                  onClick: () => this.loadNotifications(),
+                },
+                "Try again",
+              ),
+            ])
+          : this.notificationLogs.length
+            ? h(
+                "div",
+                { class: "edge-notification-list" },
+                this.notificationLogs.map((item) =>
+                  h(
+                    "button",
+                    {
+                      type: "button",
+                      class: ["edge-notification-row", item?.read ? "" : "is-unread"],
+                      key: item?.name || item?.creation || item?.subject,
+                      onClick: () => this.openNotification(item),
+                    },
+                    [
+                      h("span", { class: "edge-notification-row__indicator", "aria-hidden": "true" }),
+                      h("span", { class: "edge-notification-row__copy" }, [
+                        h(
+                          "strong",
+                          stripMarkup(item?.subject || item?.email_header || "Notification"),
+                        ),
+                        item?.creation
+                          ? h("small", this.formatNotificationTime(item.creation))
+                          : null,
+                      ]),
+                    ],
+                  ),
+                ),
+              )
+            : h("div", { class: "edge-topbar-menu__state" }, "You have no notifications.");
+
+      return h(
+        "section",
+        {
+          class: "edge-topbar-menu edge-notification-menu",
+          role: "dialog",
+          "aria-label": "Notifications",
+        },
+        [
+          h("header", { class: "edge-topbar-menu__header" }, [
+            h("div", [
+              h("strong", "Notifications"),
+              h("small", this.unreadCount ? `${this.unreadCount} unread` : "You are up to date"),
+            ]),
+            this.unreadCount
+              ? h(
+                  "button",
+                  {
+                    type: "button",
+                    class: "edge-topbar-menu__link",
+                    onClick: () => this.markAllNotificationsRead(),
+                  },
+                  "Mark all read",
+                )
+              : null,
+          ]),
+          content,
+          h("footer", { class: "edge-topbar-menu__footer" }, [
+            h(
+              "button",
+              {
+                type: "button",
+                class: "edge-topbar-menu__link",
+                onClick: () => {
+                  this.openInNewTab("/app/notification-log");
+                  this.notificationsOpen = false;
+                },
+              },
+              "View all notifications",
+            ),
+          ]),
+        ],
+      );
+    },
+
+    renderNotificationControl() {
+      return h("div", { class: "edge-topbar-action-wrap edge-notification-menu-wrap" }, [
+        h(
+          EdgeNotificationBell,
+          {
+            unreadCount: this.unreadCount,
+            title: "Notifications",
+            "aria-expanded": this.notificationsOpen ? "true" : "false",
+            onToggle: () => this.toggleNotifications(),
+          },
+          {
+            icon: () => h(EdgeIcon, { name: "bell", size: "sm" }),
+          },
+        ),
+        this.renderNotificationPanel(),
+      ]);
+    },
+
+    renderProfileMenu() {
+      if (!this.profileMenuOpen) return null;
+      const user = this.currentUserInfo();
+      return h(
+        "section",
+        {
+          class: "edge-topbar-menu edge-user-menu",
+          role: "menu",
+          "aria-label": "User menu",
+        },
+        [
+          h("header", { class: "edge-user-menu__identity" }, [
+            this.renderAvatar(false),
+            h("span", { class: "edge-user-menu__copy" }, [
+              h("strong", user.name || "User"),
+              h("small", user.email || ""),
+            ]),
+          ]),
+          h("div", { class: "edge-user-menu__items" }, [
+            h(
+              "button",
+              { type: "button", role: "menuitem", onClick: () => this.openProfile() },
+              [h(EdgeIcon, { name: "user", size: "sm" }), h("span", "My profile")],
+            ),
+            h(
+              "button",
+              { type: "button", role: "menuitem", onClick: () => this.openUserSettings() },
+              [h(EdgeIcon, { name: "settings", size: "sm" }), h("span", "User settings")],
+            ),
+            h(
+              "button",
+              {
+                type: "button",
+                role: "menuitem",
+                class: "edge-user-menu__logout",
+                onClick: () => this.logout(),
+              },
+              [h(EdgeIcon, { name: "close", size: "sm" }), h("span", "Log out")],
+            ),
+          ]),
+        ],
+      );
+    },
+
+    renderAvatar(withChevron = true) {
+      const user = this.currentUserInfo();
+      const content = user.image
+        ? h("img", {
+            class: "edge-user-avatar__image",
+            src: user.image,
+            alt: user.name || "User profile",
+            loading: "eager",
+            decoding: "async",
+          })
+        : h("span", { class: "edge-user-avatar__initials" }, productInitials(user.name || user.id));
+
+      if (!withChevron) {
+        return h("span", { class: "edge-user-avatar edge-user-avatar--static" }, [content]);
+      }
+
+      return h(
+        "button",
+        {
+          type: "button",
+          class: "edge-user-avatar-button",
+          title: user.name || "User menu",
+          "aria-label": "Open user menu",
+          "aria-expanded": this.profileMenuOpen ? "true" : "false",
+          onClick: () => this.toggleProfileMenu(),
+        },
+        [
+          h("span", { class: "edge-user-avatar" }, [content]),
+          h(EdgeIcon, { name: "chevron-down", size: "xs" }),
+        ],
+      );
+    },
+
+    renderUserControl() {
+      return h("div", { class: "edge-topbar-action-wrap edge-user-menu-wrap" }, [
+        this.renderAvatar(true),
+        this.renderProfileMenu(),
+      ]);
+    },
   },
+
   render() {
     const slots = this.$slots;
     const groups = normalizedGroups(this.menuItems);
@@ -307,20 +796,14 @@ export const EdgeAppShell = defineComponent({
                   );
                 }),
               ),
-              this.userName
-                ? h("div", { class: "edge-sidebar__user" }, [
-                    h("span", { class: "edge-sidebar__avatar" }, productInitials(this.userName)),
-                    h("span", { class: "edge-sidebar__user-copy" }, [
-                      h("strong", this.userName),
-                      h(
-                        "small",
-                        this.branchName || this.tenantName || this.product || "EdgeSuite",
-                      ),
-                    ]),
-                  ])
-                : null,
             ],
           )
+        : null;
+
+    const customNotificationContent = slots.notifications
+      ? slotValue(slots, "notifications", [])
+      : this.showNotifications
+        ? this.renderNotificationControl()
         : null;
 
     const topbar = slots.topbar
@@ -365,7 +848,10 @@ export const EdgeAppShell = defineComponent({
               ]),
             ),
           ),
-          h("div", { class: "edge-topbar-actions" }, slotValue(slots, "notifications", [])),
+          h("div", { class: "edge-topbar-actions" }, [
+            customNotificationContent,
+            this.showUserMenu ? this.renderUserControl() : null,
+          ]),
         ]);
 
     return h(
