@@ -77,6 +77,30 @@ def test_shell_provides_notifications_profile_menu_and_user_images():
 		assert expected in component
 
 
+def test_shared_modal_is_accessible_flat_and_product_neutral():
+	component = (APP_ROOT / "public/js/edgeui/modal_components.js").read_text(encoding="utf-8")
+	styles = (APP_ROOT / "public/css/edgeui_modal.css").read_text(encoding="utf-8")
+	bundle = (APP_ROOT / "public/js/edgeui.bundle.js").read_text(encoding="utf-8")
+	hooks = (APP_ROOT / "hooks.py").read_text(encoding="utf-8")
+	for expected in (
+		"EdgeModal",
+		"EdgeFormDialog",
+		'role: "dialog"',
+		'"aria-modal": "true"',
+		"onDocumentKeydown",
+		"field-change",
+		"search-options",
+		"open-full-form",
+	):
+		assert expected in component
+	assert "ignore_permissions" not in component
+	assert "eduedge" not in component.lower()
+	assert "box-shadow: none !important" in styles
+	assert "@media (max-width: 47.99rem)" in styles
+	assert "modalComponents" in bundle
+	assert "edgeui_modal.css" in hooks
+
+
 def test_primary_actions_keep_accessible_text_contrast():
 	styles = (APP_ROOT / "public/css/edgeui_action_contrast.css").read_text(encoding="utf-8")
 	hooks = (APP_ROOT / "hooks.py").read_text(encoding="utf-8")
