@@ -1,4 +1,5 @@
 import { baseComponents } from "./edgeui/components";
+import { installContextIdentityResolver } from "./edgeui/context_identity";
 import { applyFrappeCompatibility } from "./edgeui/frappe_compat";
 import { modalComponents } from "./edgeui/modal_components";
 import { professionalComponents } from "./edgeui/professional_components";
@@ -23,9 +24,11 @@ const runtime = createEdgeSuiteRuntime({
 if (typeof globalThis !== "undefined") {
   exposeEdgeSuiteRuntime(runtime, globalThis);
   installSharedShellEnhancements(runtime);
+  installContextIdentityResolver();
 }
 
 export * from "./edgeui/components";
+export * from "./edgeui/context_identity";
 export * from "./edgeui/frappe_compat";
 export * from "./edgeui/icons";
 export * from "./edgeui/modal_components";
