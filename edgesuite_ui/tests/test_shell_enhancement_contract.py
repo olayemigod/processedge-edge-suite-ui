@@ -6,6 +6,7 @@ ROOT = Path(__file__).resolve().parents[2]
 BUNDLE = ROOT / "edgesuite_ui" / "public" / "js" / "edgeui.bundle.js"
 SHELL = ROOT / "edgesuite_ui" / "public" / "js" / "edgeui" / "shell_enhancements.js"
 CONTEXT_IDENTITY = ROOT / "edgesuite_ui" / "public" / "js" / "edgeui" / "context_identity.js"
+NOTIFICATION_RUNTIME = ROOT / "edgesuite_ui" / "public" / "js" / "edgeui" / "notification_runtime.js"
 STYLES = ROOT / "edgesuite_ui" / "public" / "css" / "edgeui_shell_enhancements.css"
 HOOKS = ROOT / "edgesuite_ui" / "hooks.py"
 
@@ -15,16 +16,18 @@ def read(path: Path) -> str:
 
 
 def test_shared_shell_enhancements_are_exported_and_loaded():
-	for path in (SHELL, CONTEXT_IDENTITY, STYLES):
+	for path in (SHELL, CONTEXT_IDENTITY, NOTIFICATION_RUNTIME, STYLES):
 		assert path.exists(), path
 
 	bundle = read(BUNDLE)
 	hooks = read(HOOKS)
 	assert 'EDGE_SUITE_UI_VERSION = "0.3.0"' in bundle
 	assert "installSharedShellEnhancements(runtime)" in bundle
+	assert "suppressNativeNotificationRuntime(runtime)" in bundle
 	assert "installContextIdentityResolver()" in bundle
 	assert 'export * from "./edgeui/shell_enhancements"' in bundle
 	assert 'export * from "./edgeui/context_identity"' in bundle
+	assert 'export * from "./edgeui/notification_runtime"' in bundle
 	assert "edgeui_shell_enhancements.css" in hooks
 
 
@@ -75,6 +78,18 @@ def test_notification_center_uses_shared_renderer_and_pluggable_provider():
 	):
 		assert contract in content
 	assert "coreedge/" not in content.lower()
+
+
+def test_shared_notifications_disable_hidden_native_polling():
+	content = read(NOTIFICATION_RUNTIME)
+	for contract in (
+		"suppressNativeNotificationRuntime",
+		"attrs.useSharedNotifications !== false",
+		"attrs.showNotifications = false",
+		"SharedNotificationShell",
+		'edgeUI.registerComponent("EdgeAppShell"',
+	):
+		assert contract in content
 
 
 def test_navigation_adapter_can_preserve_product_pages_or_open_external_desk_views():
