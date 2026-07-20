@@ -1,5 +1,7 @@
 import * as Vue from "vue";
 
+import { createProductMenuController } from "./product_menu";
+
 function assertName(name, kind) {
   if (typeof name !== "string" || !name.trim()) {
     throw new TypeError(`${kind} name must be a non-empty string`);
@@ -14,6 +16,9 @@ export function createEdgeSuiteRuntime({ version, components = {} } = {}) {
 
   const componentRegistry = Object.create(null);
   const adapterRegistry = Object.create(null);
+  const productMenu = createProductMenuController({
+    target: typeof globalThis !== "undefined" ? globalThis : {},
+  });
 
   const runtime = {
     version: version.trim(),
@@ -81,6 +86,38 @@ export function createEdgeSuiteRuntime({ version, components = {} } = {}) {
 
     getAdapter(name) {
       return adapterRegistry[name] || null;
+    },
+
+    registerProductMenu(config) {
+      return productMenu.register(config);
+    },
+
+    mountProductMenu() {
+      return productMenu.mount();
+    },
+
+    refreshProductMenu() {
+      return productMenu.refresh();
+    },
+
+    openProductMenu() {
+      return productMenu.open();
+    },
+
+    closeProductMenu() {
+      return productMenu.close();
+    },
+
+    toggleProductMenu() {
+      return productMenu.toggle();
+    },
+
+    destroyProductMenu() {
+      return productMenu.destroy();
+    },
+
+    getProductMenuConfig() {
+      return productMenu.getConfig();
     },
   };
 

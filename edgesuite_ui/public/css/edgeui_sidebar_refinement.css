@@ -1,0 +1,117 @@
+/* EdgeSuite UI sidebar refinement.
+   Loaded after edgeui_professional.css so product pages can adopt the
+   collapsible grouped navigation without changing their existing layouts. */
+
+:root {
+  --edge-shell-gutter: clamp(.75rem, 1.4vw, 1.25rem);
+  --edge-sidebar-section-radius: .7rem;
+}
+
+.edge-shell-body {
+  column-gap: var(--edge-shell-gutter);
+  padding-inline-end: var(--edge-shell-gutter);
+}
+
+.edge-sidebar__section {
+  min-width: 0;
+}
+
+.edge-sidebar__section-toggle {
+  align-items: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--edge-sidebar-section-radius);
+  color: var(--edge-color-ink-500);
+  cursor: pointer;
+  display: grid;
+  font: inherit;
+  font-size: .67rem;
+  font-weight: 780;
+  gap: .4rem;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  letter-spacing: .075em;
+  margin: 0;
+  min-height: 2rem;
+  padding: .4rem .6rem;
+  text-align: left;
+  text-transform: uppercase;
+  transition: background 140ms ease, border-color 140ms ease, color 140ms ease;
+  width: 100%;
+}
+
+.edge-sidebar__section-toggle:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--edge-color-surface-muted) 82%, transparent);
+  border-color: var(--edge-color-border);
+  color: var(--edge-color-ink-800);
+}
+
+.edge-sidebar__section-toggle:disabled {
+  cursor: default;
+  opacity: 1;
+}
+
+.edge-sidebar__section-toggle > span:nth-child(2) {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.edge-sidebar__section-toggle > .edge-icon:last-child {
+  color: var(--edge-color-ink-500);
+  margin-left: auto;
+  transform: rotate(0deg);
+  transition: transform 160ms ease, color 140ms ease;
+}
+
+.edge-sidebar__section.is-collapsed .edge-sidebar__section-toggle > .edge-icon:last-child {
+  transform: rotate(-90deg);
+}
+
+.edge-sidebar__section.is-expanded .edge-sidebar__section-toggle {
+  color: var(--edge-color-ink-700);
+}
+
+.edge-sidebar__section.is-expanded .edge-sidebar__section-toggle > .edge-icon:last-child {
+  color: var(--edge-color-brand-600);
+}
+
+.edge-sidebar__items {
+  margin-top: .2rem;
+}
+
+.edge-sidebar__items[hidden] {
+  display: none !important;
+}
+
+.edge-sidebar__section-toggle:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--edge-color-brand-500) 28%, transparent);
+  outline-offset: 2px;
+}
+
+.edge-app-shell--compact .edge-shell-body {
+  --edge-shell-gutter: clamp(.5rem, 1vw, .85rem);
+}
+
+@media (max-width: 74.99rem) {
+  :root {
+    --edge-shell-gutter: clamp(.6rem, 1.1vw, .9rem);
+  }
+}
+
+@media (max-width: 61.99rem) {
+  .edge-shell-body {
+    column-gap: 0;
+    padding-inline-end: 0;
+  }
+
+  .edge-sidebar__section-toggle {
+    min-height: 2.15rem;
+  }
+}
+
+@media (max-width: 35.99rem) {
+  .edge-sidebar__section-toggle {
+    padding-inline: .55rem;
+  }
+}

@@ -7,5 +7,20 @@ app_license = "mit"
 
 # EdgeSuite UI is loaded locally on every product site. It does not require
 # CoreEdge or any remote platform service to render product pages.
-app_include_css = ["edgeui.bundle.css", "edgeui_compat.bundle.css"]
+#
+# Files named *.bundle.* are resolved through Frappe's hashed asset manifest.
+# Plain CSS files are served directly from the app's public asset directory.
+app_include_css = [
+	"edgeui.bundle.css",
+	"edgeui_compat.bundle.css",
+	"/assets/edgesuite_ui/css/edgeui_product_menu.css",
+	"/assets/edgesuite_ui/css/edgeui_professional.css",
+	"/assets/edgesuite_ui/css/edgeui_sidebar_refinement.css",
+	"/assets/edgesuite_ui/css/edgeui_action_contrast.css",
+	"/assets/edgesuite_ui/css/edgeui_flat_chrome.css",
+	"/assets/edgesuite_ui/css/edgeui_modal.css",
+	"/assets/edgesuite_ui/css/edgeui_multiselect.css",
+	"/assets/edgesuite_ui/css/edgeui_shell_enhancements.css",
+	"/assets/edgesuite_ui/css/edgeui_dashboard_alignment.css",
+]
 app_include_js = ["edgeui.bundle.js"]

@@ -29,6 +29,7 @@ def test_runtime_exports_the_compatibility_contract():
 		"createEdgeApp",
 		"components",
 		"EdgeAppShell",
+		"EdgeIcon",
 		"EdgePageLayout",
 		"EdgePageHeader",
 		"EdgeFilterBar",
@@ -41,6 +42,18 @@ def test_runtime_exports_the_compatibility_contract():
 		"EdgeNotificationDrawer",
 	):
 		assert required_symbol in source
+
+
+def test_shared_vue_bridge_uses_the_loaded_edgesuite_runtime():
+	bridge = (JS_ROOT / "edgeui" / "vue-bridge.js").read_text(encoding="utf-8")
+
+	assert "globalThis.EdgeSuiteUI?.Vue || globalThis.EdgeUI?.Vue" in bridge
+	assert "export const resolveComponent = Vue.resolveComponent" in bridge
+	assert "export const withKeys = Vue.withKeys" in bridge
+	assert "export const vModelSelect = Vue.vModelSelect" in bridge
+	assert "coreedge" not in bridge.lower()
+	assert 'from "vue"' not in bridge
+	assert "from 'vue'" not in bridge
 
 
 def test_runtime_does_not_import_platform_or_product_apps():
@@ -57,21 +70,49 @@ def test_runtime_version_matches_python_package_version():
 
 def test_frappe_hooks_include_local_runtime_assets():
 	hooks = HOOKS.read_text(encoding="utf-8")
-	for asset in ("edgeui.bundle.js", "edgeui.bundle.css", "edgeui_compat.bundle.css"):
-		assert f'"{asset}"' in hooks
 
-	assert (JS_ROOT / "edgeui.bundle.js").is_file()
-	assert (CSS_ROOT / "edgeui.bundle.css").is_file()
-	assert (CSS_ROOT / "edgeui_compat.bundle.css").is_file()
+	for bundled_asset in (
+		"edgeui.bundle.js",
+		"edgeui.bundle.css",
+		"edgeui_compat.bundle.css",
+	):
+		assert f'"{bundled_asset}"' in hooks
+
+	for static_asset in (
+		"/assets/edgesuite_ui/css/edgeui_product_menu.css",
+		"/assets/edgesuite_ui/css/edgeui_professional.css",
+		"/assets/edgesuite_ui/css/edgeui_sidebar_refinement.css",
+	):
+		assert f'"{static_asset}"' in hooks
+
+	for path in (
+		JS_ROOT / "edgeui.bundle.js",
+		CSS_ROOT / "edgeui.bundle.css",
+		CSS_ROOT / "edgeui_compat.bundle.css",
+		CSS_ROOT / "edgeui_product_menu.css",
+		CSS_ROOT / "edgeui_professional.css",
+		CSS_ROOT / "edgeui_sidebar_refinement.css",
+	):
+		assert path.is_file()
+
+
+def test_plain_css_hooks_use_app_scoped_static_asset_urls():
+	hooks = HOOKS.read_text(encoding="utf-8")
+	for asset in (
+		"edgeui_product_menu.css",
+		"edgeui_professional.css",
+		"edgeui_sidebar_refinement.css",
+	):
+		assert f'"{asset}"' not in hooks
+		assert f'"/assets/edgesuite_ui/css/{asset}"' in hooks
 
 
 def test_bundle_entrypoint_uses_frappe_bundle_naming_and_local_modules():
 	entrypoint = (JS_ROOT / "edgeui.bundle.js").read_text(encoding="utf-8")
 
-	assert (JS_ROOT / "edgeui" / "components.js").is_file()
-	assert (JS_ROOT / "edgeui" / "runtime.js").is_file()
-	assert '"./edgeui/components"' in entrypoint
-	assert '"./edgeui/runtime"' in entrypoint
+	for module in ("components", "icons", "professional_components", "runtime"):
+		assert (JS_ROOT / "edgeui" / f"{module}.js").is_file()
+		assert f'"./edgeui/{module}"' in entrypoint
 
 
 def test_migrated_product_compatibility_surface_is_present():

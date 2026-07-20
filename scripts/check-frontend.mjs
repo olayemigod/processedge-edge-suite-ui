@@ -34,4 +34,30 @@ await build({
   write: false,
 });
 
-console.log("Frontend syntax and bundle validation passed.");
+await build({
+  stdin: {
+    contents: `
+      import {
+        createApp,
+        createElementBlock,
+        openBlock,
+        resolveComponent,
+        vModelSelect,
+        vModelText,
+        withDirectives,
+        withKeys
+      } from "./edgesuite_ui/public/js/edgeui/vue-bridge.js";
+      console.log(createApp, createElementBlock, openBlock, resolveComponent, vModelSelect, vModelText, withDirectives, withKeys);
+    `,
+    resolveDir: repositoryRoot,
+    sourcefile: "vue-bridge-consumer.js",
+    loader: "js",
+  },
+  bundle: true,
+  format: "esm",
+  logLevel: "warning",
+  platform: "browser",
+  write: false,
+});
+
+console.log("Frontend syntax, runtime bundle, and Vue bridge validation passed.");
