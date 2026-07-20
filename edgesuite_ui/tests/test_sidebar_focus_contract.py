@@ -2,7 +2,6 @@ from pathlib import Path
 
 from edgesuite_ui import __version__
 
-
 APP_ROOT = Path(__file__).resolve().parents[1]
 REPO_ROOT = APP_ROOT.parent
 
