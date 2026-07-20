@@ -47,10 +47,9 @@ function setText(element, value) {
   if (next && normalizedText(element.textContent) !== next) element.textContent = next;
 }
 
-function setMark(mark, identity, company) {
-  if (!mark || !company) return;
-  const logo = company.logo || identity.tenant_logo || "";
-  const signature = `${logo}|${company.label}|${identity.tenant_icon || "building"}`;
+function setImageOrIcon(mark, { logo = "", icon = "grid", label = "" } = {}) {
+  if (!mark) return;
+  const signature = `${logo}|${icon}|${label}`;
   if (mark.dataset.edgeContextIdentity === signature) return;
   mark.dataset.edgeContextIdentity = signature;
   mark.replaceChildren();
@@ -60,18 +59,18 @@ function setMark(mark, identity, company) {
     const image = document.createElement("img");
     image.className = "edge-identity-logo";
     image.src = logo;
-    image.alt = company.label || company.key;
+    image.alt = label;
     image.loading = "eager";
     image.decoding = "async";
     mark.appendChild(image);
     return;
   }
 
-  const icon = document.createElement("span");
-  icon.className = "edge-icon edge-icon--sm";
-  icon.setAttribute("aria-hidden", "true");
-  icon.innerHTML = edgeIconMarkup(identity.tenant_icon || "building", { size: "sm" });
-  mark.appendChild(icon);
+  const iconNode = document.createElement("span");
+  iconNode.className = "edge-icon edge-icon--sm";
+  iconNode.setAttribute("aria-hidden", "true");
+  iconNode.innerHTML = edgeIconMarkup(icon || "grid", { size: "sm" });
+  mark.appendChild(iconNode);
 }
 
 function applyContextIdentity(shell) {
@@ -92,7 +91,11 @@ function applyContextIdentity(shell) {
   identity.tenant_logo = company.logo || "";
 
   const brand = topbar.querySelector(".edge-topbar__brand");
-  setMark(brand?.querySelector(".edge-topbar__mark"), identity, company);
+  setImageOrIcon(brand?.querySelector(".edge-topbar__mark"), {
+    logo: company.logo || identity.tenant_logo || "",
+    icon: identity.tenant_icon || "building",
+    label: company.label || company.key,
+  });
   setText(brand?.querySelector(".edge-topbar__title-copy strong"), identity.tenant_name);
   setText(
     brand?.querySelector(".edge-topbar__title-copy small"),
@@ -107,6 +110,33 @@ function applyContextIdentity(shell) {
   });
 }
 
+function applyProductMenuIdentity() {
+  const edgeUI = globalThis.EdgeSuiteUI || globalThis.EdgeUI;
+  const config = edgeUI?.getProductMenuConfig?.();
+  if (!config?.product) return;
+  const identity = sharedIdentity(config.product);
+  const productName = normalizedText(identity.product_name || identity.product_label);
+  if (!productName) return;
+
+  const panel = document.getElementById("edge-product-menu-dropdown");
+  if (!panel) return;
+  const brand = panel.querySelector(".edge-product-menu__brand");
+  setImageOrIcon(brand?.querySelector(".edge-product-menu__brand-mark"), {
+    logo: identity.product_logo || "",
+    icon: identity.product_icon || "grid",
+    label: productName,
+  });
+  setText(brand?.querySelector("strong"), productName);
+  setText(brand?.querySelector("small"), identity.product_subtitle || config.subtitle || "EdgeSuite product");
+  setText(panel.querySelector(".edge-product-menu__product"), productName);
+
+  const input = panel.querySelector(".edge-product-menu__search");
+  if (input) input.placeholder = `Search ${productName}`;
+  panel.setAttribute("aria-label", `${productName} product menu`);
+  const trigger = document.getElementById("edge-product-menu-trigger");
+  if (trigger) trigger.setAttribute("aria-label", `Open ${productName} product menu`);
+}
+
 let observer = null;
 let scheduled = false;
 
@@ -115,6 +145,7 @@ function applyAllContextIdentities() {
   document
     .querySelectorAll(".edge-app-shell[data-edge-product]")
     .forEach((shell) => applyContextIdentity(shell));
+  applyProductMenuIdentity();
 }
 
 function scheduleContextIdentity() {
@@ -134,4 +165,4 @@ export function installContextIdentityResolver() {
   scheduleContextIdentity();
 }
 
-export { applyAllContextIdentities, applyContextIdentity };
+export { applyAllContextIdentities, applyContextIdentity, applyProductMenuIdentity };
