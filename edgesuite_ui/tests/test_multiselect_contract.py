@@ -16,7 +16,7 @@ def test_shared_multiselect_is_registered_before_runtime_exposure():
 		"const components = Object.freeze"
 	)
 	for contract in (
-		"admission_programs",
+		"multiselect",
 		"edge-multiselect",
 		"updateValue(field, next)",
 		"__edgeMultiSelectCompatible",
