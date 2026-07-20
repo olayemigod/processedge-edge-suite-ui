@@ -19,6 +19,7 @@ app_include_css = [
 	"/assets/edgesuite_ui/css/edgeui_action_contrast.css",
 	"/assets/edgesuite_ui/css/edgeui_flat_chrome.css",
 	"/assets/edgesuite_ui/css/edgeui_modal.css",
+	"/assets/edgesuite_ui/css/edgeui_multiselect.css",
 	"/assets/edgesuite_ui/css/edgeui_shell_enhancements.css",
 ]
 app_include_js = ["edgeui.bundle.js"]
