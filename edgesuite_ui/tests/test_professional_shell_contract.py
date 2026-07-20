@@ -101,11 +101,21 @@ def test_shared_modal_is_accessible_flat_and_product_neutral():
 	assert "edgeui_modal.css" in hooks
 
 
-def test_primary_actions_keep_accessible_text_contrast():
+def test_primary_actions_keep_accessible_text_contrast_site_wide():
 	styles = (APP_ROOT / "public/css/edgeui_action_contrast.css").read_text(encoding="utf-8")
 	hooks = (APP_ROOT / "hooks.py").read_text(encoding="utf-8")
-	assert ".edge-button--primary" in styles
-	assert "color: #fff" in styles
+	for expected in (
+		".edge-button--primary,",
+		".edge-button--primary:hover:not(:disabled)",
+		".edge-button--primary:focus-visible",
+		".edge-button--primary:active:not(:disabled)",
+		".edge-button--primary:disabled",
+		"color: #fff !important",
+		"-webkit-text-fill-color: #fff",
+		"color: inherit !important",
+	):
+		assert expected in styles
+	assert ".edge-app-shell .edge-button--primary" not in styles
 	assert "edgeui_action_contrast.css" in hooks
 
 
