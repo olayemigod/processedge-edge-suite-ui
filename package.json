@@ -1,6 +1,6 @@
 {
   "name": "@processedge/edgesuite-ui",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "private": true,
   "description": "Independent EdgeSuite UI runtime for ProcessEdge Frappe applications.",
   "license": "MIT",
