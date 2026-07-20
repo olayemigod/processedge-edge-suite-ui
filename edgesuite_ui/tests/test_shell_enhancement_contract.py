@@ -63,6 +63,21 @@ def test_context_identity_tracks_active_company_without_product_specific_observe
 		assert contract in content
 
 
+def test_product_menu_uses_deployment_aware_product_identity():
+	content = read(CONTEXT_IDENTITY)
+	for contract in (
+		"applyProductMenuIdentity",
+		"getProductMenuConfig",
+		"identity.product_name",
+		"identity.product_logo",
+		"identity.product_icon",
+		"edge-product-menu__brand-mark",
+		"edge-product-menu__product",
+		"edge-product-menu-trigger",
+	):
+		assert contract in content
+
+
 def test_notification_center_uses_shared_renderer_and_pluggable_provider():
 	content = read(SHELL)
 	for contract in (
