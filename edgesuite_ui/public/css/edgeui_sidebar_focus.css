@@ -1,0 +1,10 @@
+/* Native Frappe navigation is suppressed only while a visible EdgeSuite
+   product shell is the active Desk surface. A stale hide class must never
+   affect ERPNext workspaces, reports, or DocType pages. */
+body.edge-suite-native-sidebar-hidden:not(.edge-suite-shell-focused) .body-sidebar-container {
+  display: flex !important;
+}
+
+body.edge-suite-shell-focused.edge-suite-native-sidebar-hidden .body-sidebar-container {
+  display: none !important;
+}

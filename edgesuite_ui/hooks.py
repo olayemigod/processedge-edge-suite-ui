@@ -22,6 +22,7 @@ app_include_css = [
 	"/assets/edgesuite_ui/css/edgeui_multiselect.css",
 	"/assets/edgesuite_ui/css/edgeui_shell_enhancements.css",
 	"/assets/edgesuite_ui/css/edgeui_dashboard_alignment.css",
+	"/assets/edgesuite_ui/css/edgeui_sidebar_focus.css",
 	"/assets/edgesuite_ui/css/edgeui_form_controls.css",
 	"/assets/edgesuite_ui/css/edgeui_context.css",
 ]
