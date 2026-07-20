@@ -212,7 +212,10 @@ export const EdgeLinkField = defineComponent({
 
     function onInput(event) {
       query.value = event.target.value;
-      if (cleanText(props.modelValue)) emit("update:modelValue", "");
+      if (cleanText(props.modelValue)) {
+        emit("update:modelValue", "");
+        emit("clear");
+      }
       scheduleSearch();
     }
 
