@@ -69,3 +69,11 @@ def test_link_field_keeps_parent_context_reactive():
 	assert "() => props.context" in content
 	assert "results.value = []" in content
 	assert "activeIndex.value = -1" in content
+
+
+def test_replacing_selected_text_emits_clear_for_dependent_fields():
+	content = read(JS)
+	on_input = content.split("function onInput(event)", 1)[1].split("function onFocus()", 1)[0]
+
+	assert 'emit("update:modelValue", "")' in on_input
+	assert 'emit("clear")' in on_input
