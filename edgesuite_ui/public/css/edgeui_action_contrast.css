@@ -1,13 +1,33 @@
-.edge-app-shell .edge-button--primary,
-.edge-app-shell .edge-button--primary:hover:not(:disabled),
-.edge-app-shell .edge-button--primary:focus-visible,
-.edge-product-menu .edge-button--primary,
-.edge-product-menu .edge-button--primary:hover:not(:disabled),
-.edge-product-menu .edge-button--primary:focus-visible {
-	color: #fff;
+/* Shared primary-action contrast.
+   EdgeSuite dialogs are portalled directly under <body>, so this contract must
+   not depend on an .edge-app-shell ancestor. The class is owned by EdgeSuite
+   UI and is safe to enforce consistently across product pages and overlays. */
+.edge-button--primary,
+.edge-button--primary:hover:not(:disabled),
+.edge-button--primary:focus,
+.edge-button--primary:focus-visible,
+.edge-button--primary:active:not(:disabled) {
+	color: #fff !important;
+	-webkit-text-fill-color: #fff;
 }
 
-.edge-app-shell .edge-button--primary:disabled,
-.edge-product-menu .edge-button--primary:disabled {
-	color: rgb(255 255 255 / 78%);
+.edge-button--primary > *,
+.edge-button--primary:hover:not(:disabled) > *,
+.edge-button--primary:focus-visible > *,
+.edge-button--primary:active:not(:disabled) > * {
+	color: inherit !important;
+	-webkit-text-fill-color: inherit;
+}
+
+.edge-button--primary svg,
+.edge-button--primary .edge-icon,
+.edge-button--primary .icon {
+	color: inherit !important;
+	fill: currentColor;
+	stroke: currentColor;
+}
+
+.edge-button--primary:disabled {
+	color: rgb(255 255 255 / 78%) !important;
+	-webkit-text-fill-color: rgb(255 255 255 / 78%);
 }
