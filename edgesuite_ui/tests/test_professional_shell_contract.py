@@ -77,9 +77,8 @@ def test_shell_provides_notifications_profile_menu_and_user_images():
 		assert expected in component
 
 
-def test_shared_modal_is_accessible_flat_and_product_neutral():
+def test_shared_modal_is_accessible_flat_product_neutral_and_runtime_safe():
 	component = (APP_ROOT / "public/js/edgeui/modal_components.js").read_text(encoding="utf-8")
-	portal = (APP_ROOT / "public/js/edgeui/modal_portal.js").read_text(encoding="utf-8")
 	styles = (APP_ROOT / "public/css/edgeui_modal.css").read_text(encoding="utf-8")
 	bundle = (APP_ROOT / "public/js/edgeui.bundle.js").read_text(encoding="utf-8")
 	hooks = (APP_ROOT / "hooks.py").read_text(encoding="utf-8")
@@ -92,15 +91,15 @@ def test_shared_modal_is_accessible_flat_and_product_neutral():
 		"field-change",
 		"search-options",
 		"open-full-form",
+		"portalToBody",
+		"document.body.appendChild(root)",
+		"root.parentNode !== document.body",
 	):
 		assert expected in component
-	for expected in (
-		'import { Teleport, defineComponent, h } from "vue"',
-		'to: "body"',
-		"modalPortalComponents",
-	):
-		assert expected in portal + bundle
-	assert bundle.index("...modalComponents") < bundle.index("...modalPortalComponents")
+	assert "Teleport" not in component
+	assert "modal_portal" not in bundle
+	assert "modalPortalComponents" not in bundle
+	assert "...modalComponents" in bundle
 	assert "ignore_permissions" not in component
 	assert "eduedge" not in component.lower()
 	assert "box-shadow: none !important" in styles
