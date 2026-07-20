@@ -25,12 +25,15 @@ def test_link_field_supports_search_selection_and_controlled_creation():
 		'emit("create-success"',
 		'event.key === "ArrowDown"',
 		'event.key === "ArrowUp"',
-		'event.key === "Enter"',
 		'event.key === "Escape"',
 		"requestToken",
 		"props.context",
 	):
 		assert contract in content
+
+	assert '"Enter"' in content
+	assert "selectOption(selected)" in content
+	assert "createOption()" in content
 
 
 def test_link_field_does_not_create_records_without_product_provider():
