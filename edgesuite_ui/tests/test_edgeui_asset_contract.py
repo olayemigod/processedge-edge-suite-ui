@@ -44,6 +44,18 @@ def test_runtime_exports_the_compatibility_contract():
 		assert required_symbol in source
 
 
+def test_shared_vue_bridge_uses_the_loaded_edgesuite_runtime():
+	bridge = (JS_ROOT / "edgeui" / "vue-bridge.js").read_text(encoding="utf-8")
+
+	assert "globalThis.EdgeSuiteUI?.Vue || globalThis.EdgeUI?.Vue" in bridge
+	assert "export const resolveComponent = Vue.resolveComponent" in bridge
+	assert "export const withKeys = Vue.withKeys" in bridge
+	assert "export const vModelSelect = Vue.vModelSelect" in bridge
+	assert "coreedge" not in bridge.lower()
+	assert 'from "vue"' not in bridge
+	assert "from 'vue'" not in bridge
+
+
 def test_runtime_does_not_import_platform_or_product_apps():
 	source = _javascript_source().lower()
 
