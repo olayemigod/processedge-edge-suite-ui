@@ -30,12 +30,14 @@ jobs:
         run: python -m compileall -q edgesuite_ui
       - name: Ruff
         run: ruff check .
-      - name: Validate package, runtime, shell, and boundaries
+      - name: Validate package, runtime, shell, forms, context, and boundaries
         run: |
           python -m pytest -q \
             edgesuite_ui/tests/test_edgeui_asset_contract.py \
             edgesuite_ui/tests/test_shell_enhancement_contract.py \
-            edgesuite_ui/tests/test_dashboard_alignment_and_waffle_contract.py
+            edgesuite_ui/tests/test_dashboard_alignment_and_waffle_contract.py \
+            edgesuite_ui/tests/test_form_link_contract.py \
+            edgesuite_ui/tests/test_branch_context_contract.py
 
   frontend:
     name: Frontend validation
