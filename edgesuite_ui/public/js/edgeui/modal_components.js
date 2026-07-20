@@ -73,21 +73,39 @@ export const EdgeModal = defineComponent({
   },
   emits: ["close"],
   data() {
-    return { previousFocus: null, bodyLocked: false };
+    return { previousFocus: null, bodyLocked: false, portalRoot: null };
   },
   watch: {
     open(next) {
-      if (next) this.activate();
-      else this.deactivate();
+      if (next) {
+        this.activate();
+        this.$nextTick(this.portalToBody);
+      } else {
+        this.deactivate();
+      }
     },
   },
   mounted() {
-    if (this.open) this.activate();
+    if (this.open) {
+      this.activate();
+      this.$nextTick(this.portalToBody);
+    }
+  },
+  updated() {
+    if (this.open) this.portalToBody();
   },
   beforeUnmount() {
     this.deactivate();
+    this.portalRoot = null;
   },
   methods: {
+    portalToBody() {
+      if (typeof document === "undefined" || !document.body) return;
+      const root = this.$el;
+      if (!root || root.nodeType !== 1 || !root.classList?.contains("edge-modal-backdrop")) return;
+      this.portalRoot = root;
+      if (root.parentNode !== document.body) document.body.appendChild(root);
+    },
     activate() {
       if (this.bodyLocked || typeof document === "undefined") return;
       this.previousFocus = document.activeElement;
@@ -96,6 +114,7 @@ export const EdgeModal = defineComponent({
       this.bodyLocked = true;
       document.addEventListener("keydown", this.onDocumentKeydown);
       this.$nextTick(() => {
+        this.portalToBody();
         const root = this.$refs.dialog;
         const target = root?.querySelector("[data-edge-autofocus]") || focusableElements(root)[0];
         target?.focus?.();
