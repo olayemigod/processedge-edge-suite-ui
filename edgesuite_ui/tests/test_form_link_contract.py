@@ -1,6 +1,5 @@
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[2]
 JS = ROOT / "edgesuite_ui" / "public" / "js" / "edgeui" / "form_components.js"
 CSS = ROOT / "edgesuite_ui" / "public" / "css" / "edgeui_form_controls.css"
