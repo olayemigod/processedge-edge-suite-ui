@@ -9,8 +9,9 @@ import { installProductMenuMountEnhancements } from "./edgeui/product_menu_mount
 import { professionalComponents } from "./edgeui/professional_components";
 import { createEdgeSuiteRuntime, exposeEdgeSuiteRuntime } from "./edgeui/runtime";
 import { installSharedShellEnhancements } from "./edgeui/shell_enhancements";
+import { installSidebarFocusLifecycle } from "./edgeui/sidebar_focus";
 
-export const EDGE_SUITE_UI_VERSION = "0.3.3";
+export const EDGE_SUITE_UI_VERSION = "0.3.4";
 
 applyFrappeCompatibility(professionalComponents);
 applyModalCrossRuntimeCompatibility(modalComponents);
@@ -31,6 +32,7 @@ if (typeof globalThis !== "undefined") {
   exposeEdgeSuiteRuntime(runtime, globalThis);
   installProductMenuMountEnhancements(runtime);
   installSharedShellEnhancements(runtime);
+  installSidebarFocusLifecycle(runtime);
   suppressNativeNotificationRuntime(runtime);
   installContextIdentityResolver();
 }
@@ -48,4 +50,5 @@ export * from "./edgeui/product_menu_mount";
 export * from "./edgeui/professional_components";
 export * from "./edgeui/runtime";
 export * from "./edgeui/shell_enhancements";
+export * from "./edgeui/sidebar_focus";
 export default runtime;
