@@ -1,5 +1,6 @@
 import { baseComponents } from "./edgeui/components";
 import { installContextIdentityResolver } from "./edgeui/context_identity";
+import { contextComponents } from "./edgeui/context_components";
 import { applyFrappeCompatibility } from "./edgeui/frappe_compat";
 import { formComponents } from "./edgeui/form_components";
 import { modalComponents } from "./edgeui/modal_components";
@@ -11,7 +12,7 @@ import { professionalComponents } from "./edgeui/professional_components";
 import { createEdgeSuiteRuntime, exposeEdgeSuiteRuntime } from "./edgeui/runtime";
 import { installSharedShellEnhancements } from "./edgeui/shell_enhancements";
 
-export const EDGE_SUITE_UI_VERSION = "0.4.0";
+export const EDGE_SUITE_UI_VERSION = "0.4.1";
 
 applyFrappeCompatibility(professionalComponents);
 applyModalCrossRuntimeCompatibility(modalComponents);
@@ -22,6 +23,7 @@ const components = Object.freeze({
   ...professionalComponents,
   ...modalComponents,
   ...formComponents,
+  ...contextComponents,
 });
 
 const runtime = createEdgeSuiteRuntime({
@@ -38,6 +40,7 @@ if (typeof globalThis !== "undefined") {
 }
 
 export * from "./edgeui/components";
+export * from "./edgeui/context_components";
 export * from "./edgeui/context_identity";
 export * from "./edgeui/frappe_compat";
 export * from "./edgeui/form_components";
