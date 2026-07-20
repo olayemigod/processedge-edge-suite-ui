@@ -22,5 +22,6 @@ app_include_css = [
 	"/assets/edgesuite_ui/css/edgeui_multiselect.css",
 	"/assets/edgesuite_ui/css/edgeui_shell_enhancements.css",
 	"/assets/edgesuite_ui/css/edgeui_dashboard_alignment.css",
+	"/assets/edgesuite_ui/css/edgeui_sidebar_focus.css",
 ]
 app_include_js = ["edgeui.bundle.js"]
