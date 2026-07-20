@@ -21,7 +21,7 @@ def test_shared_shell_enhancements_are_exported_and_loaded():
 
 	bundle = read(BUNDLE)
 	hooks = read(HOOKS)
-	assert 'EDGE_SUITE_UI_VERSION = "0.3.1"' in bundle
+	assert 'EDGE_SUITE_UI_VERSION = "0.3.2"' in bundle
 	assert "installSharedShellEnhancements(runtime)" in bundle
 	assert "suppressNativeNotificationRuntime(runtime)" in bundle
 	assert "installContextIdentityResolver()" in bundle
