@@ -7,7 +7,7 @@ import { professionalComponents } from "./edgeui/professional_components";
 import { createEdgeSuiteRuntime, exposeEdgeSuiteRuntime } from "./edgeui/runtime";
 import { installSharedShellEnhancements } from "./edgeui/shell_enhancements";
 
-export const EDGE_SUITE_UI_VERSION = "0.3.0";
+export const EDGE_SUITE_UI_VERSION = "0.3.1";
 
 applyFrappeCompatibility(professionalComponents);
 
