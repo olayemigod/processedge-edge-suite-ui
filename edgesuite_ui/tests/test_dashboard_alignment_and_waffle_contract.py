@@ -1,6 +1,5 @@
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[2]
 JS_ROOT = ROOT / "edgesuite_ui" / "public" / "js"
 CSS_ROOT = ROOT / "edgesuite_ui" / "public" / "css"
@@ -62,5 +61,5 @@ def test_alignment_and_waffle_enhancements_are_loaded_globally():
 	bundle = read(BUNDLE)
 
 	assert "/assets/edgesuite_ui/css/edgeui_dashboard_alignment.css" in hooks
-	assert 'installProductMenuMountEnhancements(runtime)' in bundle
+	assert "installProductMenuMountEnhancements(runtime)" in bundle
 	assert 'export * from "./edgeui/product_menu_mount"' in bundle
