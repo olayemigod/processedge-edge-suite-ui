@@ -1,0 +1,185 @@
+// Shared Vue runtime bridge for EdgeSuite product bundles.
+//
+// Product Vue SFCs are compiled as separate Frappe bundles. Importing Vue
+// directly in each product bundle creates a second runtime instance, which
+// breaks resolveComponent(), slots, directives, and lifecycle context when the
+// app is mounted by EdgeSuiteUI.createEdgeApp().
+//
+// Page loaders must load edgeui.bundle.js before the product bundle. This
+// bridge then exposes the exact Vue runtime already owned by EdgeSuite UI.
+
+const Vue = globalThis.EdgeSuiteUI?.Vue || globalThis.EdgeUI?.Vue;
+
+if (!Vue) {
+  throw new Error(
+    "EdgeSuite UI Vue runtime is unavailable. Load edgeui.bundle.js before the product bundle.",
+  );
+}
+
+export default Vue;
+
+export const BaseTransition = Vue.BaseTransition;
+export const BaseTransitionPropsValidators = Vue.BaseTransitionPropsValidators;
+export const Comment = Vue.Comment;
+export const DeprecationTypes = Vue.DeprecationTypes;
+export const EffectScope = Vue.EffectScope;
+export const ErrorCodes = Vue.ErrorCodes;
+export const ErrorTypeStrings = Vue.ErrorTypeStrings;
+export const Fragment = Vue.Fragment;
+export const KeepAlive = Vue.KeepAlive;
+export const ReactiveEffect = Vue.ReactiveEffect;
+export const Static = Vue.Static;
+export const Suspense = Vue.Suspense;
+export const Teleport = Vue.Teleport;
+export const Text = Vue.Text;
+export const TrackOpTypes = Vue.TrackOpTypes;
+export const Transition = Vue.Transition;
+export const TransitionGroup = Vue.TransitionGroup;
+export const TriggerOpTypes = Vue.TriggerOpTypes;
+export const VueElement = Vue.VueElement;
+export const assertNumber = Vue.assertNumber;
+export const callWithAsyncErrorHandling = Vue.callWithAsyncErrorHandling;
+export const callWithErrorHandling = Vue.callWithErrorHandling;
+export const camelize = Vue.camelize;
+export const capitalize = Vue.capitalize;
+export const cloneVNode = Vue.cloneVNode;
+export const compatUtils = Vue.compatUtils;
+export const compile = Vue.compile;
+export const computed = Vue.computed;
+export const createApp = Vue.createApp;
+export const createBlock = Vue.createBlock;
+export const createCommentVNode = Vue.createCommentVNode;
+export const createElementBlock = Vue.createElementBlock;
+export const createElementVNode = Vue.createElementVNode;
+export const createHydrationRenderer = Vue.createHydrationRenderer;
+export const createPropsRestProxy = Vue.createPropsRestProxy;
+export const createRenderer = Vue.createRenderer;
+export const createSSRApp = Vue.createSSRApp;
+export const createSlots = Vue.createSlots;
+export const createStaticVNode = Vue.createStaticVNode;
+export const createTextVNode = Vue.createTextVNode;
+export const createVNode = Vue.createVNode;
+export const customRef = Vue.customRef;
+export const defineAsyncComponent = Vue.defineAsyncComponent;
+export const defineComponent = Vue.defineComponent;
+export const defineCustomElement = Vue.defineCustomElement;
+export const defineEmits = Vue.defineEmits;
+export const defineExpose = Vue.defineExpose;
+export const defineModel = Vue.defineModel;
+export const defineOptions = Vue.defineOptions;
+export const defineProps = Vue.defineProps;
+export const defineSSRCustomElement = Vue.defineSSRCustomElement;
+export const defineSlots = Vue.defineSlots;
+export const devtools = Vue.devtools;
+export const effect = Vue.effect;
+export const effectScope = Vue.effectScope;
+export const getCurrentInstance = Vue.getCurrentInstance;
+export const getCurrentScope = Vue.getCurrentScope;
+export const getCurrentWatcher = Vue.getCurrentWatcher;
+export const getTransitionRawChildren = Vue.getTransitionRawChildren;
+export const guardReactiveProps = Vue.guardReactiveProps;
+export const h = Vue.h;
+export const handleError = Vue.handleError;
+export const hasInjectionContext = Vue.hasInjectionContext;
+export const hydrate = Vue.hydrate;
+export const hydrateOnIdle = Vue.hydrateOnIdle;
+export const hydrateOnInteraction = Vue.hydrateOnInteraction;
+export const hydrateOnMediaQuery = Vue.hydrateOnMediaQuery;
+export const hydrateOnVisible = Vue.hydrateOnVisible;
+export const initCustomFormatter = Vue.initCustomFormatter;
+export const inject = Vue.inject;
+export const isMemoSame = Vue.isMemoSame;
+export const isProxy = Vue.isProxy;
+export const isReactive = Vue.isReactive;
+export const isReadonly = Vue.isReadonly;
+export const isRef = Vue.isRef;
+export const isRuntimeOnly = Vue.isRuntimeOnly;
+export const isShallow = Vue.isShallow;
+export const isVNode = Vue.isVNode;
+export const markRaw = Vue.markRaw;
+export const mergeDefaults = Vue.mergeDefaults;
+export const mergeModels = Vue.mergeModels;
+export const mergeProps = Vue.mergeProps;
+export const nextTick = Vue.nextTick;
+export const normalizeClass = Vue.normalizeClass;
+export const normalizeProps = Vue.normalizeProps;
+export const normalizeStyle = Vue.normalizeStyle;
+export const onActivated = Vue.onActivated;
+export const onBeforeMount = Vue.onBeforeMount;
+export const onBeforeUnmount = Vue.onBeforeUnmount;
+export const onBeforeUpdate = Vue.onBeforeUpdate;
+export const onDeactivated = Vue.onDeactivated;
+export const onErrorCaptured = Vue.onErrorCaptured;
+export const onMounted = Vue.onMounted;
+export const onRenderTracked = Vue.onRenderTracked;
+export const onRenderTriggered = Vue.onRenderTriggered;
+export const onScopeDispose = Vue.onScopeDispose;
+export const onServerPrefetch = Vue.onServerPrefetch;
+export const onUnmounted = Vue.onUnmounted;
+export const onUpdated = Vue.onUpdated;
+export const onWatcherCleanup = Vue.onWatcherCleanup;
+export const openBlock = Vue.openBlock;
+export const popScopeId = Vue.popScopeId;
+export const provide = Vue.provide;
+export const proxyRefs = Vue.proxyRefs;
+export const pushScopeId = Vue.pushScopeId;
+export const queuePostFlushCb = Vue.queuePostFlushCb;
+export const reactive = Vue.reactive;
+export const readonly = Vue.readonly;
+export const ref = Vue.ref;
+export const render = Vue.render;
+export const renderList = Vue.renderList;
+export const renderSlot = Vue.renderSlot;
+export const resolveComponent = Vue.resolveComponent;
+export const resolveDirective = Vue.resolveDirective;
+export const resolveDynamicComponent = Vue.resolveDynamicComponent;
+export const resolveFilter = Vue.resolveFilter;
+export const resolveTransitionHooks = Vue.resolveTransitionHooks;
+export const setBlockTracking = Vue.setBlockTracking;
+export const setDevtoolsHook = Vue.setDevtoolsHook;
+export const setTransitionHooks = Vue.setTransitionHooks;
+export const shallowReactive = Vue.shallowReactive;
+export const shallowReadonly = Vue.shallowReadonly;
+export const shallowRef = Vue.shallowRef;
+export const ssrContextKey = Vue.ssrContextKey;
+export const ssrUtils = Vue.ssrUtils;
+export const stop = Vue.stop;
+export const toDisplayString = Vue.toDisplayString;
+export const toHandlerKey = Vue.toHandlerKey;
+export const toRaw = Vue.toRaw;
+export const toRef = Vue.toRef;
+export const toRefs = Vue.toRefs;
+export const toValue = Vue.toValue;
+export const transformVNodeArgs = Vue.transformVNodeArgs;
+export const triggerRef = Vue.triggerRef;
+export const unref = Vue.unref;
+export const useAttrs = Vue.useAttrs;
+export const useCssModule = Vue.useCssModule;
+export const useCssVars = Vue.useCssVars;
+export const useHost = Vue.useHost;
+export const useId = Vue.useId;
+export const useModel = Vue.useModel;
+export const useShadowRoot = Vue.useShadowRoot;
+export const useSlots = Vue.useSlots;
+export const useTemplateRef = Vue.useTemplateRef;
+export const useTransitionState = Vue.useTransitionState;
+export const vModelCheckbox = Vue.vModelCheckbox;
+export const vModelDynamic = Vue.vModelDynamic;
+export const vModelRadio = Vue.vModelRadio;
+export const vModelSelect = Vue.vModelSelect;
+export const vModelText = Vue.vModelText;
+export const vShow = Vue.vShow;
+export const version = Vue.version;
+export const warn = Vue.warn;
+export const watch = Vue.watch;
+export const watchEffect = Vue.watchEffect;
+export const watchPostEffect = Vue.watchPostEffect;
+export const watchSyncEffect = Vue.watchSyncEffect;
+export const withAsyncContext = Vue.withAsyncContext;
+export const withCtx = Vue.withCtx;
+export const withDefaults = Vue.withDefaults;
+export const withDirectives = Vue.withDirectives;
+export const withKeys = Vue.withKeys;
+export const withMemo = Vue.withMemo;
+export const withModifiers = Vue.withModifiers;
+export const withScopeId = Vue.withScopeId;
