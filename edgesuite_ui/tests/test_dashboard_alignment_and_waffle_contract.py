@@ -6,7 +6,9 @@ CSS_ROOT = ROOT / "edgesuite_ui" / "public" / "css"
 HOOKS = ROOT / "edgesuite_ui" / "hooks.py"
 BUNDLE = JS_ROOT / "edgeui.bundle.js"
 MOUNT = JS_ROOT / "edgeui" / "product_menu_mount.js"
+MENU = JS_ROOT / "edgeui" / "product_menu_v2.js"
 ALIGNMENT = CSS_ROOT / "edgeui_dashboard_alignment.css"
+PRODUCT_MENU_STYLES = CSS_ROOT / "edgeui_product_menu.css"
 
 
 def read(path: Path) -> str:
@@ -54,6 +56,39 @@ def test_product_menu_mounts_in_product_topbar_or_native_desk_navbar():
 		"MutationObserver",
 	):
 		assert contract in content
+
+
+def test_product_menu_supports_one_standalone_primary_item():
+	menu = read(MENU)
+	styles = read(PRODUCT_MENU_STYLES)
+
+	for contract in (
+		"config.primary_item || config.primaryItem",
+		"primary_item:",
+		"visiblePrimaryItem",
+		"edge-product-menu__primary-wrap",
+		"edge-product-menu__primary",
+		'event.target.closest(".edge-product-menu__primary, .edge-product-menu__item")',
+		"(!config.sections.length && !config.primary_item)",
+	):
+		assert contract in menu
+
+	for contract in (
+		".edge-product-menu__primary-wrap",
+		".edge-product-menu__primary",
+		".edge-product-menu__primary-icon",
+		"grid-template-columns: 2rem minmax(0, 1fr) auto",
+	):
+		assert contract in styles
+
+
+def test_product_menu_hides_technical_description_tokens():
+	menu = read(MENU)
+
+	assert "TECHNICAL_DESCRIPTIONS" in menu
+	for value in ("page", "doctype", "report", "workspace", "link"):
+		assert f'"{value}"' in menu
+	assert "normalizeDescription(item.description || item.subtitle)" in menu
 
 
 def test_alignment_and_waffle_enhancements_are_loaded_globally():
