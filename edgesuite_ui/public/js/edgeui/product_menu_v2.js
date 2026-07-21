@@ -4,6 +4,7 @@ const TRIGGER_ID = "edge-product-menu-trigger";
 const HOST_ID = "edge-product-menu-host";
 const PANEL_ID = "edge-product-menu-dropdown";
 const OPEN_CLASS = "edge-product-menu--open";
+const TECHNICAL_DESCRIPTIONS = new Set(["page", "doctype", "report", "workspace", "link"]);
 
 function escapeHtml(value) {
   return String(value || "").replace(/[&<>"']/g, (character) => ({
@@ -13,6 +14,11 @@ function escapeHtml(value) {
     '"': "&quot;",
     "'": "&#39;",
   })[character]);
+}
+
+function normalizeDescription(value) {
+  const description = String(value || "").trim();
+  return TECHNICAL_DESCRIPTIONS.has(description.toLowerCase()) ? "" : description;
 }
 
 function userRoles(target) {
@@ -34,7 +40,7 @@ function itemIsVisible(target, item) {
 function normalizeItem(item = {}) {
   return {
     label: String(item.label || "").trim(),
-    description: String(item.description || item.subtitle || "").trim(),
+    description: normalizeDescription(item.description || item.subtitle),
     icon: String(item.icon || "list").trim() || "list",
     badge: item.badge == null ? "" : String(item.badge),
     keywords: Array.isArray(item.keywords)
@@ -57,10 +63,12 @@ function normalizeConfig(config = {}) {
   }
 
   const product = String(config.product || "EdgeSuite").trim() || "EdgeSuite";
+  const primaryItem = config.primary_item || config.primaryItem;
+  const normalizedPrimaryItem = primaryItem ? normalizeItem(primaryItem) : null;
   const sections = (Array.isArray(config.sections) ? config.sections : [])
     .map((section) => ({
       label: String(section?.label || "").trim(),
-      description: String(section?.description || "").trim(),
+      description: normalizeDescription(section?.description),
       icon: String(section?.icon || "layers").trim() || "layers",
       items: (Array.isArray(section?.items) ? section.items : []).map(normalizeItem),
     }))
@@ -68,7 +76,11 @@ function normalizeConfig(config = {}) {
 
   return {
     product,
-    subtitle: String(config.subtitle || config.description || "").trim(),
+    subtitle: normalizeDescription(config.subtitle || config.description),
+    primary_item:
+      normalizedPrimaryItem && normalizedPrimaryItem.label && (normalizedPrimaryItem.route || normalizedPrimaryItem.link_to)
+        ? normalizedPrimaryItem
+        : null,
     sections,
     profile: config.profile && typeof config.profile === "object" ? { ...config.profile } : {},
     navigate: typeof config.navigate === "function" ? config.navigate : null,
@@ -190,6 +202,13 @@ export function createProductMenuController({ target = globalThis } = {}) {
     menuPanel.style.maxHeight = `${Math.max(280, viewportHeight - triggerBox.bottom - 20)}px`;
   }
 
+  function visiblePrimaryItem() {
+    const item = config?.primary_item;
+    if (!item || !itemIsVisible(target, item)) return null;
+    const normalizedQuery = query.trim().toLowerCase();
+    return matchesQuery({ label: "Home", description: "" }, item, normalizedQuery) ? item : null;
+  }
+
   function visibleSections() {
     const normalizedQuery = query.trim().toLowerCase();
     return (config?.sections || [])
@@ -209,8 +228,9 @@ export function createProductMenuController({ target = globalThis } = {}) {
     const profile = config.profile || {};
     const profileName = profile.name || profile.full_name || "EdgeSuite User";
     const details = [profile.company, profile.branch].filter(Boolean).join(" · ");
+    const primaryItem = visiblePrimaryItem();
     const sections = visibleSections();
-    const itemCount = sections.reduce((total, section) => total + section.items.length, 0);
+    const itemCount = sections.reduce((total, section) => total + section.items.length, primaryItem ? 1 : 0);
 
     menuPanel.innerHTML = `
       <header class="edge-product-menu__header">
@@ -246,6 +266,27 @@ export function createProductMenuController({ target = globalThis } = {}) {
         />
         <span class="edge-product-menu__result-count">${itemCount}</span>
       </div>
+      ${
+        primaryItem
+          ? `<div class="edge-product-menu__primary-wrap">
+              <button
+                type="button"
+                class="edge-product-menu__primary${itemIsActive(target, primaryItem) ? " is-active" : ""}"
+                role="menuitem"
+                data-link-type="${escapeHtml(primaryItem.link_type)}"
+                data-link-to="${escapeHtml(primaryItem.link_to)}"
+                data-route="${escapeHtml(primaryItem.route)}"
+              >
+                <span class="edge-product-menu__primary-icon" aria-hidden="true">${edgeIconMarkup(primaryItem.icon || "home", { target })}</span>
+                <span class="edge-product-menu__item-copy">
+                  <strong>${escapeHtml(primaryItem.label)}</strong>
+                  ${primaryItem.description ? `<small>${escapeHtml(primaryItem.description)}</small>` : ""}
+                </span>
+                ${primaryItem.badge ? `<span class="edge-product-menu__item-badge">${escapeHtml(primaryItem.badge)}</span>` : ""}
+              </button>
+            </div>`
+          : ""
+      }
       <div class="edge-product-menu__sections" role="menu">
         ${
           sections.length
@@ -285,7 +326,9 @@ export function createProductMenuController({ target = globalThis } = {}) {
             </section>`,
                 )
                 .join("")
-            : `
+            : primaryItem
+              ? ""
+              : `
               <div class="edge-product-menu__empty">
                 ${edgeIconMarkup("search", { target })}
                 <strong>No menu item found</strong>
@@ -325,7 +368,7 @@ export function createProductMenuController({ target = globalThis } = {}) {
 
   function mount() {
     const doc = document();
-    if (!doc || !config || !config.sections.length) return false;
+    if (!doc || !config || (!config.sections.length && !config.primary_item)) return false;
 
     let host = doc.getElementById(HOST_ID);
     let menuPanel = panel();
@@ -385,7 +428,7 @@ export function createProductMenuController({ target = globalThis } = {}) {
         close();
         return;
       }
-      const itemNode = event.target.closest(".edge-product-menu__item");
+      const itemNode = event.target.closest(".edge-product-menu__primary, .edge-product-menu__item");
       if (!itemNode) return;
       routeTo(target, config, {
         link_type: itemNode.dataset.linkType || "Page",
