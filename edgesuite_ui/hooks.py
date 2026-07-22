@@ -25,5 +25,6 @@ app_include_css = [
 	"/assets/edgesuite_ui/css/edgeui_sidebar_focus.css",
 	"/assets/edgesuite_ui/css/edgeui_form_controls.css",
 	"/assets/edgesuite_ui/css/edgeui_context.css",
+	"/assets/edgesuite_ui/css/edgeui_documents.css",
 ]
 app_include_js = ["edgeui.bundle.js"]
