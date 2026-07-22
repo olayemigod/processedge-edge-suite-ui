@@ -48,7 +48,7 @@ def test_document_form_supports_tabs_sections_dependencies_links_and_child_rows(
 def test_workflow_component_is_provider_driven_and_does_not_write_documents():
 	content = read(JS)
 	for contract in (
-		'emit: ["save", "delete", "transition", "back", "more-action"]',
+		'emits: ["save", "delete", "transition", "back", "more-action"]',
 		'this.$emit("transition", transition)',
 		'this.$emit("save")',
 		'this.$emit("delete")',
