@@ -1,0 +1,92 @@
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[2]
+JS = ROOT / "edgesuite_ui" / "public" / "js" / "edgeui" / "document_components.js"
+CSS = ROOT / "edgesuite_ui" / "public" / "css" / "edgeui_documents.css"
+BUNDLE = ROOT / "edgesuite_ui" / "public" / "js" / "edgeui.bundle.js"
+HOOKS = ROOT / "edgesuite_ui" / "hooks.py"
+VERSION = ROOT / "edgesuite_ui" / "__init__.py"
+
+
+def read(path: Path) -> str:
+	return path.read_text(encoding="utf-8")
+
+
+def test_document_foundation_exports_full_workspace_components():
+	content = read(JS)
+	for contract in (
+		"EdgeDataTable",
+		"EdgeChildTable",
+		"EdgeWorkflowBar",
+		"EdgeDocumentForm",
+		"EdgeSettingsLayout",
+		"documentComponents",
+		"evaluateDocumentDependency",
+		"EdgeLinkField",
+		"EdgeStatusBadge",
+	):
+		assert contract in content
+
+
+def test_document_form_supports_tabs_sections_dependencies_links_and_child_rows():
+	content = read(JS)
+	for contract in (
+		"schema.tabs",
+		"selectedTab",
+		"section.fields",
+		"depends_on",
+		"mandatory_depends_on",
+		"read_only_depends_on",
+		"child_fields",
+		"linkSearcher",
+		"childLinkSearcher",
+		'"update:modelValue"',
+	):
+		assert contract in content
+
+
+def test_workflow_component_is_provider_driven_and_does_not_write_documents():
+	content = read(JS)
+	for contract in (
+		'emit: ["save", "delete", "transition", "back", "more-action"]',
+		'this.$emit("transition", transition)',
+		'this.$emit("save")',
+		'this.$emit("delete")',
+	):
+		assert contract in content
+	for forbidden in (
+		"frappe.call",
+		"frappe.client.insert",
+		"frappe.client.set_value",
+		"apply_workflow(",
+		"doc.save(",
+		"doc.submit(",
+		"doc.cancel(",
+	):
+		assert forbidden not in content
+
+
+def test_document_components_are_registered_and_versioned():
+	bundle = read(BUNDLE)
+	hooks = read(HOOKS)
+	version = read(VERSION)
+	assert 'from "./edgeui/document_components"' in bundle
+	assert "...documentComponents" in bundle
+	assert 'export * from "./edgeui/document_components"' in bundle
+	assert 'EDGE_SUITE_UI_VERSION = "0.5.0"' in bundle
+	assert '__version__ = "0.5.0"' in version
+	assert "/assets/edgesuite_ui/css/edgeui_documents.css" in hooks
+
+
+def test_document_styles_cover_desktop_mobile_forms_lists_workflows_and_settings():
+	styles = read(CSS)
+	for selector in (
+		".edge-data-table",
+		".edge-document-form",
+		".edge-document-section__grid",
+		".edge-child-table",
+		".edge-workflow-bar",
+		".edge-settings-layout",
+		"@media (max-width: 47.99rem)",
+	):
+		assert selector in styles
