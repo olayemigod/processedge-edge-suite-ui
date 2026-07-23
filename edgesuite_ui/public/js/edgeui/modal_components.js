@@ -1,5 +1,7 @@
 import { defineComponent, h } from "vue";
 
+import { EdgeDropdown, EdgeLinkField } from "./form_components";
+
 let openModalCount = 0;
 
 function normalizedType(field = {}) {
@@ -26,7 +28,11 @@ function visibleField(field, values) {
 }
 
 function requiredField(field, values) {
-  return Boolean(field?.required || field?.reqd || conditionMatches(field?.required_when, values) && field?.required_when);
+  return Boolean(
+    field?.required ||
+      field?.reqd ||
+      (conditionMatches(field?.required_when, values) && field?.required_when),
+  );
 }
 
 function normalizedOptions(field = {}) {
@@ -38,8 +44,10 @@ function normalizedOptions(field = {}) {
             value: String(option.value ?? option.name ?? ""),
             label: String(option.label ?? option.title ?? option.value ?? option.name ?? ""),
             description: String(option.description ?? ""),
+            disabled: Boolean(option.disabled),
+            raw: option,
           }
-        : { value: String(option), label: String(option), description: "" },
+        : { value: String(option), label: String(option), description: "", disabled: false, raw: option },
     );
   }
   if (typeof options === "string") {
@@ -47,9 +55,14 @@ function normalizedOptions(field = {}) {
       .split("\n")
       .map((value) => value.trim())
       .filter(Boolean)
-      .map((value) => ({ value, label: value, description: "" }));
+      .map((value) => ({ value, label: value, description: "", disabled: false, raw: value }));
   }
   return [];
+}
+
+function selectedOptionLabel(field, value) {
+  const option = normalizedOptions(field).find((item) => String(item.value) === String(value ?? ""));
+  return String(field.selected_label || option?.label || value || "");
 }
 
 function focusableElements(root) {
@@ -136,7 +149,7 @@ export const EdgeModal = defineComponent({
       if (event.target === event.currentTarget && this.closeOnBackdrop) this.requestClose();
     },
     onDocumentKeydown(event) {
-      if (!this.open) return;
+      if (!this.open || event.defaultPrevented) return;
       if (event.key === "Escape") {
         event.preventDefault();
         this.requestClose();
@@ -196,9 +209,7 @@ export const EdgeModal = defineComponent({
               ),
             ]),
             h("div", { class: "edge-modal__body" }, slots.default ? slots.default() : []),
-            slots.footer
-              ? h("footer", { class: "edge-modal__footer" }, slots.footer())
-              : null,
+            slots.footer ? h("footer", { class: "edge-modal__footer" }, slots.footer()) : null,
           ],
         ),
       ],
@@ -223,6 +234,7 @@ export const EdgeFormDialog = defineComponent({
     fullFormLabel: { type: String, default: "Open full form" },
     showFullForm: { type: Boolean, default: false },
     size: { type: String, default: "lg" },
+    linkSearcher: { type: Function, default: null },
   },
   emits: [
     "close",
@@ -253,45 +265,103 @@ export const EdgeFormDialog = defineComponent({
       const required = requiredField(field, this.modelValue || {});
       const error = this.fieldErrors?.[field.fieldname] || "";
       const id = `edge-form-${field.fieldname}`;
+      const disabled = Boolean(this.busy || field.disabled || field.read_only);
+      const autofocus = index === 0 ? "true" : undefined;
+      const helperId = error ? `${id}-error` : field.description ? `${id}-help` : undefined;
+
+      if (type === "check" || type === "checkbox") {
+        return h("div", { class: ["edge-form-field", "edge-form-field--check"] }, [
+          h("label", { class: "edge-checkbox" }, [
+            h("input", {
+              id,
+              name: field.fieldname,
+              class: error ? "is-invalid" : "",
+              type: "checkbox",
+              checked: Boolean(Number(value) || value === true),
+              disabled,
+              required,
+              "aria-invalid": error ? "true" : undefined,
+              "aria-describedby": helperId,
+              "data-edge-autofocus": autofocus,
+              onChange: (event) => this.updateValue(field, event.target.checked ? 1 : 0),
+            }),
+            h("span", field.label || field.fieldname),
+          ]),
+          field.description ? h("small", { id: `${id}-help` }, field.description) : null,
+          error ? h("small", { id: `${id}-error`, class: "edge-form-error" }, error) : null,
+        ]);
+      }
+
+      if (type === "select") {
+        return h("div", { class: ["edge-form-field", "edge-form-field--select"] }, [
+          h(EdgeDropdown, {
+            id,
+            name: field.fieldname,
+            class: "edge-form-control",
+            modelValue: value,
+            options: normalizedOptions(field),
+            label: field.label || field.fieldname,
+            placeholder: field.placeholder || "Select",
+            description: field.description || "",
+            error,
+            required,
+            disabled,
+            "data-edge-autofocus": autofocus,
+            "onUpdate:modelValue": (next) => this.updateValue(field, next),
+          }),
+        ]);
+      }
+
+      if (type === "link") {
+        const searcher = this.linkSearcher
+          ? (query, context) =>
+              this.linkSearcher(field, query, context?.values || this.modelValue || {})
+          : null;
+        return h("div", { class: ["edge-form-field", "edge-form-field--link"] }, [
+          h(EdgeLinkField, {
+            id,
+            name: field.fieldname,
+            class: "edge-form-control",
+            modelValue: value,
+            selectedLabel: selectedOptionLabel(field, value),
+            options: normalizedOptions(field),
+            label: field.label || field.fieldname,
+            placeholder: field.placeholder || `Search ${field.label || "records"}`,
+            description: field.description || "",
+            error,
+            required,
+            disabled,
+            minChars: field.min_chars ?? 0,
+            debounceMs: field.debounce_ms ?? 220,
+            canCreate: Boolean(field.can_create),
+            creator: typeof field.creator === "function" ? field.creator : null,
+            context: { values: this.modelValue || {}, field },
+            searcher,
+            "data-edge-autofocus": autofocus,
+            "onUpdate:modelValue": (next) => this.updateValue(field, next),
+            onQueryChange: (query) => this.searchOptions(field, query),
+            onSelect: (option) => this.$emit("search-options", {
+              field,
+              query: option?.value || "",
+              option,
+              values: { ...(this.modelValue || {}) },
+            }),
+          }),
+        ]);
+      }
+
       const common = {
         id,
         name: field.fieldname,
         class: ["edge-form-control", error ? "is-invalid" : ""],
-        disabled: this.busy || field.disabled || field.read_only,
+        disabled,
         required,
         "aria-invalid": error ? "true" : undefined,
-        "aria-describedby": error ? `${id}-error` : field.description ? `${id}-help` : undefined,
-        "data-edge-autofocus": index === 0 ? "true" : undefined,
+        "aria-describedby": helperId,
+        "data-edge-autofocus": autofocus,
       };
       let control;
-
-      if (type === "check" || type === "checkbox") {
-        control = h("label", { class: "edge-checkbox" }, [
-          h("input", {
-            ...common,
-            class: error ? "is-invalid" : "",
-            type: "checkbox",
-            checked: Boolean(Number(value) || value === true),
-            onChange: (event) => this.updateValue(field, event.target.checked ? 1 : 0),
-          }),
-          h("span", field.label || field.fieldname),
-        ]);
-      } else if (type === "select") {
-        control = h(
-          "select",
-          {
-            ...common,
-            value,
-            onChange: (event) => this.updateValue(field, event.target.value),
-          },
-          [
-            field.allow_blank !== false ? h("option", { value: "" }, field.placeholder || "Select") : null,
-            ...normalizedOptions(field).map((option) =>
-              h("option", { value: option.value, key: option.value }, option.label),
-            ),
-          ],
-        );
-      } else if (type === "text" || type === "small text" || type === "textarea") {
+      if (type === "text" || type === "small text" || type === "textarea") {
         control = h("textarea", {
           ...common,
           rows: field.rows || 3,
@@ -299,31 +369,6 @@ export const EdgeFormDialog = defineComponent({
           placeholder: field.placeholder || "",
           onInput: (event) => this.updateValue(field, event.target.value),
         });
-      } else if (type === "link") {
-        const listId = `${id}-options`;
-        control = h("div", { class: "edge-link-control" }, [
-          h("input", {
-            ...common,
-            type: "text",
-            list: listId,
-            value,
-            autocomplete: "off",
-            placeholder: field.placeholder || `Search ${field.label || "records"}`,
-            onFocus: (event) => this.searchOptions(field, event.target.value),
-            onInput: (event) => {
-              this.updateValue(field, event.target.value);
-              this.searchOptions(field, event.target.value);
-            },
-          }),
-          h(
-            "datalist",
-            { id: listId },
-            normalizedOptions(field).map((option) =>
-              h("option", { value: option.value, key: option.value }, option.label),
-            ),
-          ),
-          field.options_loading ? h("span", { class: "edge-link-control__loading" }, "Loading…") : null,
-        ]);
       } else {
         const inputType =
           type === "date"
@@ -347,16 +392,8 @@ export const EdgeFormDialog = defineComponent({
         });
       }
 
-      if (type === "check" || type === "checkbox") {
-        return h("div", { class: ["edge-form-field", "edge-form-field--check"] }, [
-          control,
-          field.description ? h("small", { id: `${id}-help` }, field.description) : null,
-          error ? h("small", { id: `${id}-error`, class: "edge-form-error" }, error) : null,
-        ]);
-      }
-
-      return h("label", { class: ["edge-form-field", `edge-form-field--${type.replace(/\s+/g, "-")}`] }, [
-        h("span", { class: "edge-form-field__label" }, [
+      return h("div", { class: ["edge-form-field", `edge-form-field--${type.replace(/\s+/g, "-")}`] }, [
+        h("label", { class: "edge-form-field__label", for: id }, [
           field.label || field.fieldname,
           required ? h("span", { class: "edge-form-required", "aria-hidden": "true" }, " *") : null,
         ]),
@@ -380,9 +417,7 @@ export const EdgeFormDialog = defineComponent({
       },
       {
         default: () => [
-          this.loading
-            ? h("div", { class: "edge-modal-state", role: "status" }, "Loading form…")
-            : null,
+          this.loading ? h("div", { class: "edge-modal-state", role: "status" }, "Loading form…") : null,
           this.error ? h("div", { class: "edge-form-global-error", role: "alert" }, this.error) : null,
           !this.loading
             ? h(
