@@ -6,6 +6,7 @@ import frappe
 from frappe import _
 
 PRODUCT_PROVIDER_HOOK = "edgesuite_product_availability_providers"
+CONVENTIONAL_PROVIDER_SUFFIX = "api.product_context.get_product_availability"
 ACTIVE_PRODUCT_CACHE_PREFIX = "edgesuite:active-product"
 PUBLIC_PRODUCT_FIELDS = (
 	"key",
@@ -41,9 +42,14 @@ def _flatten_provider_paths(value: object) -> list[str]:
 	return []
 
 
-def _provider_paths() -> list[str]:
-	paths = _flatten_provider_paths(frappe.get_hooks(PRODUCT_PROVIDER_HOOK, default=[]))
-	return list(dict.fromkeys(path for path in paths if path))
+def _provider_paths() -> tuple[list[str], set[str]]:
+	explicit_paths = set(
+		_flatten_provider_paths(frappe.get_hooks(PRODUCT_PROVIDER_HOOK, default=[]))
+	)
+	paths = list(explicit_paths)
+	for app_name in frappe.get_installed_apps():
+		paths.append(f"{app_name}.{CONVENTIONAL_PROVIDER_SUFFIX}")
+	return list(dict.fromkeys(path for path in paths if path)), explicit_paths
 
 
 def _normalize_product(value: Mapping) -> dict | None:
@@ -85,26 +91,37 @@ def _provider_products(result: object) -> list[Mapping]:
 	return []
 
 
-def get_available_products() -> list[dict]:
-	"""Return the final product availability list supplied by installed product apps.
+def _log_provider_failure(provider_path: str) -> None:
+	frappe.log_error(
+		title=f"EdgeSuite product availability provider failed: {provider_path}",
+		message=frappe.get_traceback(),
+	)
 
-	The shared UI layer does not infer availability from installed apps, roles, activation,
-	or subscription state. Each product provider owns those rules and returns a descriptor
-	only when that product is available to the current user.
+
+def get_available_products() -> list[dict]:
+	"""Return the final product availability list supplied by product apps.
+
+	Installed apps are used only to discover the conventional provider path. The
+	shared UI layer does not infer availability from installation, roles, activation,
+	or subscription state. Each product provider owns those rules and returns a
+	descriptor only when that product is available to the current user.
 	"""
 	products: dict[str, dict] = {}
-	for provider_path in _provider_paths():
+	provider_paths, explicit_paths = _provider_paths()
+	for provider_path in provider_paths:
 		try:
 			provider = frappe.get_attr(provider_path)
+		except (AttributeError, ImportError, ModuleNotFoundError):
+			if provider_path in explicit_paths:
+				_log_provider_failure(provider_path)
+			continue
+		try:
 			for candidate in _provider_products(provider()):
 				normalized = _normalize_product(candidate)
 				if normalized:
 					products[normalized["key"]] = normalized
 		except Exception:
-			frappe.log_error(
-				title=f"EdgeSuite product availability provider failed: {provider_path}",
-				message=frappe.get_traceback(),
-			)
+			_log_provider_failure(provider_path)
 	return sorted(products.values(), key=lambda product: (product["order"], product["label"].lower()))
 
 
