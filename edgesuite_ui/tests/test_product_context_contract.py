@@ -43,6 +43,12 @@ class TestProductContextContract(unittest.TestCase):
 		self.assertIn("resolveProductFromRoute", source)
 		self.assertNotIn("installed_apps", source)
 
+	def test_product_routes_normalize_browser_and_frappe_desk_shapes(self):
+		source = (APP_ROOT / "public/js/edgeui/product_context.js").read_text(encoding="utf-8")
+		self.assertIn('.replace(/^app\\//i, "")', source)
+		self.assertIn("frappe?.get_route", source)
+		self.assertIn("routeMatches(pattern, normalizedRoute)", source)
+
 
 if __name__ == "__main__":
 	unittest.main()
