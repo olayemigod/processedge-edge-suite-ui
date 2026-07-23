@@ -12,6 +12,7 @@ function normalizeRoute(value) {
     .replace(/^https?:\/\/[^/]+/i, "")
     .split(/[?#]/, 1)[0]
     .replace(/^\/+/, "")
+    .replace(/^app\//i, "")
     .toLowerCase();
 }
 
