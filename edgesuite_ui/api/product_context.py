@@ -69,18 +69,21 @@ def _normalize_product(value: Mapping) -> dict | None:
 		route_patterns = [route_patterns]
 	elif not isinstance(route_patterns, (list, tuple)):
 		route_patterns = []
-	product = {
+	return {
 		"key": key,
 		"product_key": key,
 		"label": label,
 		"product": str(value.get("product") or label).strip() or label,
 		"icon": str(value.get("icon") or "apps").strip() or "apps",
-		"home_route": str(value.get("home_route") or value.get("homeRoute") or "").strip(),
-		"route_patterns": [str(route).strip() for route in route_patterns if str(route).strip()],
+		"home_route": str(
+			value.get("home_route") or value.get("homeRoute") or ""
+		).strip(),
+		"route_patterns": [
+			str(route).strip() for route in route_patterns if str(route).strip()
+		],
 		"order": int(value.get("order") or 100),
 		"default": bool(value.get("default")),
 	}
-	return product
 
 
 def _provider_products(result: object) -> list[Mapping]:
@@ -111,7 +114,7 @@ def get_available_products() -> list[dict]:
 	for provider_path in provider_paths:
 		try:
 			provider = frappe.get_attr(provider_path)
-		except (AttributeError, ImportError, ModuleNotFoundError):
+		except Exception:
 			if provider_path in explicit_paths:
 				_log_provider_failure(provider_path)
 			continue
@@ -122,7 +125,10 @@ def get_available_products() -> list[dict]:
 					products[normalized["key"]] = normalized
 		except Exception:
 			_log_provider_failure(provider_path)
-	return sorted(products.values(), key=lambda product: (product["order"], product["label"].lower()))
+	return sorted(
+		products.values(),
+		key=lambda product: (product["order"], product["label"].lower()),
+	)
 
 
 def _cache_key(user: str | None = None) -> str:
@@ -146,12 +152,20 @@ def _active_product(products: list[dict], preferred: str | None = None) -> str:
 		key = _normalize_key(candidate)
 		if key and key in available_keys:
 			return key
-	default_product = next((product for product in products if product.get("default")), None)
-	return str((default_product or (products[0] if products else {})).get("key") or "")
+	default_product = next(
+		(product for product in products if product.get("default")),
+		None,
+	)
+	fallback = default_product or (products[0] if products else {})
+	return str(fallback.get("key") or "")
 
 
 def _public_product(product: Mapping) -> dict:
-	return {field: product.get(field) for field in PUBLIC_PRODUCT_FIELDS if field in product}
+	return {
+		field: product.get(field)
+		for field in PUBLIC_PRODUCT_FIELDS
+		if field in product
+	}
 
 
 @frappe.whitelist()
@@ -170,9 +184,15 @@ def get_product_context() -> dict:
 def switch_product(product_key: str) -> dict:
 	products = get_available_products()
 	key = _normalize_key(product_key)
-	selected = next((product for product in products if product["key"] == key), None)
+	selected = next(
+		(product for product in products if product["key"] == key),
+		None,
+	)
 	if not selected:
-		frappe.throw(_("This product is not currently available."), frappe.PermissionError)
+		frappe.throw(
+			_("This product is not currently available."),
+			frappe.PermissionError,
+		)
 	_set_cached_active_product(key)
 	return {
 		"active_product": key,
