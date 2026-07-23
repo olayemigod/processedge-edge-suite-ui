@@ -1,5 +1,3 @@
-import { h } from "vue";
-
 function focusableElements(root) {
   if (!root) return [];
   return Array.from(
@@ -16,52 +14,6 @@ function dialogElement(instance) {
       ? instance.$el
       : null);
   return root?.querySelector?.(".edge-modal") || null;
-}
-
-function renderRuntimeNeutralModal() {
-  if (!this.open) return null;
-  const slots = this.$slots;
-  return h(
-    "div",
-    {
-      class: "edge-modal-backdrop",
-      role: "presentation",
-      onMousedown: this.onBackdrop,
-    },
-    [
-      h(
-        "section",
-        {
-          class: ["edge-modal", `edge-modal--${this.size}`],
-          role: "dialog",
-          "aria-modal": "true",
-          "aria-labelledby": "edge-modal-title",
-          "aria-describedby": this.subtitle ? "edge-modal-subtitle" : undefined,
-        },
-        [
-          h("header", { class: "edge-modal__header" }, [
-            h("div", { class: "edge-modal__heading" }, [
-              h("h2", { id: "edge-modal-title" }, this.title),
-              this.subtitle ? h("p", { id: "edge-modal-subtitle" }, this.subtitle) : null,
-            ]),
-            h(
-              "button",
-              {
-                type: "button",
-                class: "edge-modal__close",
-                disabled: this.busy,
-                "aria-label": "Close dialog",
-                onClick: this.requestClose,
-              },
-              "×",
-            ),
-          ]),
-          h("div", { class: "edge-modal__body" }, slots.default ? slots.default() : []),
-          slots.footer ? h("footer", { class: "edge-modal__footer" }, slots.footer()) : null,
-        ],
-      ),
-    ],
-  );
 }
 
 export function applyModalCrossRuntimeCompatibility(modalComponents = {}) {
@@ -86,7 +38,7 @@ export function applyModalCrossRuntimeCompatibility(modalComponents = {}) {
       });
     },
     onDocumentKeydown(event) {
-      if (!this.open) return;
+      if (!this.open || event.defaultPrevented) return;
       if (event.key === "Escape") {
         event.preventDefault();
         this.requestClose();
@@ -107,7 +59,10 @@ export function applyModalCrossRuntimeCompatibility(modalComponents = {}) {
     },
   };
 
-  EdgeModal.render = renderRuntimeNeutralModal;
+  // Keep EdgeModal's original render function. Replacing it here strips or
+  // invalidates slot VNodes when product pages and EdgeSuite UI are mounted
+  // through different Vue entry points, which results in an empty dialog body.
+  // The compatibility layer only augments focus and portal behaviour.
   EdgeModal.__edgeCrossRuntimeCompatible = true;
   return modalComponents;
 }
