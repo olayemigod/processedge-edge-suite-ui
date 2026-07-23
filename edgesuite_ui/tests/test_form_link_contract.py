@@ -11,29 +11,45 @@ def read(path: Path) -> str:
 	return path.read_text(encoding="utf-8")
 
 
-def test_link_field_supports_search_selection_and_controlled_creation():
+def test_link_field_supports_search_selection_creation_and_fuzzy_ranking():
 	content = read(JS)
 
 	for contract in (
 		"EdgeLinkField",
 		"normalizeLinkOption",
+		"fuzzyOptionScore",
+		"fuzzyFilterOptions",
+		"fuzzySubsequenceScore",
 		"searcher",
 		"creator",
 		"canCreate",
 		'emit("update:modelValue"',
 		'emit("select"',
 		'emit("create-success"',
-		'event.key === "ArrowDown"',
-		'event.key === "ArrowUp"',
+		'"ArrowDown"',
+		'"ArrowUp"',
+		'"Home"',
+		'"End"',
 		'event.key === "Escape"',
 		"requestToken",
 		"props.context",
 	):
 		assert contract in content
 
-	assert '"Enter"' in content
+	assert 'event.key !== "Enter"' in content
 	assert "selectOption(selected)" in content
 	assert "createOption()" in content
+
+
+def test_static_options_use_regular_non_searchable_dropdown():
+	content = read(JS)
+
+	assert 'name: "EdgeDropdown"' in content
+	assert '"aria-haspopup": "listbox"' in content
+	assert 'type: "search"' not in content.split("export const EdgeDropdown", 1)[1].split(
+		"export const EdgeLinkField", 1
+	)[0]
+	assert "EdgeDropdown," in content.split("export const formComponents", 1)[1]
 
 
 def test_link_field_does_not_create_records_without_product_provider():
@@ -46,7 +62,7 @@ def test_link_field_does_not_create_records_without_product_provider():
 	assert "save(" not in content
 
 
-def test_link_field_is_exported_and_styled_globally():
+def test_dropdowns_are_exported_and_styled_globally():
 	bundle = read(BUNDLE)
 	hooks = read(HOOKS)
 	styles = read(CSS)
@@ -56,6 +72,9 @@ def test_link_field_is_exported_and_styled_globally():
 	assert 'export * from "./edgeui/form_components"' in bundle
 	assert "/assets/edgesuite_ui/css/edgeui_form_controls.css" in hooks
 	for selector in (
+		".edge-dropdown",
+		".edge-dropdown__menu",
+		".edge-dropdown__option",
 		".edge-link-field",
 		".edge-link-field__menu",
 		".edge-link-field__option",
@@ -63,6 +82,18 @@ def test_link_field_is_exported_and_styled_globally():
 		".edge-link-field__helper.is-error",
 	):
 		assert selector in styles
+
+
+def test_both_flyouts_match_control_width_exactly():
+	styles = read(CSS)
+	shared_menu = styles.split(".edge-dropdown__menu,", 1)[1].split(".edge-dropdown__option,", 1)[0]
+
+	assert "width: 100%;" in shared_menu
+	assert "min-width: 100%;" in shared_menu
+	assert "max-width: 100%;" in shared_menu
+	assert "box-sizing: border-box;" in shared_menu
+	assert "right: auto;" in shared_menu
+	assert "overflow-x: hidden;" in shared_menu
 
 
 def test_link_field_keeps_parent_context_reactive():
