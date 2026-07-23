@@ -3,6 +3,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 JS = ROOT / "edgesuite_ui" / "public" / "js" / "edgeui" / "form_components.js"
 MODAL_JS = ROOT / "edgesuite_ui" / "public" / "js" / "edgeui" / "modal_components.js"
+MODAL_COMPAT_JS = ROOT / "edgesuite_ui" / "public" / "js" / "edgeui" / "modal_cross_runtime.js"
 CSS = ROOT / "edgesuite_ui" / "public" / "css" / "edgeui_form_controls.css"
 MODAL_CSS = ROOT / "edgesuite_ui" / "public" / "css" / "edgeui_modal.css"
 BUNDLE = ROOT / "edgesuite_ui" / "public" / "js" / "edgeui.bundle.js"
@@ -126,6 +127,16 @@ def test_dialog_flyouts_are_forced_to_the_trigger_width():
 	assert "min-inline-size: 100% !important;" in dialog_width_contract
 	assert "max-inline-size: 100% !important;" in dialog_width_contract
 	assert "box-sizing: border-box !important;" in dialog_width_contract
+
+
+def test_modal_compatibility_preserves_original_render_and_slot_content():
+	content = read(MODAL_COMPAT_JS)
+
+	assert "EdgeModal.methods =" in content
+	assert "EdgeModal.render =" not in content
+	assert "renderRuntimeNeutralModal" not in content
+	assert "different Vue entry points" in content
+	assert "event.defaultPrevented" in content
 
 
 def test_link_field_keeps_parent_context_reactive():
