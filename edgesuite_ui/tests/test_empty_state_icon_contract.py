@@ -1,6 +1,5 @@
 from pathlib import Path
 
-
 PACKAGE_ROOT = Path(__file__).resolve().parents[1]
 JS_ROOT = PACKAGE_ROOT / "public" / "js"
 
