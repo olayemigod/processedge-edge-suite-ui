@@ -1,0 +1,41 @@
+.edge-child-table th {
+  line-height: 1.25;
+  max-width: 12rem;
+  min-width: 6.25rem;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.edge-child-table th:first-child,
+.edge-child-table td:first-child {
+  min-width: 12rem;
+}
+
+.edge-child-table td:has(.edge-link-field) {
+  min-width: 11rem;
+}
+
+.edge-child-table td:has(> input[type="checkbox"]) {
+  min-width: 6.25rem;
+  text-align: center;
+  width: 6.25rem;
+}
+
+.edge-child-table td > input[type="checkbox"] {
+  display: block;
+  margin-inline: auto;
+}
+
+.edge-child-table td .form-control,
+.edge-child-table td .edge-link-field,
+.edge-child-table td .edge-link-field__input {
+  min-width: 0;
+  width: 100%;
+}
+
+@media (max-width: 47.99rem) {
+  .edge-child-table th:first-child,
+  .edge-child-table td:first-child {
+    min-width: 10rem;
+  }
+}
