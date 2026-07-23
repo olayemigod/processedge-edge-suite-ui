@@ -54,12 +54,45 @@ function normalizeOptions(options) {
     });
 }
 
-function optionMatches(option, query) {
+function fuzzySubsequenceScore(source, query) {
+  let sourceIndex = 0;
+  let queryIndex = 0;
+  let gapPenalty = 0;
+  let lastMatch = -1;
+  while (sourceIndex < source.length && queryIndex < query.length) {
+    if (source[sourceIndex] === query[queryIndex]) {
+      if (lastMatch >= 0) gapPenalty += Math.max(0, sourceIndex - lastMatch - 1);
+      lastMatch = sourceIndex;
+      queryIndex += 1;
+    }
+    sourceIndex += 1;
+  }
+  return queryIndex === query.length ? 40 - Math.min(30, gapPenalty) : -1;
+}
+
+export function fuzzyOptionScore(option, query) {
   const term = cleanText(query).toLowerCase();
-  if (!term) return true;
-  return [option.value, option.label, option.description]
+  if (!term) return 1;
+  const candidates = [option.value, option.label, option.description]
     .filter(Boolean)
-    .some((value) => String(value).toLowerCase().includes(term));
+    .map((value) => cleanText(value).toLowerCase());
+  let score = -1;
+  for (const candidate of candidates) {
+    if (candidate === term) score = Math.max(score, 1000);
+    else if (candidate.startsWith(term)) score = Math.max(score, 800 - candidate.length);
+    else if (candidate.split(/\s+/).some((word) => word.startsWith(term))) score = Math.max(score, 650 - candidate.length);
+    else if (candidate.includes(term)) score = Math.max(score, 500 - candidate.indexOf(term));
+    else score = Math.max(score, fuzzySubsequenceScore(candidate, term));
+  }
+  return score;
+}
+
+export function fuzzyFilterOptions(options, query) {
+  return normalizeOptions(options)
+    .map((option, index) => ({ option, index, score: fuzzyOptionScore(option, query) }))
+    .filter((entry) => entry.score >= 0)
+    .sort((left, right) => right.score - left.score || left.index - right.index)
+    .map((entry) => entry.option);
 }
 
 function exactOption(options, query) {
@@ -69,6 +102,151 @@ function exactOption(options, query) {
     (option) => option.value.toLowerCase() === term || option.label.toLowerCase() === term,
   );
 }
+
+export const EdgeDropdown = defineComponent({
+  name: "EdgeDropdown",
+  inheritAttrs: false,
+  props: {
+    modelValue: { type: [String, Number], default: "" },
+    options: { type: Array, default: () => [] },
+    label: { type: String, default: "" },
+    placeholder: { type: String, default: "Select" },
+    description: { type: String, default: "" },
+    error: { type: String, default: "" },
+    required: { type: Boolean, default: false },
+    disabled: { type: Boolean, default: false },
+    readonly: { type: Boolean, default: false },
+    id: { type: String, default: "" },
+    name: { type: String, default: "" },
+  },
+  emits: ["update:modelValue", "select", "change"],
+  setup(props, { attrs, emit }) {
+    const root = ref(null);
+    const button = ref(null);
+    const open = ref(false);
+    const activeIndex = ref(-1);
+    const fieldId = props.id || `edge-dropdown-${Math.random().toString(36).slice(2, 10)}`;
+
+    const normalized = () => normalizeOptions(props.options);
+    const selected = () => normalized().find((option) => String(option.value) === String(props.modelValue)) || null;
+
+    function closeMenu({ restoreFocus = false } = {}) {
+      open.value = false;
+      activeIndex.value = -1;
+      if (restoreFocus) nextTick(() => button.value?.focus());
+    }
+
+    function openMenu() {
+      if (props.disabled || props.readonly) return;
+      open.value = true;
+      const options = normalized();
+      activeIndex.value = Math.max(0, options.findIndex((option) => String(option.value) === String(props.modelValue)));
+    }
+
+    function choose(option) {
+      if (!option || option.disabled) return;
+      emit("update:modelValue", option.value);
+      emit("select", option);
+      emit("change", option);
+      closeMenu({ restoreFocus: true });
+    }
+
+    function onKeydown(event) {
+      const options = normalized();
+      if (["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) {
+        event.preventDefault();
+        if (!open.value) openMenu();
+        if (!options.length) return;
+        if (event.key === "Home") activeIndex.value = 0;
+        else if (event.key === "End") activeIndex.value = options.length - 1;
+        else if (event.key === "ArrowDown") activeIndex.value = (activeIndex.value + 1 + options.length) % options.length;
+        else activeIndex.value = (activeIndex.value - 1 + options.length) % options.length;
+        return;
+      }
+      if (event.key === "Escape") {
+        event.preventDefault();
+        closeMenu({ restoreFocus: true });
+        return;
+      }
+      if (["Enter", " "].includes(event.key)) {
+        event.preventDefault();
+        if (!open.value) openMenu();
+        else choose(options[activeIndex.value]);
+      }
+    }
+
+    function onDocumentPointerDown(event) {
+      if (!root.value?.contains(event.target)) closeMenu();
+    }
+
+    onMounted(() => document.addEventListener("pointerdown", onDocumentPointerDown));
+    onBeforeUnmount(() => document.removeEventListener("pointerdown", onDocumentPointerDown));
+
+    return () => {
+      const options = normalized();
+      const current = selected();
+      return h("div", { ref: root, class: ["edge-dropdown", { "has-error": Boolean(props.error), "is-open": open.value }] }, [
+        props.label
+          ? h("label", { class: "edge-dropdown__label", for: fieldId }, [
+              props.label,
+              props.required ? h("span", { class: "edge-dropdown__required" }, " *") : null,
+            ])
+          : null,
+        h("div", { class: "edge-dropdown__control" }, [
+          h(
+            "button",
+            {
+              ...attrs,
+              ref: button,
+              id: fieldId,
+              name: props.name || undefined,
+              type: "button",
+              class: ["form-control", "edge-dropdown__trigger", attrs.class],
+              disabled: props.disabled,
+              "aria-haspopup": "listbox",
+              "aria-expanded": open.value ? "true" : "false",
+              "aria-controls": `${fieldId}-listbox`,
+              "aria-invalid": props.error ? "true" : "false",
+              onClick: () => (open.value ? closeMenu() : openMenu()),
+              onKeydown,
+            },
+            [
+              h("span", { class: ["edge-dropdown__value", { "is-placeholder": !current }] }, current?.label || props.placeholder),
+              h("span", { class: "edge-dropdown__chevron", "aria-hidden": "true" }, "▾"),
+            ],
+          ),
+          open.value
+            ? h(
+                "div",
+                { id: `${fieldId}-listbox`, class: "edge-dropdown__menu", role: "listbox" },
+                options.map((option, index) =>
+                  h(
+                    "button",
+                    {
+                      type: "button",
+                      class: ["edge-dropdown__option", { "is-active": index === activeIndex.value, "is-disabled": option.disabled }],
+                      role: "option",
+                      disabled: option.disabled,
+                      "aria-selected": String(option.value) === String(props.modelValue) ? "true" : "false",
+                      onMouseenter: () => { activeIndex.value = index; },
+                      onClick: () => choose(option),
+                    },
+                    [
+                      h("span", { class: "edge-dropdown__option-label" }, option.label),
+                      option.description ? h("small", { class: "edge-dropdown__option-description" }, option.description) : null,
+                    ],
+                  ),
+                ),
+              )
+            : null,
+        ]),
+        props.error || props.description
+          ? h("p", { class: ["edge-dropdown__helper", { "is-error": Boolean(props.error) }] }, props.error || props.description)
+          : null,
+      ]);
+    };
+  },
+});
 
 export const EdgeLinkField = defineComponent({
   name: "EdgeLinkField",
@@ -98,15 +276,7 @@ export const EdgeLinkField = defineComponent({
     id: { type: String, default: "" },
     name: { type: String, default: "" },
   },
-  emits: [
-    "update:modelValue",
-    "select",
-    "clear",
-    "query-change",
-    "create",
-    "create-success",
-    "search-error",
-  ],
+  emits: ["update:modelValue", "select", "clear", "query-change", "create", "create-success", "search-error"],
   setup(props, { attrs, emit, slots }) {
     const root = ref(null);
     const input = ref(null);
@@ -119,23 +289,18 @@ export const EdgeLinkField = defineComponent({
     const focused = ref(false);
     let timer = null;
     let requestToken = 0;
-
     const fieldId = props.id || `edge-link-${Math.random().toString(36).slice(2, 10)}`;
 
     function currentStaticOptions(term = query.value) {
-      return normalizeOptions(props.options).filter((option) => optionMatches(option, term));
+      return fuzzyFilterOptions(props.options, term);
     }
-
     function syncDisplayValue() {
-      if (focused.value) return;
-      query.value = props.selectedLabel || cleanText(props.modelValue);
+      if (!focused.value) query.value = props.selectedLabel || cleanText(props.modelValue);
     }
-
     function closeMenu() {
       open.value = false;
       activeIndex.value = -1;
     }
-
     async function runSearch(term = query.value) {
       const normalized = cleanText(term);
       emit("query-change", normalized);
@@ -145,16 +310,15 @@ export const EdgeLinkField = defineComponent({
         open.value = props.openOnFocus && focused.value;
         return;
       }
-
       const token = ++requestToken;
       loading.value = true;
       open.value = true;
       try {
         const found = props.searcher
           ? await props.searcher(normalized, { ...(props.context || {}) })
-          : currentStaticOptions(normalized);
+          : props.options;
         if (token !== requestToken) return;
-        results.value = normalizeOptions(found);
+        results.value = fuzzyFilterOptions(found, normalized);
         activeIndex.value = results.value.length ? 0 : -1;
       } catch (error) {
         if (token !== requestToken) return;
@@ -164,12 +328,10 @@ export const EdgeLinkField = defineComponent({
         if (token === requestToken) loading.value = false;
       }
     }
-
     function scheduleSearch() {
       if (timer) clearTimeout(timer);
       timer = setTimeout(() => runSearch(), Math.max(0, Number(props.debounceMs) || 0));
     }
-
     function selectOption(option) {
       const normalized = normalizeLinkOption(option);
       if (!normalized || normalized.disabled) return;
@@ -178,7 +340,6 @@ export const EdgeLinkField = defineComponent({
       query.value = normalized.label || normalized.value;
       closeMenu();
     }
-
     function clearSelection() {
       if (props.disabled || props.readonly) return;
       emit("update:modelValue", "");
@@ -188,15 +349,11 @@ export const EdgeLinkField = defineComponent({
       activeIndex.value = -1;
       nextTick(() => input.value?.focus());
     }
-
     async function createOption() {
       const term = cleanText(query.value);
       if (!term || !props.canCreate || creating.value) return;
       emit("create", term);
-      if (!props.creator) {
-        closeMenu();
-        return;
-      }
+      if (!props.creator) return closeMenu();
       creating.value = true;
       try {
         const created = normalizeLinkOption(await props.creator(term, { ...(props.context || {}) }));
@@ -209,7 +366,6 @@ export const EdgeLinkField = defineComponent({
         creating.value = false;
       }
     }
-
     function onInput(event) {
       query.value = event.target.value;
       if (cleanText(props.modelValue)) {
@@ -218,12 +374,10 @@ export const EdgeLinkField = defineComponent({
       }
       scheduleSearch();
     }
-
     function onFocus() {
       focused.value = true;
       if (props.openOnFocus) runSearch();
     }
-
     function onBlur() {
       focused.value = false;
       setTimeout(() => {
@@ -233,19 +387,16 @@ export const EdgeLinkField = defineComponent({
         }
       }, 0);
     }
-
     function onKeydown(event) {
-      if (event.key === "ArrowDown") {
+      const count = results.value.length;
+      if (["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) {
         event.preventDefault();
         open.value = true;
-        const count = results.value.length;
-        activeIndex.value = count ? (activeIndex.value + 1 + count) % count : -1;
-        return;
-      }
-      if (event.key === "ArrowUp") {
-        event.preventDefault();
-        const count = results.value.length;
-        activeIndex.value = count ? (activeIndex.value - 1 + count) % count : -1;
+        if (!count) return;
+        if (event.key === "Home") activeIndex.value = 0;
+        else if (event.key === "End") activeIndex.value = count - 1;
+        else if (event.key === "ArrowDown") activeIndex.value = (activeIndex.value + 1 + count) % count;
+        else activeIndex.value = (activeIndex.value - 1 + count) % count;
         return;
       }
       if (event.key === "Escape") {
@@ -256,36 +407,21 @@ export const EdgeLinkField = defineComponent({
       if (event.key !== "Enter") return;
       event.preventDefault();
       const selected = results.value[activeIndex.value];
-      if (selected) {
-        selectOption(selected);
-      } else if (props.canCreate && !exactOption(results.value, query.value)) {
-        createOption();
-      }
+      if (selected) selectOption(selected);
+      else if (props.canCreate && !exactOption(results.value, query.value)) createOption();
     }
-
     function onDocumentPointerDown(event) {
       if (!root.value?.contains(event.target)) closeMenu();
     }
 
     watch(() => props.modelValue, syncDisplayValue);
     watch(() => props.selectedLabel, syncDisplayValue);
-    watch(
-      () => props.options,
-      () => {
-        if (!props.searcher) results.value = currentStaticOptions();
-      },
-      { deep: true },
-    );
-    watch(
-      () => props.context,
-      () => {
-        results.value = [];
-        activeIndex.value = -1;
-        if (focused.value) scheduleSearch();
-      },
-      { deep: true },
-    );
-
+    watch(() => props.options, () => { if (!props.searcher) results.value = currentStaticOptions(); }, { deep: true });
+    watch(() => props.context, () => {
+      results.value = [];
+      activeIndex.value = -1;
+      if (focused.value) scheduleSearch();
+    }, { deep: true });
     onMounted(() => document.addEventListener("pointerdown", onDocumentPointerDown));
     onBeforeUnmount(() => {
       document.removeEventListener("pointerdown", onDocumentPointerDown);
@@ -295,141 +431,85 @@ export const EdgeLinkField = defineComponent({
 
     return () => {
       const hasExact = Boolean(exactOption(results.value, query.value));
-      const showCreate = Boolean(
-        props.canCreate && cleanText(query.value) && !hasExact && !loading.value,
-      );
+      const showCreate = Boolean(props.canCreate && cleanText(query.value) && !hasExact && !loading.value);
       const helper = props.error || props.description;
-      const optionNodes = results.value.map((option, index) =>
-        h(
-          "button",
-          {
-            type: "button",
-            class: [
-              "edge-link-field__option",
-              { "is-active": index === activeIndex.value, "is-disabled": option.disabled },
-            ],
-            role: "option",
-            disabled: option.disabled,
-            "aria-selected": index === activeIndex.value ? "true" : "false",
-            onMouseenter: () => {
-              activeIndex.value = index;
-            },
-            onMousedown: (event) => event.preventDefault(),
-            onClick: () => selectOption(option),
-          },
-          [
-            h("span", { class: "edge-link-field__option-label" }, option.label),
-            option.description
-              ? h("small", { class: "edge-link-field__option-description" }, option.description)
-              : null,
-          ],
-        ),
-      );
-
-      if (showCreate) {
-        optionNodes.push(
-          h(
-            "button",
-            {
-              type: "button",
-              class: "edge-link-field__create",
-              disabled: creating.value,
-              onMousedown: (event) => event.preventDefault(),
-              onClick: createOption,
-            },
-            slots.create
-              ? slots.create({ query: cleanText(query.value), creating: creating.value })
-              : `${creating.value ? "Creating…" : props.createLabel} “${cleanText(query.value)}”`,
-          ),
-        );
-      }
-
+      const optionNodes = results.value.map((option, index) => h("button", {
+        type: "button",
+        class: ["edge-link-field__option", { "is-active": index === activeIndex.value, "is-disabled": option.disabled }],
+        role: "option",
+        disabled: option.disabled,
+        "aria-selected": index === activeIndex.value ? "true" : "false",
+        onMouseenter: () => { activeIndex.value = index; },
+        onMousedown: (event) => event.preventDefault(),
+        onClick: () => selectOption(option),
+      }, [
+        h("span", { class: "edge-link-field__option-label" }, option.label),
+        option.description ? h("small", { class: "edge-link-field__option-description" }, option.description) : null,
+      ]));
+      if (showCreate) optionNodes.push(h("button", {
+        type: "button",
+        class: "edge-link-field__create",
+        disabled: creating.value,
+        onMousedown: (event) => event.preventDefault(),
+        onClick: createOption,
+      }, slots.create
+        ? slots.create({ query: cleanText(query.value), creating: creating.value })
+        : `${creating.value ? "Creating…" : props.createLabel} “${cleanText(query.value)}”`));
       if (!loading.value && !results.value.length && !showCreate) {
-        optionNodes.push(
-          h("div", { class: "edge-link-field__empty", role: "status" }, props.noResultsLabel),
-        );
+        optionNodes.push(h("div", { class: "edge-link-field__empty", role: "status" }, props.noResultsLabel));
       }
-
-      return h(
-        "div",
-        {
-          ref: root,
-          class: ["edge-link-field", { "has-error": Boolean(props.error), "is-open": open.value }],
-        },
-        [
-          props.label
-            ? h("label", { class: "edge-link-field__label", for: fieldId }, [
-                props.label,
-                props.required ? h("span", { class: "edge-link-field__required" }, " *") : null,
-              ])
+      return h("div", { ref: root, class: ["edge-link-field", { "has-error": Boolean(props.error), "is-open": open.value }] }, [
+        props.label ? h("label", { class: "edge-link-field__label", for: fieldId }, [
+          props.label,
+          props.required ? h("span", { class: "edge-link-field__required" }, " *") : null,
+        ]) : null,
+        h("div", { class: "edge-link-field__control" }, [
+          h("input", {
+            ...attrs,
+            ref: input,
+            id: fieldId,
+            name: props.name || undefined,
+            type: "search",
+            class: ["form-control", "edge-link-field__input", attrs.class],
+            value: query.value,
+            placeholder: props.placeholder,
+            disabled: props.disabled,
+            readonly: props.readonly,
+            required: props.required,
+            autocomplete: "off",
+            role: "combobox",
+            "aria-autocomplete": "list",
+            "aria-expanded": open.value ? "true" : "false",
+            "aria-controls": `${fieldId}-listbox`,
+            "aria-invalid": props.error ? "true" : "false",
+            onInput,
+            onFocus,
+            onBlur,
+            onKeydown,
+          }),
+          loading.value ? h("span", { class: "edge-link-field__spinner", "aria-label": props.loadingLabel }) : null,
+          props.allowClear && cleanText(props.modelValue) && !props.disabled && !props.readonly
+            ? h("button", {
+                type: "button",
+                class: "edge-link-field__clear",
+                "aria-label": `Clear ${props.label || "selection"}`,
+                onMousedown: (event) => event.preventDefault(),
+                onClick: clearSelection,
+              }, "×")
             : null,
-          h("div", { class: "edge-link-field__control" }, [
-            h("input", {
-              ...attrs,
-              ref: input,
-              id: fieldId,
-              name: props.name || undefined,
-              type: "search",
-              class: ["form-control", "edge-link-field__input", attrs.class],
-              value: query.value,
-              placeholder: props.placeholder,
-              disabled: props.disabled,
-              readonly: props.readonly,
-              required: props.required,
-              autocomplete: "off",
-              role: "combobox",
-              "aria-autocomplete": "list",
-              "aria-expanded": open.value ? "true" : "false",
-              "aria-controls": `${fieldId}-listbox`,
-              "aria-invalid": props.error ? "true" : "false",
-              onInput,
-              onFocus,
-              onBlur,
-              onKeydown,
-            }),
-            loading.value
-              ? h("span", { class: "edge-link-field__spinner", "aria-label": props.loadingLabel })
-              : null,
-            props.allowClear && cleanText(props.modelValue) && !props.disabled && !props.readonly
-              ? h(
-                  "button",
-                  {
-                    type: "button",
-                    class: "edge-link-field__clear",
-                    "aria-label": `Clear ${props.label || "selection"}`,
-                    onMousedown: (event) => event.preventDefault(),
-                    onClick: clearSelection,
-                  },
-                  "×",
-                )
-              : null,
-          ]),
-          helper
-            ? h(
-                "p",
-                { class: ["edge-link-field__helper", { "is-error": Boolean(props.error) }] },
-                helper,
-              )
-            : null,
-          open.value
-            ? h(
-                "div",
-                {
-                  id: `${fieldId}-listbox`,
-                  class: "edge-link-field__menu",
-                  role: "listbox",
-                },
-                loading.value
-                  ? [h("div", { class: "edge-link-field__loading" }, props.loadingLabel)]
-                  : optionNodes,
-              )
-            : null,
-        ],
-      );
+          open.value ? h("div", {
+            id: `${fieldId}-listbox`,
+            class: "edge-link-field__menu",
+            role: "listbox",
+          }, loading.value ? [h("div", { class: "edge-link-field__loading" }, props.loadingLabel)] : optionNodes) : null,
+        ]),
+        helper ? h("p", { class: ["edge-link-field__helper", { "is-error": Boolean(props.error) }] }, helper) : null,
+      ]);
     };
   },
 });
 
 export const formComponents = {
+  EdgeDropdown,
   EdgeLinkField,
 };
