@@ -87,6 +87,7 @@ export function createProductContextController({ target = globalThis } = {}) {
   let availabilityResolved = false;
   let activeProductKey = "";
   let switching = false;
+  let switchHandler = null;
 
   function availableRecords() {
     if (availabilityResolved) return Array.from(authoritativeAvailability.values());
@@ -160,14 +161,19 @@ export function createProductContextController({ target = globalThis } = {}) {
 
   function registerProduct(descriptor) {
     const normalized = normalizeDescriptor(descriptor);
+    const existing = descriptors.get(normalized.key) || {};
     descriptors.set(normalized.key, {
-      ...(descriptors.get(normalized.key) || {}),
+      ...existing,
       ...normalized,
+      activate: normalized.activate || existing.activate || null,
+      home_route: normalized.home_route || existing.home_route || "",
+      route_patterns:
+        normalized.route_patterns?.length ? normalized.route_patterns : existing.route_patterns || [],
     });
     const previousKey = activeProductKey;
     ensureActiveProduct(normalized.active ? normalized.key : activeProductKey);
     notify("registration", previousKey);
-    return combinedProduct(normalizeAvailableProduct(descriptors.get(normalized.key)));
+    return descriptors.get(normalized.key);
   }
 
   function setAvailableProducts(payload = {}) {
@@ -200,6 +206,14 @@ export function createProductContextController({ target = globalThis } = {}) {
     ensureActiveProduct(activeProductKey);
     notify("availability-reset", previousKey);
     return getState();
+  }
+
+  function setSwitchHandler(handler) {
+    if (handler !== null && typeof handler !== "function") {
+      throw new TypeError("Product switch handler must be a function or null");
+    }
+    switchHandler = handler;
+    return switchHandler;
   }
 
   function resolveProductFromRoute(route = routeFromTarget(target)) {
@@ -251,13 +265,17 @@ export function createProductContextController({ target = globalThis } = {}) {
     const previousKey = activeProductKey;
     try {
       const descriptor = descriptors.get(selected.key) || selected;
-      const activationResult = descriptor.activate
-        ? await descriptor.activate({
+      const handler = descriptor.activate || switchHandler;
+      const activationResult = handler
+        ? await handler({
             product: selected,
             previous_product: getActiveProduct(),
             available_products: getAvailableProducts(),
           })
         : null;
+      if (activationResult?.available_products) {
+        setAvailableProducts(activationResult);
+      }
       activeProductKey = selected.key;
       notify("switch", previousKey);
       if (options.navigate !== false) {
@@ -292,6 +310,7 @@ export function createProductContextController({ target = globalThis } = {}) {
     registerProduct,
     setAvailableProducts,
     clearAvailableProducts,
+    setSwitchHandler,
     getAvailableProducts,
     getActiveProduct,
     getState,
