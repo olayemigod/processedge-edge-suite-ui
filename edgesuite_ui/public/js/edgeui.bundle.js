@@ -14,7 +14,7 @@ import { createEdgeSuiteRuntime, exposeEdgeSuiteRuntime } from "./edgeui/runtime
 import { installSharedShellEnhancements } from "./edgeui/shell_enhancements";
 import { installSidebarFocusLifecycle } from "./edgeui/sidebar_focus";
 
-export const EDGE_SUITE_UI_VERSION = "0.5.0";
+export const EDGE_SUITE_UI_VERSION = "0.5.1";
 
 applyFrappeCompatibility(professionalComponents);
 applyModalCrossRuntimeCompatibility(modalComponents);
