@@ -4,6 +4,7 @@ ROOT = Path(__file__).resolve().parents[2]
 JS = ROOT / "edgesuite_ui" / "public" / "js" / "edgeui" / "document_components.js"
 CSS = ROOT / "edgesuite_ui" / "public" / "css" / "edgeui_documents.css"
 BUNDLE = ROOT / "edgesuite_ui" / "public" / "js" / "edgeui.bundle.js"
+STANDALONE_BUNDLE = ROOT / "edgesuite_ui" / "public" / "js" / "edgesuite_ui.bundle.js"
 HOOKS = ROOT / "edgesuite_ui" / "hooks.py"
 VERSION = ROOT / "edgesuite_ui" / "__init__.py"
 
@@ -68,13 +69,16 @@ def test_workflow_component_is_provider_driven_and_does_not_write_documents():
 
 def test_document_components_are_registered_and_versioned():
 	bundle = read(BUNDLE)
+	standalone_bundle = read(STANDALONE_BUNDLE)
 	hooks = read(HOOKS)
 	version = read(VERSION)
 	assert 'from "./edgeui/document_components"' in bundle
 	assert "...documentComponents" in bundle
 	assert 'export * from "./edgeui/document_components"' in bundle
-	assert 'EDGE_SUITE_UI_VERSION = "0.5.0"' in bundle
-	assert '__version__ = "0.5.0"' in version
+	assert 'EDGE_SUITE_UI_VERSION = "0.5.2"' in bundle
+	assert '__version__ = "0.5.2"' in version
+	assert 'export * from "./edgeui.bundle"' in standalone_bundle
+	assert 'export { default } from "./edgeui.bundle"' in standalone_bundle
 	assert "/assets/edgesuite_ui/css/edgeui_documents.css" in hooks
 
 
