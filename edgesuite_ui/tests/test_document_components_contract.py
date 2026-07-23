@@ -3,6 +3,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 JS = ROOT / "edgesuite_ui" / "public" / "js" / "edgeui" / "document_components.js"
 CSS = ROOT / "edgesuite_ui" / "public" / "css" / "edgeui_documents.css"
+CHILD_TABLE_CSS = ROOT / "edgesuite_ui" / "public" / "css" / "edgeui_child_table_layout.css"
 BUNDLE = ROOT / "edgesuite_ui" / "public" / "js" / "edgeui.bundle.js"
 STANDALONE_BUNDLE = ROOT / "edgesuite_ui" / "public" / "js" / "edgesuite_ui.bundle.js"
 HOOKS = ROOT / "edgesuite_ui" / "hooks.py"
@@ -80,6 +81,7 @@ def test_document_components_are_registered_and_versioned():
 	assert 'export * from "./edgeui.bundle"' in standalone_bundle
 	assert 'export { default } from "./edgeui.bundle"' in standalone_bundle
 	assert "/assets/edgesuite_ui/css/edgeui_documents.css" in hooks
+	assert "/assets/edgesuite_ui/css/edgeui_child_table_layout.css" in hooks
 
 
 def test_document_styles_cover_desktop_mobile_forms_lists_workflows_and_settings():
@@ -94,3 +96,16 @@ def test_document_styles_cover_desktop_mobile_forms_lists_workflows_and_settings
 		"@media (max-width: 47.99rem)",
 	):
 		assert selector in styles
+
+
+def test_child_table_layout_wraps_long_headers_and_preserves_link_width():
+	styles = read(CHILD_TABLE_CSS)
+	for contract in (
+		"white-space: normal",
+		"overflow-wrap: anywhere",
+		".edge-child-table th:first-child",
+		"td:has(.edge-link-field)",
+		'td:has(> input[type="checkbox"])',
+		"min-width: 11rem",
+	):
+		assert contract in styles
