@@ -25,7 +25,11 @@ def test_bundle_registers_icon_aware_override_after_base_components():
 	assert "...baseComponents" in entrypoint
 	assert "...emptyStateComponents" in entrypoint
 	assert entrypoint.index("...baseComponents") < entrypoint.index("...emptyStateComponents")
-	assert 'export * from "./edgeui/empty_state_components"' in entrypoint
+	assert (
+		'export { EdgeEmptyState, emptyStateComponents } from "./edgeui/empty_state_components"'
+		in entrypoint
+	)
+	assert 'export * from "./edgeui/empty_state_components"' not in entrypoint
 
 
 def test_empty_state_override_keeps_custom_slots_and_action_contract():
