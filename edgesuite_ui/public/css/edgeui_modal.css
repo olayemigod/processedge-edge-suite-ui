@@ -112,6 +112,7 @@ body.edge-modal-open { overflow: hidden; }
   background: var(--edge-color-surface, #fff);
   border: 1px solid var(--edge-color-border-strong, #cbd7e5);
   border-radius: .625rem;
+  box-sizing: border-box;
   color: var(--edge-color-ink-950, #122033);
   font: inherit;
   min-height: 2.55rem;
@@ -152,6 +153,31 @@ textarea.edge-form-control { min-height: 5.5rem; resize: vertical; }
   transform: translateY(-50%);
 }
 .edge-modal .edge-button { box-shadow: none !important; transform: none !important; }
+
+/* Dialog fields use the shared custom dropdowns so the flyout can be
+   dimensioned against the actual control instead of browser-native popup UI. */
+.edge-modal .edge-dropdown,
+.edge-modal .edge-link-field,
+.edge-modal .edge-dropdown__control,
+.edge-modal .edge-link-field__control {
+  box-sizing: border-box;
+  inline-size: 100%;
+  max-inline-size: 100%;
+  min-inline-size: 0;
+}
+.edge-modal .edge-dropdown__trigger,
+.edge-modal .edge-link-field__input,
+.edge-modal .edge-dropdown__menu,
+.edge-modal .edge-link-field__menu {
+  box-sizing: border-box !important;
+  inline-size: 100% !important;
+  max-inline-size: 100% !important;
+  min-inline-size: 100% !important;
+}
+.edge-modal .edge-dropdown__menu,
+.edge-modal .edge-link-field__menu {
+  inset-inline: 0 auto;
+}
 
 @media (max-width: 47.99rem) {
   .edge-modal-backdrop { align-items: flex-end; padding: 0; }
