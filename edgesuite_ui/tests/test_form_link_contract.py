@@ -2,7 +2,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 JS = ROOT / "edgesuite_ui" / "public" / "js" / "edgeui" / "form_components.js"
+MODAL_JS = ROOT / "edgesuite_ui" / "public" / "js" / "edgeui" / "modal_components.js"
 CSS = ROOT / "edgesuite_ui" / "public" / "css" / "edgeui_form_controls.css"
+MODAL_CSS = ROOT / "edgesuite_ui" / "public" / "css" / "edgeui_modal.css"
 BUNDLE = ROOT / "edgesuite_ui" / "public" / "js" / "edgeui.bundle.js"
 HOOKS = ROOT / "edgesuite_ui" / "hooks.py"
 
@@ -94,6 +96,36 @@ def test_both_flyouts_match_control_width_exactly():
 	assert "box-sizing: border-box;" in shared_menu
 	assert "right: auto;" in shared_menu
 	assert "overflow-x: hidden;" in shared_menu
+
+
+def test_form_dialog_uses_shared_dropdown_and_link_controls():
+	content = read(MODAL_JS)
+	render_field = content.split("renderField(field, index)", 1)[1].split("  render()", 1)[0]
+
+	assert 'import { EdgeDropdown, EdgeLinkField } from "./form_components"' in content
+	assert "h(EdgeDropdown" in render_field
+	assert "h(EdgeLinkField" in render_field
+	assert '"datalist"' not in render_field
+	assert 'control = h(\n          "select"' not in render_field
+	assert "linkSearcher" in content
+	assert "onQueryChange" in render_field
+
+
+def test_dialog_flyouts_are_forced_to_the_trigger_width():
+	styles = read(MODAL_CSS)
+	dialog_width_contract = styles.split("/* Dialog fields use the shared custom dropdowns", 1)[1]
+
+	for selector in (
+		".edge-modal .edge-dropdown__trigger",
+		".edge-modal .edge-link-field__input",
+		".edge-modal .edge-dropdown__menu",
+		".edge-modal .edge-link-field__menu",
+	):
+		assert selector in dialog_width_contract
+	assert "inline-size: 100% !important;" in dialog_width_contract
+	assert "min-inline-size: 100% !important;" in dialog_width_contract
+	assert "max-inline-size: 100% !important;" in dialog_width_contract
+	assert "box-sizing: border-box !important;" in dialog_width_contract
 
 
 def test_link_field_keeps_parent_context_reactive():
