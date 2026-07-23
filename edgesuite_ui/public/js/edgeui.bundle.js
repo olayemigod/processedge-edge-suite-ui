@@ -49,7 +49,7 @@ export * from "./edgeui/components";
 export * from "./edgeui/context_components";
 export * from "./edgeui/context_identity";
 export * from "./edgeui/document_components";
-export * from "./edgeui/empty_state_components";
+export { EdgeEmptyState, emptyStateComponents } from "./edgeui/empty_state_components";
 export * from "./edgeui/form_components";
 export * from "./edgeui/frappe_compat";
 export * from "./edgeui/icons";
