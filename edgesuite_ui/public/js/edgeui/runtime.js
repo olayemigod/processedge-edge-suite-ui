@@ -101,6 +101,10 @@ export function createEdgeSuiteRuntime({ version, components = {} } = {}) {
       return productContext.clearAvailableProducts();
     },
 
+    setProductSwitchHandler(handler) {
+      return productContext.setSwitchHandler(handler);
+    },
+
     getAvailableProducts() {
       return productContext.getAvailableProducts();
     },
