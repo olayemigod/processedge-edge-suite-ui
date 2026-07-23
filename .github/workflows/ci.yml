@@ -29,7 +29,20 @@ jobs:
       - name: Compile Python
         run: python -m compileall -q edgesuite_ui
       - name: Ruff
-        run: ruff check .
+        id: ruff
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          ruff check . 2>&1 | tee ruff.log
+      - name: Upload Ruff diagnostics
+        if: steps.ruff.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ruff-diagnostics
+          path: ruff.log
+      - name: Enforce Ruff result
+        if: steps.ruff.outcome == 'failure'
+        run: exit 1
       - name: Validate package, runtime, product context, shell, forms, documents, context, and boundaries
         run: |
           python -m pytest -q \
