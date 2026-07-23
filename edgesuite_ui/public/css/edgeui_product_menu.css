@@ -2,9 +2,64 @@
   align-items: center;
   display: inline-flex;
   flex: 0 0 auto;
+  gap: 0.25rem;
   list-style: none;
   margin: 0 0.25rem;
   padding: 0;
+}
+
+.edge-product-switcher {
+  align-items: center;
+  background: var(--edge-color-surface-muted, var(--control-bg, #f6f8fa));
+  border: 1px solid var(--edge-color-border, var(--border-color, #dfe6ec));
+  border-radius: 0.55rem;
+  color: var(--edge-color-ink-700, var(--text-color, #334b61));
+  display: inline-grid;
+  grid-template-columns: 1rem minmax(5.5rem, auto) 0.8rem;
+  min-height: 2.25rem;
+  padding: 0 0.45rem;
+  position: relative;
+}
+
+.edge-product-switcher:focus-within {
+  border-color: var(--edge-color-brand-500, var(--primary, #1677c8));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--edge-color-brand-500, #1677c8) 18%, transparent);
+}
+
+.edge-product-switcher__icon,
+.edge-product-switcher__chevron {
+  align-items: center;
+  display: inline-flex;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.edge-product-switcher__icon svg,
+.edge-product-switcher__chevron svg {
+  height: 0.9rem;
+  width: 0.9rem;
+}
+
+.edge-product-switcher__select {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  height: 2rem;
+  max-width: 11rem;
+  min-width: 0;
+  outline: 0;
+  padding: 0 0.35rem;
+  text-overflow: ellipsis;
+}
+
+.edge-product-switcher__select:disabled {
+  cursor: progress;
+  opacity: 0.65;
 }
 
 .edge-product-menu__trigger {
@@ -204,6 +259,16 @@
   white-space: nowrap;
 }
 
+@media (max-width: 48rem) {
+  .edge-product-switcher {
+    grid-template-columns: 1rem minmax(4.5rem, 7rem) 0.8rem;
+  }
+
+  .edge-product-switcher__select {
+    max-width: 7rem;
+  }
+}
+
 @media (max-width: 36rem) {
   .edge-product-menu {
     max-height: calc(100vh - 4rem);
@@ -226,5 +291,15 @@
 
   .edge-product-menu__item {
     min-height: 2.5rem;
+  }
+
+  .edge-product-switcher {
+    grid-template-columns: 1rem minmax(3.75rem, 5.5rem) 0.7rem;
+    padding-inline: 0.3rem;
+  }
+
+  .edge-product-switcher__select {
+    font-size: 0.72rem;
+    max-width: 5.5rem;
   }
 }
