@@ -376,7 +376,7 @@ export const EdgeLinkField = defineComponent({
     }
     function onFocus() {
       focused.value = true;
-      if (props.openOnFocus) runSearch();
+      if (props.openOnFocus) runSearch(cleanText(props.modelValue) ? "" : query.value);
     }
     function onBlur() {
       focused.value = false;
