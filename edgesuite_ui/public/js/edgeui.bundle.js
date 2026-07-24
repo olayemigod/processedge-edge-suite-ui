@@ -11,6 +11,7 @@ import { suppressNativeNotificationRuntime } from "./edgeui/notification_runtime
 import { installProductMenuMountEnhancements } from "./edgeui/product_menu_mount";
 import { professionalComponents } from "./edgeui/professional_components";
 import { createEdgeSuiteRuntime, exposeEdgeSuiteRuntime } from "./edgeui/runtime";
+import { createCompatibleRuntimeComponents } from "./edgeui/runtime_component_compat";
 import { installSharedShellEnhancements } from "./edgeui/shell_enhancements";
 import { installSidebarFocusLifecycle } from "./edgeui/sidebar_focus";
 
@@ -20,14 +21,16 @@ applyFrappeCompatibility(professionalComponents);
 applyModalCrossRuntimeCompatibility(modalComponents);
 applyMultiSelectCompatibility(modalComponents);
 
-const components = Object.freeze({
-  ...baseComponents,
-  ...professionalComponents,
-  ...modalComponents,
-  ...formComponents,
-  ...contextComponents,
-  ...documentComponents,
-});
+const components = Object.freeze(
+  createCompatibleRuntimeComponents({
+    baseComponents,
+    professionalComponents,
+    modalComponents,
+    formComponents,
+    contextComponents,
+    documentComponents,
+  }),
+);
 
 const runtime = createEdgeSuiteRuntime({
   version: EDGE_SUITE_UI_VERSION,
@@ -58,6 +61,7 @@ export * from "./edgeui/product_menu";
 export * from "./edgeui/product_menu_mount";
 export * from "./edgeui/professional_components";
 export * from "./edgeui/runtime";
+export * from "./edgeui/runtime_component_compat";
 export * from "./edgeui/shell_enhancements";
 export * from "./edgeui/sidebar_focus";
 
