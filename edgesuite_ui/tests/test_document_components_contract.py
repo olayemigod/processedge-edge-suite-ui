@@ -2,6 +2,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 JS = ROOT / "edgesuite_ui" / "public" / "js" / "edgeui" / "document_components.js"
+COMPAT = ROOT / "edgesuite_ui" / "public" / "js" / "edgeui" / "runtime_component_compat.js"
 CSS = ROOT / "edgesuite_ui" / "public" / "css" / "edgeui_documents.css"
 CHILD_TABLE_CSS = ROOT / "edgesuite_ui" / "public" / "css" / "edgeui_child_table_layout.css"
 BUNDLE = ROOT / "edgesuite_ui" / "public" / "js" / "edgeui.bundle.js"
@@ -68,20 +69,32 @@ def test_workflow_component_is_provider_driven_and_does_not_write_documents():
 		assert forbidden not in content
 
 
-def test_document_components_are_registered_and_versioned():
+def test_document_components_are_registered_versioned_and_compatibility_wrapped():
 	bundle = read(BUNDLE)
 	standalone_bundle = read(STANDALONE_BUNDLE)
 	hooks = read(HOOKS)
 	version = read(VERSION)
+	compat = read(COMPAT)
 	assert 'from "./edgeui/document_components"' in bundle
-	assert "...documentComponents" in bundle
+	assert 'from "./edgeui/runtime_component_compat"' in bundle
+	assert "createCompatibleRuntimeComponents" in bundle
+	assert "documentComponents," in bundle
 	assert 'export * from "./edgeui/document_components"' in bundle
-	assert 'EDGE_SUITE_UI_VERSION = "0.5.2"' in bundle
-	assert '__version__ = "0.5.2"' in version
+	assert 'export * from "./edgeui/runtime_component_compat"' in bundle
+	assert 'EDGE_SUITE_UI_VERSION = "0.5.4"' in bundle
+	assert '__version__ = "0.5.4"' in version
 	assert 'export * from "./edgeui.bundle"' in standalone_bundle
 	assert 'export { default } from "./edgeui.bundle"' in standalone_bundle
 	assert "/assets/edgesuite_ui/css/edgeui_documents.css" in hooks
 	assert "/assets/edgesuite_ui/css/edgeui_child_table_layout.css" in hooks
+	for contract in (
+		"normalizeEdgeDataTableColumns",
+		"fieldname: column.fieldname || column.key",
+		"createCompatibleEdgeDataTable",
+		"createCompatibleEdgeStatCard",
+		"normalizeEdgeStatIcon",
+	):
+		assert contract in compat
 
 
 def test_document_styles_cover_desktop_mobile_forms_lists_workflows_and_settings():
