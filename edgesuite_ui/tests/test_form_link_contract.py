@@ -154,3 +154,10 @@ def test_replacing_selected_text_emits_clear_for_dependent_fields():
 
 	assert 'emit("update:modelValue", "")' in on_input
 	assert 'emit("clear")' in on_input
+
+
+def test_selected_link_opens_the_full_provider_list_on_focus():
+	content = read(JS)
+	on_focus = content.split("function onFocus()", 1)[1].split("function onBlur()", 1)[0]
+
+	assert 'runSearch(cleanText(props.modelValue) ? "" : query.value)' in on_focus
