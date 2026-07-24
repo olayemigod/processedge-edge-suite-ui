@@ -1,8 +1,14 @@
+import assert from "node:assert/strict";
 import { readFile, readdir } from "node:fs/promises";
 import { resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 
 import { build } from "esbuild";
+
+import {
+  normalizeEdgeDataTableColumns,
+  normalizeEdgeStatIcon,
+} from "../edgesuite_ui/public/js/edgeui/runtime_component_compat.js";
 
 const repositoryRoot = resolve(import.meta.dirname, "..");
 const javascriptRoot = resolve(repositoryRoot, "edgesuite_ui/public/js");
@@ -24,6 +30,19 @@ for (const path of await javascriptFiles(javascriptRoot)) {
   const result = spawnSync(process.execPath, ["--check", path], { stdio: "inherit" });
   if (result.status !== 0) process.exit(result.status ?? 1);
 }
+
+assert.equal(normalizeEdgeStatIcon("file-pen-line"), "clipboard");
+assert.equal(normalizeEdgeStatIcon("credit-card"), "wallet");
+assert.deepEqual(
+  normalizeEdgeDataTableColumns([
+    { key: "patient_label", label: "Patient" },
+    { fieldname: "status", type: "status", label: "Status" },
+  ]),
+  [
+    { key: "patient_label", fieldname: "patient_label", label: "Patient", status: false },
+    { fieldname: "status", type: "status", label: "Status", status: true },
+  ],
+);
 
 await build({
   entryPoints: [entrypoint],
@@ -60,4 +79,4 @@ await build({
   write: false,
 });
 
-console.log("Frontend syntax, runtime bundle, and Vue bridge validation passed.");
+console.log("Frontend syntax, runtime compatibility, runtime bundle, and Vue bridge validation passed.");
