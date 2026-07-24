@@ -21,16 +21,25 @@ applyFrappeCompatibility(professionalComponents);
 applyModalCrossRuntimeCompatibility(modalComponents);
 applyMultiSelectCompatibility(modalComponents);
 
-const components = Object.freeze(
-  createCompatibleRuntimeComponents({
-    baseComponents,
-    professionalComponents,
-    modalComponents,
-    formComponents,
-    contextComponents,
-    documentComponents,
-  }),
-);
+const compatibleComponents = createCompatibleRuntimeComponents({
+  baseComponents,
+  professionalComponents,
+  modalComponents,
+  formComponents,
+  contextComponents,
+  documentComponents,
+});
+
+const components = Object.freeze({
+  ...baseComponents,
+  ...professionalComponents,
+  ...modalComponents,
+  ...formComponents,
+  ...contextComponents,
+  ...documentComponents,
+  EdgeStatCard: compatibleComponents.EdgeStatCard,
+  EdgeDataTable: compatibleComponents.EdgeDataTable,
+});
 
 const runtime = createEdgeSuiteRuntime({
   version: EDGE_SUITE_UI_VERSION,
