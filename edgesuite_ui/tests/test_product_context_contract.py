@@ -49,6 +49,13 @@ class TestProductContextContract(unittest.TestCase):
 		self.assertIn("frappe?.get_route", source)
 		self.assertIn("routeMatches(pattern, normalizedRoute)", source)
 
+	def test_hooks_use_collision_safe_canonical_bundle(self):
+		hooks = (APP_ROOT / "hooks.py").read_text(encoding="utf-8")
+		self.assertIn('app_include_js = ["edgesuite_ui.bundle.js"]', hooks)
+		self.assertNotIn('app_include_js = ["edgeui.bundle.js"]', hooks)
+		self.assertTrue((APP_ROOT / "public/js/edgesuite_ui.bundle.js").exists())
+		self.assertTrue((APP_ROOT / "public/js/edgeui.bundle.js").exists())
+
 
 if __name__ == "__main__":
 	unittest.main()
