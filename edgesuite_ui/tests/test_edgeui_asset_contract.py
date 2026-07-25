@@ -72,11 +72,13 @@ def test_frappe_hooks_include_local_runtime_assets():
 	hooks = HOOKS.read_text(encoding="utf-8")
 
 	for bundled_asset in (
-		"edgeui.bundle.js",
+		"edgesuite_ui.bundle.js",
 		"edgeui.bundle.css",
 		"edgeui_compat.bundle.css",
 	):
 		assert f'"{bundled_asset}"' in hooks
+
+	assert 'app_include_js = ["edgeui.bundle.js"]' not in hooks
 
 	for static_asset in (
 		"/assets/edgesuite_ui/css/edgeui_product_menu.css",
@@ -86,6 +88,7 @@ def test_frappe_hooks_include_local_runtime_assets():
 		assert f'"{static_asset}"' in hooks
 
 	for path in (
+		JS_ROOT / "edgesuite_ui.bundle.js",
 		JS_ROOT / "edgeui.bundle.js",
 		CSS_ROOT / "edgeui.bundle.css",
 		CSS_ROOT / "edgeui_compat.bundle.css",
@@ -113,6 +116,12 @@ def test_bundle_entrypoint_uses_frappe_bundle_naming_and_local_modules():
 	for module in ("components", "icons", "professional_components", "runtime"):
 		assert (JS_ROOT / "edgeui" / f"{module}.js").is_file()
 		assert f'"./edgeui/{module}"' in entrypoint
+
+
+def test_collision_safe_entrypoint_reexports_compatibility_runtime():
+	entrypoint = (JS_ROOT / "edgesuite_ui.bundle.js").read_text(encoding="utf-8")
+	assert 'export * from "./edgeui.bundle"' in entrypoint
+	assert 'export { default } from "./edgeui.bundle"' in entrypoint
 
 
 def test_migrated_product_compatibility_surface_is_present():
