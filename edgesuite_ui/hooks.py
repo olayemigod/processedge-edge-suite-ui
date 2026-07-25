@@ -9,6 +9,8 @@ app_license = "mit"
 # CoreEdge or any remote platform service to render product pages.
 #
 # Files named *.bundle.* are resolved through Frappe's hashed asset manifest.
+# The canonical JS name is intentionally unique so it cannot collide with the
+# legacy CoreEdge edgeui.bundle.js while downstream consumers are migrated.
 # Plain CSS files are served directly from the app's public asset directory.
 app_include_css = [
 	"edgeui.bundle.css",
@@ -28,4 +30,4 @@ app_include_css = [
 	"/assets/edgesuite_ui/css/edgeui_documents.css",
 	"/assets/edgesuite_ui/css/edgeui_child_table_layout.css",
 ]
-app_include_js = ["edgeui.bundle.js"]
+app_include_js = ["edgesuite_ui.bundle.js"]
