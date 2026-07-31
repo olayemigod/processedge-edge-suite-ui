@@ -2,6 +2,7 @@ const HOST_ID = "edge-product-menu-host";
 const PANEL_ID = "edge-product-menu-dropdown";
 const TRIGGER_ID = "edge-product-menu-trigger";
 const SLOT_ID = "edge-product-menu-slot";
+const DIRECT_HANDLER_KEY = "__edgeSuiteProductMenuDirectHandler";
 
 const NATIVE_NAVBAR_SELECTORS = [
   ".navbar .navbar-nav.ms-auto",
@@ -128,7 +129,26 @@ function stabilizeTrigger(document) {
   return trigger;
 }
 
-function moveHost(document) {
+function bindDirectTrigger(document, toggleMenu) {
+  const trigger = stabilizeTrigger(document);
+  if (!trigger || typeof toggleMenu !== "function") return trigger;
+
+  const existing = trigger[DIRECT_HANDLER_KEY];
+  if (existing) trigger.removeEventListener("click", existing, true);
+
+  const handler = (event) => {
+    if (event.button != null && event.button !== 0) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    toggleMenu();
+  };
+
+  trigger.addEventListener("click", handler, true);
+  trigger[DIRECT_HANDLER_KEY] = handler;
+  return trigger;
+}
+
+function moveHost(document, toggleMenu = null) {
   const host = document.getElementById(HOST_ID);
   const target = preferredTarget(document);
   if (!host || !target) return false;
@@ -136,7 +156,7 @@ function moveHost(document) {
   host.style.position = "relative";
   host.style.zIndex = "4";
   host.style.pointerEvents = "auto";
-  stabilizeTrigger(document);
+  bindDirectTrigger(document, toggleMenu);
   return true;
 }
 
@@ -163,6 +183,7 @@ export function installProductMenuMountEnhancements(edgeUI, target = globalThis)
 
   let scheduled = false;
   let observer = null;
+  let directToggle = null;
 
   const mountAtPreferredTarget = () => {
     const menuTarget = preferredTarget(document);
@@ -180,8 +201,8 @@ export function installProductMenuMountEnhancements(edgeUI, target = globalThis)
       if (needsTemporaryNavbarClass) menuTarget.classList.remove("navbar");
     }
 
-    const moved = moveHost(document);
-    stabilizeTrigger(document);
+    const moved = moveHost(document, directToggle);
+    bindDirectTrigger(document, directToggle);
     return moved || result;
   };
 
@@ -197,9 +218,9 @@ export function installProductMenuMountEnhancements(edgeUI, target = globalThis)
 
   const openMenu = () => {
     mountAtPreferredTarget();
-    moveHost(document);
+    moveHost(document, directToggle);
     const opened = Boolean(originalOpen());
-    moveHost(document);
+    moveHost(document, directToggle);
     if (opened) emitMenuOpened(target);
     scheduleMount();
     return opened;
@@ -221,7 +242,7 @@ export function installProductMenuMountEnhancements(edgeUI, target = globalThis)
 
   edgeUI.refreshProductMenu = function refreshProductMenu() {
     const refreshed = originalRefresh ? originalRefresh() : mountAtPreferredTarget();
-    moveHost(document);
+    moveHost(document, directToggle);
     scheduleMount();
     return refreshed;
   };
@@ -232,18 +253,8 @@ export function installProductMenuMountEnhancements(edgeUI, target = globalThis)
     const panel = document.getElementById(PANEL_ID);
     return panel && !panel.hidden ? closeMenu() : openMenu();
   };
-
-  document.addEventListener(
-    "click",
-    (event) => {
-      const trigger = event.target?.closest?.(`#${TRIGGER_ID}`);
-      if (!trigger || trigger.hidden) return;
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      edgeUI.toggleProductMenu();
-    },
-    true,
-  );
+  directToggle = edgeUI.toggleProductMenu;
+  bindDirectTrigger(document, directToggle);
 
   ["desktop_screen", "sidebar_setup", "toolbar_setup", "page-change"].forEach((eventName) => {
     document.addEventListener(eventName, scheduleMount);
