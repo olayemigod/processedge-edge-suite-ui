@@ -1,7 +1,7 @@
 html[data-edge-density="compact"] {
   --edge-density-control-height: 2.15rem;
   --edge-density-row-gap: 0.35rem;
-  --edge-density-section-gap: 0.75rem;
+  --edge-density-section-gap: 0.5rem;
   --edge-density-card-padding: 0.85rem;
   --edge-density-page-padding: clamp(0.8rem, 1.4vw, 1.15rem);
 }
@@ -9,7 +9,7 @@ html[data-edge-density="compact"] {
 html[data-edge-density="comfortable"] {
   --edge-density-control-height: 2.5rem;
   --edge-density-row-gap: 0.55rem;
-  --edge-density-section-gap: 1rem;
+  --edge-density-section-gap: 0.7rem;
   --edge-density-card-padding: 1.1rem;
   --edge-density-page-padding: clamp(1rem, 1.9vw, 1.5rem);
 }
@@ -17,7 +17,7 @@ html[data-edge-density="comfortable"] {
 html[data-edge-density="touch"] {
   --edge-density-control-height: 2.9rem;
   --edge-density-row-gap: 0.7rem;
-  --edge-density-section-gap: 1.2rem;
+  --edge-density-section-gap: 0.85rem;
   --edge-density-card-padding: 1.25rem;
   --edge-density-page-padding: clamp(1rem, 2.2vw, 1.75rem);
 }
@@ -28,14 +28,20 @@ html[data-edge-density="touch"] {
   padding: var(--edge-density-page-padding, 1rem);
 }
 
-.edge-app-shell .edge-sidebar__nav,
+.edge-app-shell .edge-sidebar__nav {
+  gap: var(--edge-density-section-gap, 0.7rem);
+}
+
 .edge-app-shell .edge-sidebar__items,
 .edge-page-layout__sections,
 .edge-section-stack {
   gap: var(--edge-density-row-gap, 0.5rem);
 }
 
-.edge-app-shell .edge-sidebar__section + .edge-sidebar__section,
+.edge-app-shell .edge-sidebar__section + .edge-sidebar__section {
+  margin-top: 0;
+}
+
 .edge-page-layout__section + .edge-page-layout__section {
   margin-top: var(--edge-density-section-gap, 1rem);
 }
@@ -95,6 +101,17 @@ html[data-edge-density="touch"] .edge-product-menu__item {
   display: none;
 }
 
+.edge-product-menu__search-wrap {
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.edge-product-menu__search {
+  flex: 1 1 12rem;
+  min-width: 8rem;
+}
+
 .edge-product-menu__density,
 .edge-product-menu__favorite-control {
   flex: 0 0 auto;
@@ -115,6 +132,7 @@ html[data-edge-density="touch"] .edge-product-menu__item {
   padding: 0 0.65rem;
   font-weight: 600;
   cursor: pointer;
+  white-space: nowrap;
 }
 
 .edge-product-menu__favorite-control[data-pinned="1"] {
@@ -134,16 +152,20 @@ html[data-edge-density="touch"] .edge-product-menu__item {
     --edge-density-control-height: 2.45rem;
     --edge-density-card-padding: 0.95rem;
   }
+
+  .edge-product-menu__host,
+  .edge-product-menu__trigger {
+    visibility: visible;
+  }
+
+  .edge-product-menu__density,
   .edge-product-menu__favorite-control {
-    font-size: 0;
-    width: 2.25rem;
-    padding: 0;
+    min-height: 2.25rem;
   }
-  .edge-product-menu__favorite-control::before {
-    content: "☆";
-    font-size: 1rem;
-  }
-  .edge-product-menu__favorite-control[data-pinned="1"]::before {
-    content: "★";
+
+  .edge-product-menu__favorite-control {
+    font-size: 0.74rem;
+    width: auto;
+    padding: 0 0.55rem;
   }
 }
