@@ -17,6 +17,7 @@ import { professionalComponents } from "./edgeui/professional_components";
 import { createEdgeSuiteRuntime, exposeEdgeSuiteRuntime } from "./edgeui/runtime";
 import { installSharedShellEnhancements } from "./edgeui/shell_enhancements";
 import { installSidebarFocusLifecycle } from "./edgeui/sidebar_focus";
+import { installWorkflowSaveBridge } from "./edgeui/workflow_save_bridge";
 
 export const EDGE_SUITE_UI_VERSION = "0.6.1";
 
@@ -48,6 +49,7 @@ if (typeof globalThis !== "undefined") {
   suppressNativeNotificationRuntime(runtime);
   installContextIdentityResolver();
   installEdgeSuiteInteractionRuntime(runtime, globalThis);
+  installWorkflowSaveBridge(globalThis);
   installProductMenuExtras(runtime, globalThis);
 }
 
@@ -73,5 +75,6 @@ export * from "./edgeui/professional_components";
 export * from "./edgeui/runtime";
 export * from "./edgeui/shell_enhancements";
 export * from "./edgeui/sidebar_focus";
+export * from "./edgeui/workflow_save_bridge";
 
 export default runtime;
