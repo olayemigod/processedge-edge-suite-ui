@@ -47,6 +47,10 @@ function ensureShellSlot(document) {
   return slot;
 }
 
+function visibleShellTarget(document) {
+  return ensureShellSlot(document);
+}
+
 function visibleNativeTarget(document) {
   for (const selector of NATIVE_NAVBAR_SELECTORS) {
     const nodes = Array.from(document.querySelectorAll(selector)).reverse();
@@ -73,7 +77,7 @@ function ensureFallbackSlot(document) {
 }
 
 function preferredTarget(document) {
-  return ensureShellSlot(document) || visibleNativeTarget(document) || ensureFallbackSlot(document);
+  return visibleShellTarget(document) || visibleNativeTarget(document) || ensureFallbackSlot(document);
 }
 
 function moveHost(document) {
