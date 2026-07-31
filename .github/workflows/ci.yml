@@ -43,7 +43,7 @@ jobs:
       - name: Enforce Ruff result
         if: steps.ruff.outcome == 'failure'
         run: exit 1
-      - name: Validate package, runtime, product context, shell, forms, documents, context, and boundaries
+      - name: Validate package, runtime, product context, interactions, shell, forms, documents, context, and boundaries
         id: contracts
         continue-on-error: true
         run: |
@@ -52,6 +52,7 @@ jobs:
             edgesuite_ui/tests/test_edgeui_asset_contract.py \
             edgesuite_ui/tests/test_product_menu_contract.py \
             edgesuite_ui/tests/test_product_context_contract.py \
+            edgesuite_ui/tests/test_interaction_runtime_contract.py \
             edgesuite_ui/tests/test_shell_enhancement_contract.py \
             edgesuite_ui/tests/test_dashboard_alignment_and_waffle_contract.py \
             edgesuite_ui/tests/test_form_link_contract.py \
