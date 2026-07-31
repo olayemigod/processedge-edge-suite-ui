@@ -24,15 +24,38 @@ function visibleElement(element) {
   return !box || (box.width > 0 && box.height > 0);
 }
 
-function stabilizeSlot(slot) {
+function edgeShellPresent(document) {
+  return Boolean(document.querySelector(".edge-app-shell[data-edge-product]"));
+}
+
+function stabilizeSlot(slot, { fallback = false } = {}) {
   if (!slot) return null;
   slot.hidden = false;
+  slot.classList.add("edge-product-menu-slot", "navbar");
+  slot.classList.toggle("edge-product-menu-slot--fallback", fallback);
   slot.style.display = "inline-flex";
   slot.style.alignItems = "center";
   slot.style.flex = "0 0 auto";
-  slot.style.minWidth = "2.25rem";
-  slot.style.minHeight = "2.25rem";
+  slot.style.minWidth = "2.5rem";
+  slot.style.minHeight = "2.5rem";
   slot.style.padding = "0";
+  slot.style.pointerEvents = "auto";
+
+  if (fallback) {
+    slot.style.position = "fixed";
+    slot.style.right = "0.75rem";
+    slot.style.top = "0.65rem";
+    slot.style.zIndex = "1061";
+    slot.style.order = "";
+    slot.style.margin = "0";
+  } else {
+    slot.style.position = "relative";
+    slot.style.right = "";
+    slot.style.top = "";
+    slot.style.zIndex = "4";
+    slot.style.order = "-20";
+    slot.style.margin = "0 0.25rem 0 0";
+  }
   return slot;
 }
 
@@ -53,10 +76,11 @@ function ensureShellSlot(document) {
   if (!slot) {
     slot = document.createElement("span");
     slot.id = SLOT_ID;
-    slot.className = "edge-product-menu-slot navbar";
   }
   stabilizeSlot(slot);
-  if (slot.parentElement !== actions) actions.insertBefore(slot, actions.firstChild || null);
+  if (slot.parentElement !== actions || actions.firstElementChild !== slot) {
+    actions.insertBefore(slot, actions.firstChild || null);
+  }
   return slot;
 }
 
@@ -79,18 +103,29 @@ function visibleNativeTarget(document) {
 }
 
 function ensureFallbackSlot(document) {
+  if (edgeShellPresent(document)) return null;
   let slot = document.getElementById(SLOT_ID);
   if (!slot) {
     slot = document.createElement("span");
     slot.id = SLOT_ID;
-    slot.className = "edge-product-menu-slot edge-product-menu-slot--fallback navbar";
     document.body?.appendChild(slot);
   }
-  return stabilizeSlot(slot);
+  return stabilizeSlot(slot, { fallback: true });
 }
 
 function preferredTarget(document) {
   return visibleShellTarget(document) || visibleNativeTarget(document) || ensureFallbackSlot(document);
+}
+
+function stabilizeTrigger(document) {
+  const trigger = document.getElementById(TRIGGER_ID);
+  if (!trigger) return null;
+  trigger.hidden = false;
+  trigger.style.display = "inline-flex";
+  trigger.style.position = "relative";
+  trigger.style.zIndex = "5";
+  trigger.style.pointerEvents = "auto";
+  return trigger;
 }
 
 function moveHost(document) {
@@ -98,6 +133,10 @@ function moveHost(document) {
   const target = preferredTarget(document);
   if (!host || !target) return false;
   if (host.parentElement !== target) target.appendChild(host);
+  host.style.position = "relative";
+  host.style.zIndex = "4";
+  host.style.pointerEvents = "auto";
+  stabilizeTrigger(document);
   return true;
 }
 
@@ -128,7 +167,9 @@ export function installProductMenuMountEnhancements(edgeUI, target = globalThis)
   const mountAtPreferredTarget = () => {
     const menuTarget = preferredTarget(document);
     if (!menuTarget) return false;
-    stabilizeSlot(menuTarget.id === SLOT_ID ? menuTarget : null);
+    stabilizeSlot(menuTarget.id === SLOT_ID ? menuTarget : null, {
+      fallback: menuTarget.classList.contains("edge-product-menu-slot--fallback"),
+    });
     const needsTemporaryNavbarClass = !menuTarget.classList.contains("navbar");
 
     if (needsTemporaryNavbarClass) menuTarget.classList.add("navbar");
@@ -140,8 +181,7 @@ export function installProductMenuMountEnhancements(edgeUI, target = globalThis)
     }
 
     const moved = moveHost(document);
-    const trigger = document.getElementById(TRIGGER_ID);
-    if (trigger) trigger.hidden = false;
+    stabilizeTrigger(document);
     return moved || result;
   };
 
@@ -197,7 +237,7 @@ export function installProductMenuMountEnhancements(edgeUI, target = globalThis)
     "click",
     (event) => {
       const trigger = event.target?.closest?.(`#${TRIGGER_ID}`);
-      if (!trigger) return;
+      if (!trigger || trigger.hidden) return;
       event.preventDefault();
       event.stopImmediatePropagation();
       edgeUI.toggleProductMenu();
@@ -217,8 +257,16 @@ export function installProductMenuMountEnhancements(edgeUI, target = globalThis)
       const host = document.getElementById(HOST_ID);
       const panel = document.getElementById(PANEL_ID);
       const trigger = document.getElementById(TRIGGER_ID);
-      const targetNode = preferredTarget(document);
-      if (!host || !panel || !trigger || (targetNode && host.parentElement !== targetNode)) scheduleMount();
+      const slot = document.getElementById(SLOT_ID);
+      const actions = shellActions(document);
+      if (
+        !host ||
+        !panel ||
+        !trigger ||
+        (actions && (slot?.parentElement !== actions || actions.firstElementChild !== slot))
+      ) {
+        scheduleMount();
+      }
     });
     observer.observe(document.body, { childList: true, subtree: true });
   }
