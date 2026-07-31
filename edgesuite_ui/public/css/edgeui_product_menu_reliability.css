@@ -4,24 +4,50 @@
   border: 0;
   display: inline-flex;
   flex: 0 0 auto;
-  min-height: 2.25rem;
-  min-width: 2.25rem;
+  min-height: 2.5rem;
+  min-width: 2.5rem;
   padding: 0;
+  pointer-events: auto;
+  position: relative;
+}
+
+.edge-topbar-actions {
+  position: relative;
 }
 
 .edge-topbar-actions > .edge-product-menu-slot {
-  order: -10;
+  margin: 0 0.25rem 0 0 !important;
+  order: -20 !important;
+  pointer-events: auto !important;
+  position: relative !important;
+  z-index: 4 !important;
+}
+
+.edge-topbar-actions > .edge-topbar-action-wrap {
+  position: relative;
+  z-index: 1;
 }
 
 .edge-product-menu-slot .edge-product-menu__host {
   margin: 0;
+  pointer-events: auto;
+  position: relative;
+  z-index: 4;
+}
+
+.edge-product-menu-slot .edge-product-menu__trigger {
+  pointer-events: auto !important;
+  position: relative;
+  z-index: 5;
 }
 
 .edge-product-menu-slot--fallback {
-  position: fixed;
+  margin: 0 !important;
+  order: initial !important;
+  position: fixed !important;
   right: 0.75rem;
   top: 0.65rem;
-  z-index: 1061;
+  z-index: 1061 !important;
 }
 
 .edge-product-menu__section-heading[role="button"] {
@@ -41,7 +67,8 @@
 
 @media (max-width: 48rem) {
   .edge-topbar-actions > .edge-product-menu-slot {
-    display: inline-flex;
+    display: inline-flex !important;
+    margin-right: 0.2rem !important;
   }
 
   .edge-product-menu-slot .edge-product-switcher {
