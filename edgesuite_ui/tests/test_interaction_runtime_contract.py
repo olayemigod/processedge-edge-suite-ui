@@ -9,16 +9,19 @@ def test_latest_runtime_installs_switcher_commands_density_and_menu_extras():
 	bundle = (APP / "public/js/edgeui.bundle.js").read_text()
 	interaction = (APP / "public/js/edgeui/interaction_runtime.js").read_text()
 	extras = (APP / "public/js/edgeui/product_menu_extras.js").read_text()
+	workflow_bridge = (APP / "public/js/edgeui/workflow_save_bridge.js").read_text()
 	hooks = (APP / "hooks.py").read_text()
 	package = PACKAGE.read_text()
 
 	for expected in (
 		'installProductContextBridge(runtime, globalThis)',
 		'installEdgeSuiteInteractionRuntime(runtime, globalThis)',
+		'installWorkflowSaveBridge(globalThis)',
 		'installProductMenuExtras(runtime, globalThis)',
 		'EDGE_SUITE_UI_VERSION = "0.6.1"',
 		'export * from "./edgeui/interaction_runtime"',
 		'export * from "./edgeui/product_menu_extras"',
+		'export * from "./edgeui/workflow_save_bridge"',
 	):
 		assert expected in bundle
 	assert '"version": "0.6.1"' in package
@@ -49,11 +52,23 @@ def test_latest_runtime_installs_switcher_commands_density_and_menu_extras():
 	):
 		assert expected in extras
 
+	for expected in (
+		"function workflowSaveButton",
+		'".edge-workflow-bar__actions button.edge-button--primary:not([disabled])"',
+		'label === "save"',
+		'label === "save changes"',
+		'new target.CustomEvent("edgesuite:save-request"' if False else 'target.addEventListener("edgesuite:save-request"',
+		"event.detail.handled = true",
+		"button.click()",
+	):
+		assert expected in workflow_bridge
+
 	assert '"/assets/edgesuite_ui/css/edgeui_density.css"' in hooks
 
 
 def test_ctrl_s_preserves_submitted_document_and_business_rule_safety():
 	interaction = (APP / "public/js/edgeui/interaction_runtime.js").read_text()
+	workflow_bridge = (APP / "public/js/edgeui/workflow_save_bridge.js").read_text()
 	for expected in (
 		"Number(form.doc.docstatus || 0) !== 0",
 		"Submitted documents cannot be changed with this shortcut.",
@@ -70,6 +85,7 @@ def test_ctrl_s_preserves_submitted_document_and_business_rule_safety():
 		'querySelectorAll("button:not([disabled])")',
 	):
 		assert forbidden not in interaction
+		assert forbidden not in workflow_bridge
 
 
 def test_latest_runtime_keeps_one_sidebar_and_waffle_group_open():
