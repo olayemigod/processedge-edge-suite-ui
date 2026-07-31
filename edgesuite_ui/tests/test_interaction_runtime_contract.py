@@ -38,11 +38,18 @@ def test_shared_runtime_installs_keyboard_commands_density_and_accordion():
 
     for expected in (
         'const QUICK_ACTION_SECTION_KEY = "quick-actions"',
+        'const FAVORITES_SECTION_KEY = "favorites"',
         "normalizedQuickActions",
         "withQuickActions",
+        "withFavorites",
+        "withNavigationExtras",
         'label: "Quick Actions"',
+        'label: "Favorites"',
         "runtime.setDensity?.(select.value)",
         "runtime.getProductMenuSourceConfig",
+        "runtime.getFavoriteMenuItems",
+        "runtime.toggleFavoriteMenuItem",
+        "Pin current page to Favorites",
     ):
         assert expected in menu_extras
 
@@ -87,3 +94,9 @@ def test_shared_accordion_keeps_one_sidebar_and_waffle_section_open():
 
     for mode in ("compact", "comfortable", "touch"):
         assert f'html[data-edge-density="{mode}"]' in density
+    for selector in (
+        ".edge-product-menu__density",
+        ".edge-product-menu__favorite-control",
+        '.edge-product-menu__favorite-control[data-pinned="1"]',
+    ):
+        assert selector in density
