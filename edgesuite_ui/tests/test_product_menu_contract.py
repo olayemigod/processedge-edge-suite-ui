@@ -1,6 +1,8 @@
 import unittest
 from pathlib import Path
 
+from edgesuite_ui import __version__
+
 APP_ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -82,7 +84,7 @@ class TestProductMenuContract(unittest.TestCase):
 	def test_runtime_bundle_exports_product_context(self):
 		bundle = (APP_ROOT / "public/js/edgeui.bundle.js").read_text(encoding="utf-8")
 		self.assertIn('export * from "./edgeui/product_context"', bundle)
-		self.assertIn('EDGE_SUITE_UI_VERSION = "0.6.0"', bundle)
+		self.assertIn(f'EDGE_SUITE_UI_VERSION = "{__version__}"', bundle)
 
 
 if __name__ == "__main__":
