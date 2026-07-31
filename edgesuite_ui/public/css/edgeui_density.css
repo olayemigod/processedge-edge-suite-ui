@@ -95,9 +95,61 @@ html[data-edge-density="touch"] .edge-product-menu__item {
   display: none;
 }
 
+.edge-product-menu__density {
+  flex: 0 0 auto;
+  min-height: 2rem;
+  max-width: 8.5rem;
+  border: 1px solid var(--edge-border, #d8dee9);
+  border-radius: var(--edge-radius-sm, 0.5rem);
+  background: var(--edge-surface, #fff);
+  color: var(--edge-text, #1f2937);
+  padding: 0 1.8rem 0 0.6rem;
+  font-size: 0.78rem;
+}
+
+.edge-product-menu__favorite-control {
+  flex: 0 0 auto;
+  min-height: 2rem;
+  border: 1px solid var(--edge-border, #d8dee9);
+  border-radius: var(--edge-radius-sm, 0.5rem);
+  background: var(--edge-surface, #fff);
+  color: var(--edge-text-muted, #64748b);
+  padding: 0 0.65rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.edge-product-menu__favorite-control[data-pinned="1"] {
+  color: var(--edge-brand-primary, #2563eb);
+  border-color: color-mix(in srgb, var(--edge-brand-primary, #2563eb) 45%, var(--edge-border, #d8dee9));
+  background: color-mix(in srgb, var(--edge-brand-primary, #2563eb) 8%, var(--edge-surface, #fff));
+}
+
+.edge-product-menu__favorite-control:focus-visible,
+.edge-product-menu__density:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--edge-brand-primary, #2563eb) 24%, transparent);
+}
+
 @media (max-width: 767px) {
   html[data-edge-density="compact"] {
     --edge-density-control-height: 2.45rem;
     --edge-density-card-padding: 0.95rem;
+  }
+
+  .edge-product-menu__favorite-control {
+    font-size: 0;
+    width: 2.25rem;
+    padding: 0;
+  }
+
+  .edge-product-menu__favorite-control::before {
+    content: "☆";
+    font-size: 1rem;
+  }
+
+  .edge-product-menu__favorite-control[data-pinned="1"]::before {
+    content: "★";
   }
 }
