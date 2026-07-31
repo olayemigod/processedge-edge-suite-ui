@@ -16,6 +16,7 @@ app_include_css = [
 	"edgeui.bundle.css",
 	"edgeui_compat.bundle.css",
 	"/assets/edgesuite_ui/css/edgeui_product_menu.css",
+	"/assets/edgesuite_ui/css/edgeui_product_menu_reliability.css",
 	"/assets/edgesuite_ui/css/edgeui_professional.css",
 	"/assets/edgesuite_ui/css/edgeui_sidebar_refinement.css",
 	"/assets/edgesuite_ui/css/edgeui_action_contrast.css",
