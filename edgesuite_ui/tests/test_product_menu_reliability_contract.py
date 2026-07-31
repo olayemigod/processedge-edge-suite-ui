@@ -20,6 +20,11 @@ def test_runtime_installs_deterministic_waffle_reliability():
 	for expected in (
 		'const SLOT_ID = "edge-product-menu-slot"',
 		"ensureShellSlot(document)",
+		"function stabilizeSlot",
+		'slot.style.display = "inline-flex"',
+		'slot.style.minWidth = "2.25rem"',
+		'slot.style.minHeight = "2.25rem"',
+		"if (trigger) trigger.hidden = false",
 		"event.stopImmediatePropagation()",
 		"edgeUI.toggleProductMenu()",
 		'new target.CustomEvent("edgesuite:product-menu-opened"',
