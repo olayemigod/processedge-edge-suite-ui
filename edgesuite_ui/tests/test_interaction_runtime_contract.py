@@ -2,6 +2,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 APP = ROOT / "edgesuite_ui"
+PACKAGE = ROOT / "package.json"
 
 
 def test_latest_runtime_installs_switcher_commands_density_and_menu_extras():
@@ -9,6 +10,7 @@ def test_latest_runtime_installs_switcher_commands_density_and_menu_extras():
 	interaction = (APP / "public/js/edgeui/interaction_runtime.js").read_text()
 	extras = (APP / "public/js/edgeui/product_menu_extras.js").read_text()
 	hooks = (APP / "hooks.py").read_text()
+	package = PACKAGE.read_text()
 
 	for expected in (
 		'installProductContextBridge(runtime, globalThis)',
@@ -19,6 +21,7 @@ def test_latest_runtime_installs_switcher_commands_density_and_menu_extras():
 		'export * from "./edgeui/product_menu_extras"',
 	):
 		assert expected in bundle
+	assert '"version": "0.6.1"' in package
 
 	for expected in (
 		'const COMMAND_VERSION = "1.0.0"',
