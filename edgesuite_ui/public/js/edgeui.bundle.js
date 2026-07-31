@@ -13,6 +13,7 @@ import { suppressNativeNotificationRuntime } from "./edgeui/notification_runtime
 import { installProductContextBridge } from "./edgeui/product_context_bridge";
 import { installProductMenuExtras } from "./edgeui/product_menu_extras";
 import { installProductMenuMountEnhancements } from "./edgeui/product_menu_mount";
+import { installProductMenuReliability } from "./edgeui/product_menu_reliability";
 import { professionalComponents } from "./edgeui/professional_components";
 import { createEdgeSuiteRuntime, exposeEdgeSuiteRuntime } from "./edgeui/runtime";
 import { installSharedShellEnhancements } from "./edgeui/shell_enhancements";
@@ -53,6 +54,7 @@ if (typeof globalThis !== "undefined") {
   installSidebarAccordionRuntime(globalThis);
   installWorkflowSaveBridge(globalThis);
   installProductMenuExtras(runtime, globalThis);
+  installProductMenuReliability(runtime, globalThis);
 }
 
 export * from "./edgeui/components";
@@ -73,6 +75,7 @@ export * from "./edgeui/product_context_bridge";
 export * from "./edgeui/product_menu";
 export * from "./edgeui/product_menu_extras";
 export * from "./edgeui/product_menu_mount";
+export * from "./edgeui/product_menu_reliability";
 export * from "./edgeui/professional_components";
 export * from "./edgeui/runtime";
 export * from "./edgeui/shell_enhancements";
