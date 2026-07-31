@@ -5,14 +5,15 @@ const FAVORITE_CONTROL_CLASS = "edge-product-menu__favorite-control";
 const FAVORITES_STORAGE_VERSION = "v1";
 
 function normalizePath(value) {
-  const text = String(value || "").split(/[?#]/, 1)[0].trim();
+  let text = String(value || "").split(/[?#]/, 1)[0].trim();
+  if (text.startsWith("route:")) text = text.slice(6);
   if (!text) return "";
   return (text.startsWith("/") ? text : `/${text}`).replace(/\/+$/, "") || "/";
 }
 
 function itemIdentity(item = {}) {
   const route = String(item.route || "").trim();
-  if (route) return `route:${normalizePath(route)}`;
+  if (route) return normalizePath(route);
   const linkType = String(item.link_type || item.linkType || "Page").trim() || "Page";
   const linkTo = String(item.link_to || item.linkTo || "").trim();
   return linkTo ? `${linkType.toLowerCase()}:${linkTo}` : "";
@@ -33,11 +34,17 @@ function normalizedQuickActions(config = {}) {
   });
 }
 
+function withoutGeneratedSections(config = {}) {
+  const sections = (Array.isArray(config.sections) ? config.sections : []).filter(
+    (section) => ![FAVORITES_SECTION_KEY, QUICK_ACTION_SECTION_KEY].includes(section?.key),
+  );
+  return { ...config, sections };
+}
+
 function withQuickActions(config = {}) {
   const actions = normalizedQuickActions(config);
   if (!actions.length) return config;
   const sections = Array.isArray(config.sections) ? [...config.sections] : [];
-  if (sections.some((section) => section?.key === QUICK_ACTION_SECTION_KEY)) return config;
   const overviewIndex = sections.findIndex((section) => section?.key === "overview");
   sections.splice(overviewIndex >= 0 ? overviewIndex + 1 : 0, 0, {
     key: QUICK_ACTION_SECTION_KEY,
@@ -77,7 +84,14 @@ function allItems(config = {}) {
 function readFavoriteIds(config, target) {
   try {
     const payload = JSON.parse(target?.localStorage?.getItem(favoriteStorageKey(config, target)) || "[]");
-    return new Set(Array.isArray(payload) ? payload.filter(Boolean).map(String) : []);
+    return new Set(
+      (Array.isArray(payload) ? payload : [])
+        .filter(Boolean)
+        .map((value) => {
+          const text = String(value);
+          return text.startsWith("route:") || text.startsWith("/") ? normalizePath(text) : text;
+        }),
+    );
   } catch (_error) {
     return new Set();
   }
@@ -94,13 +108,24 @@ function writeFavoriteIds(config, target, ids) {
   }
 }
 
+function dispatchFavoritesChanged(config, target, ids) {
+  if (typeof target?.CustomEvent !== "function") return;
+  target.dispatchEvent?.(
+    new target.CustomEvent("edgesuite:favorites-changed", {
+      detail: {
+        product: normalizedProduct(config),
+        routes: [...ids].filter((value) => String(value).startsWith("/")),
+      },
+    }),
+  );
+}
+
 function withFavorites(config = {}, target = globalThis) {
   const favorites = readFavoriteIds(config, target);
   if (!favorites.size) return config;
   const items = allItems(config).filter((item) => favorites.has(itemIdentity(item)));
   if (!items.length) return config;
   const sections = Array.isArray(config.sections) ? [...config.sections] : [];
-  if (sections.some((section) => section?.key === FAVORITES_SECTION_KEY)) return config;
   const overviewIndex = sections.findIndex((section) => section?.key === "overview");
   sections.splice(overviewIndex >= 0 ? overviewIndex + 1 : 0, 0, {
     key: FAVORITES_SECTION_KEY,
@@ -113,7 +138,7 @@ function withFavorites(config = {}, target = globalThis) {
 }
 
 function withNavigationExtras(config = {}, target = globalThis) {
-  return withFavorites(withQuickActions(config), target);
+  return withFavorites(withQuickActions(withoutGeneratedSections(config)), target);
 }
 
 function currentRouteParts(target) {
@@ -131,7 +156,17 @@ function itemIsCurrent(item, target) {
 }
 
 function currentMenuItem(config, target) {
-  return allItems(config).find((item) => itemIsCurrent(item, target)) || null;
+  const configured = allItems(config).find((item) => itemIsCurrent(item, target));
+  if (configured) return configured;
+  const activeNode = target?.document?.querySelector?.(
+    "#edge-product-menu-dropdown .edge-product-menu__item.is-active",
+  );
+  if (!activeNode) return null;
+  return {
+    route: activeNode.dataset.route || "",
+    link_type: activeNode.dataset.linkType || "Page",
+    link_to: activeNode.dataset.linkTo || "",
+  };
 }
 
 function installDensityControl(runtime, target) {
@@ -159,10 +194,9 @@ function installFavoriteControl(runtime, target, sourceConfig, refreshMenu) {
   const panel = document?.getElementById("edge-product-menu-dropdown");
   if (!panel || panel.querySelector(`.${FAVORITE_CONTROL_CLASS}`) || !sourceConfig) return;
   const current = currentMenuItem(sourceConfig, target);
-  if (!current) return;
-  const header = panel.querySelector(".edge-product-menu__header");
-  const close = panel.querySelector(".edge-product-menu__close");
-  if (!header) return;
+  if (!current || !itemIdentity(current)) return;
+  const searchWrap = panel.querySelector(".edge-product-menu__search-wrap");
+  if (!searchWrap) return;
   const favorites = readFavoriteIds(sourceConfig, target);
   const identity = itemIdentity(current);
   const pinned = favorites.has(identity);
@@ -171,9 +205,9 @@ function installFavoriteControl(runtime, target, sourceConfig, refreshMenu) {
   button.className = FAVORITE_CONTROL_CLASS;
   button.dataset.pinned = pinned ? "1" : "0";
   button.setAttribute("aria-pressed", pinned ? "true" : "false");
-  button.setAttribute("aria-label", pinned ? "Remove current page from Favorites" : "Pin current page to Favorites");
+  button.setAttribute("aria-label", pinned ? "Remove current page from Favorites" : "Add current page to Favorites");
   button.title = button.getAttribute("aria-label");
-  button.textContent = pinned ? "★ Pinned" : "☆ Pin page";
+  button.textContent = pinned ? "★ Current pinned" : "☆ Add current";
   button.addEventListener("click", (event) => {
     event.preventDefault();
     event.stopPropagation();
@@ -182,9 +216,9 @@ function installFavoriteControl(runtime, target, sourceConfig, refreshMenu) {
     else next.add(identity);
     writeFavoriteIds(sourceConfig, target, next);
     refreshMenu();
-    target.requestAnimationFrame?.(() => runtime.openProductMenu?.());
+    dispatchFavoritesChanged(sourceConfig, target, next);
   });
-  header.insertBefore(button, close || null);
+  searchWrap.appendChild(button);
 }
 
 export function installProductMenuExtras(runtime, target = globalThis) {
@@ -192,12 +226,31 @@ export function installProductMenuExtras(runtime, target = globalThis) {
   const originalRegister = runtime.registerProductMenu?.bind(runtime);
   if (!originalRegister) return runtime;
   let sourceConfig = null;
-  const registerSource = () => sourceConfig ? originalRegister(withNavigationExtras(sourceConfig, target)) : null;
+  let refreshQueued = false;
+
+  const registerSource = () => sourceConfig
+    ? originalRegister(withNavigationExtras(sourceConfig, target))
+    : null;
+
+  function refreshExtras() {
+    refreshQueued = false;
+    installDensityControl(runtime, target);
+    installFavoriteControl(runtime, target, sourceConfig, registerSource);
+  }
+
+  function scheduleRefresh() {
+    if (refreshQueued) return;
+    refreshQueued = true;
+    const schedule = target.requestAnimationFrame || ((callback) => target.setTimeout?.(callback, 0));
+    schedule?.(refreshExtras);
+  }
 
   runtime.registerProductMenu = function registerProductMenu(config) {
-    sourceConfig = config && typeof config === "object" ? { ...config } : config;
+    sourceConfig = config && typeof config === "object"
+      ? withoutGeneratedSections({ ...config })
+      : config;
     const registered = registerSource();
-    target.requestAnimationFrame?.(refreshExtras);
+    scheduleRefresh();
     return registered;
   };
   runtime.getProductMenuSourceConfig = () => sourceConfig;
@@ -213,18 +266,24 @@ export function installProductMenuExtras(runtime, target = globalThis) {
     else ids.add(identity);
     writeFavoriteIds(sourceConfig, target, ids);
     registerSource();
+    dispatchFavoritesChanged(sourceConfig, target, ids);
+    scheduleRefresh();
     return ids.has(identity);
   };
+  runtime.toggleCurrentPageFavorite = () => {
+    const current = sourceConfig ? currentMenuItem(sourceConfig, target) : null;
+    return current ? runtime.toggleFavoriteMenuItem(current) : false;
+  };
 
-  function refreshExtras() {
-    installDensityControl(runtime, target);
-    installFavoriteControl(runtime, target, sourceConfig, registerSource);
-  }
-
-  target.document?.addEventListener?.("page-change", refreshExtras);
-  target.addEventListener?.("edgesuite:density-changed", refreshExtras);
+  target.document?.addEventListener?.("page-change", scheduleRefresh);
+  target.addEventListener?.("edgesuite:density-changed", scheduleRefresh);
+  target.addEventListener?.("edgesuite:favorites-changed", scheduleRefresh);
   if (target.MutationObserver && target.document?.body) {
-    const observer = new target.MutationObserver(refreshExtras);
+    const observer = new target.MutationObserver((records) => {
+      if (records.some((record) => record.addedNodes?.length || record.removedNodes?.length)) {
+        scheduleRefresh();
+      }
+    });
     observer.observe(target.document.body, { childList: true, subtree: true });
     runtime.__productMenuExtrasObserver = observer;
   }
