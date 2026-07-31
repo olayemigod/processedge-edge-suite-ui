@@ -9,6 +9,7 @@ import { modalComponents } from "./edgeui/modal_components";
 import { applyModalCrossRuntimeCompatibility } from "./edgeui/modal_cross_runtime";
 import { applyMultiSelectCompatibility } from "./edgeui/multiselect_compat";
 import { suppressNativeNotificationRuntime } from "./edgeui/notification_runtime";
+import { installProductMenuExtras } from "./edgeui/product_menu_extras";
 import { installProductMenuMountEnhancements } from "./edgeui/product_menu_mount";
 import { professionalComponents } from "./edgeui/professional_components";
 import { createEdgeSuiteRuntime, exposeEdgeSuiteRuntime } from "./edgeui/runtime";
@@ -55,6 +56,7 @@ if (typeof globalThis !== "undefined") {
   suppressNativeNotificationRuntime(runtime);
   installContextIdentityResolver();
   installEdgeSuiteInteractionRuntime(runtime, globalThis);
+  installProductMenuExtras(runtime, globalThis);
 }
 
 export * from "./edgeui/components";
@@ -70,6 +72,7 @@ export * from "./edgeui/modal_cross_runtime";
 export * from "./edgeui/multiselect_compat";
 export * from "./edgeui/notification_runtime";
 export * from "./edgeui/product_menu";
+export * from "./edgeui/product_menu_extras";
 export * from "./edgeui/product_menu_mount";
 export * from "./edgeui/professional_components";
 export * from "./edgeui/runtime";
