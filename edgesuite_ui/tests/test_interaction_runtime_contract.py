@@ -57,7 +57,7 @@ def test_latest_runtime_installs_switcher_commands_density_and_menu_extras():
 		'".edge-workflow-bar__actions button.edge-button--primary:not([disabled])"',
 		'label === "save"',
 		'label === "save changes"',
-		'new target.CustomEvent("edgesuite:save-request"' if False else 'target.addEventListener("edgesuite:save-request"',
+		'target.addEventListener("edgesuite:save-request"',
 		"event.detail.handled = true",
 		"button.click()",
 	):
