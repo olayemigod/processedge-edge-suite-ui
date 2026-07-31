@@ -9,6 +9,7 @@ def test_latest_runtime_installs_switcher_commands_density_and_menu_extras():
 	bundle = (APP / "public/js/edgeui.bundle.js").read_text()
 	interaction = (APP / "public/js/edgeui/interaction_runtime.js").read_text()
 	extras = (APP / "public/js/edgeui/product_menu_extras.js").read_text()
+	mount = (APP / "public/js/edgeui/product_menu_mount.js").read_text()
 	workflow_bridge = (APP / "public/js/edgeui/workflow_save_bridge.js").read_text()
 	hooks = (APP / "hooks.py").read_text()
 	package = PACKAGE.read_text()
@@ -47,10 +48,21 @@ def test_latest_runtime_installs_switcher_commands_density_and_menu_extras():
 		'label: "Favorites"',
 		"runtime.getFavoriteMenuItems",
 		"runtime.toggleFavoriteMenuItem",
-		"Pin current page to Favorites",
+		"runtime.toggleCurrentPageFavorite",
+		"Add current page to Favorites",
+		"dispatchFavoritesChanged",
 		"runtime.setDensity?.(select.value)",
+		"withoutGeneratedSections",
 	):
 		assert expected in extras
+
+	for expected in (
+		'target.addEventListener?.("resize", scheduleMount)',
+		'target.addEventListener?.("orientationchange", scheduleMount)',
+		"mountAtPreferredTarget();",
+		"preferredTarget(document)",
+	):
+		assert expected in mount
 
 	for expected in (
 		"function workflowSaveButton",
@@ -88,7 +100,7 @@ def test_ctrl_s_preserves_submitted_document_and_business_rule_safety():
 		assert forbidden not in workflow_bridge
 
 
-def test_latest_runtime_keeps_one_sidebar_and_waffle_group_open():
+def test_latest_runtime_keeps_one_sidebar_and_user_selected_waffle_group_open():
 	interaction = (APP / "public/js/edgeui/interaction_runtime.js").read_text()
 	density = (APP / "public/css/edgeui_density.css").read_text()
 	for expected in (
@@ -96,6 +108,11 @@ def test_latest_runtime_keeps_one_sidebar_and_waffle_group_open():
 		"expanded.length <= 1",
 		"expanded.filter((section) => section !== keep).forEach(closeSection)",
 		"function reconcileProductMenu",
+		"PRODUCT_MENU_OPEN_SECTION_KEY",
+		"productSectionIdentity",
+		"preferred || active || sections[0]",
+		"panel.dataset[PRODUCT_MENU_OPEN_SECTION_KEY] = productSectionIdentity(section)",
+		'delete panel.dataset[PRODUCT_MENU_OPEN_SECTION_KEY]',
 		'section.classList.toggle("is-collapsed", collapse)',
 		'heading?.setAttribute("aria-expanded"',
 	):
@@ -108,3 +125,5 @@ def test_latest_runtime_keeps_one_sidebar_and_waffle_group_open():
 		'.edge-product-menu__favorite-control[data-pinned="1"]',
 	):
 		assert selector in density
+	assert ".edge-app-shell .edge-sidebar__section + .edge-sidebar__section" in density
+	assert "margin-top: 0" in density
