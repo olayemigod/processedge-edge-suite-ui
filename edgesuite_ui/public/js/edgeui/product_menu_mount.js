@@ -116,12 +116,17 @@ export function installProductMenuMountEnhancements(edgeUI, target = globalThis)
 
   edgeUI.openProductMenu = function openProductMenu() {
     mountAtPreferredTarget();
+    const host = document.getElementById(HOST_ID);
+    const menuTarget = preferredTarget(document);
+    if (host && menuTarget && host.parentElement !== menuTarget) menuTarget.appendChild(host);
     return originalOpen ? originalOpen() : false;
   };
 
   ["desktop_screen", "sidebar_setup", "toolbar_setup", "page-change"].forEach((eventName) => {
     document.addEventListener(eventName, scheduleMount);
   });
+  target.addEventListener?.("resize", scheduleMount);
+  target.addEventListener?.("orientationchange", scheduleMount);
   target.frappe?.router?.on?.("change", scheduleMount);
 
   if (target.MutationObserver && document.body) {
