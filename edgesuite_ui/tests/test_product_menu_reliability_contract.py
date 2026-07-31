@@ -19,10 +19,12 @@ def test_runtime_installs_deterministic_waffle_reliability():
 
 	for expected in (
 		'const SLOT_ID = "edge-product-menu-slot"',
+		'const DIRECT_HANDLER_KEY = "__edgeSuiteProductMenuDirectHandler"',
 		"ensureShellSlot(document)",
 		"function edgeShellPresent",
 		"function stabilizeSlot",
 		"function stabilizeTrigger",
+		"function bindDirectTrigger",
 		'slot.style.display = "inline-flex"',
 		'slot.style.minWidth = "2.5rem"',
 		'slot.style.minHeight = "2.5rem"',
@@ -31,12 +33,16 @@ def test_runtime_installs_deterministic_waffle_reliability():
 		"if (edgeShellPresent(document)) return null",
 		"actions.insertBefore(slot, actions.firstChild || null)",
 		'trigger.style.pointerEvents = "auto"',
+		'trigger.removeEventListener("click", existing, true)',
+		'trigger.addEventListener("click", handler, true)',
 		"event.stopImmediatePropagation()",
-		"edgeUI.toggleProductMenu()",
+		"directToggle = edgeUI.toggleProductMenu",
 		'new target.CustomEvent("edgesuite:product-menu-opened"',
 		'target.addEventListener?.("orientationchange", scheduleMount)',
 	):
 		assert expected in mount
+
+	assert 'document.addEventListener(\n    "click"' not in mount
 
 	for expected in (
 		"function prepareAccordion",
