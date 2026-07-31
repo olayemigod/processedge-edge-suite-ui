@@ -10,6 +10,7 @@ def test_latest_runtime_installs_switcher_commands_density_and_menu_extras():
 	interaction = (APP / "public/js/edgeui/interaction_runtime.js").read_text()
 	extras = (APP / "public/js/edgeui/product_menu_extras.js").read_text()
 	mount = (APP / "public/js/edgeui/product_menu_mount.js").read_text()
+	sidebar = (APP / "public/js/edgeui/sidebar_accordion_runtime.js").read_text()
 	workflow_bridge = (APP / "public/js/edgeui/workflow_save_bridge.js").read_text()
 	hooks = (APP / "hooks.py").read_text()
 	package = PACKAGE.read_text()
@@ -17,11 +18,13 @@ def test_latest_runtime_installs_switcher_commands_density_and_menu_extras():
 	for expected in (
 		'installProductContextBridge(runtime, globalThis)',
 		'installEdgeSuiteInteractionRuntime(runtime, globalThis)',
+		'installSidebarAccordionRuntime(globalThis)',
 		'installWorkflowSaveBridge(globalThis)',
 		'installProductMenuExtras(runtime, globalThis)',
 		'EDGE_SUITE_UI_VERSION = "0.6.1"',
 		'export * from "./edgeui/interaction_runtime"',
 		'export * from "./edgeui/product_menu_extras"',
+		'export * from "./edgeui/sidebar_accordion_runtime"',
 		'export * from "./edgeui/workflow_save_bridge"',
 	):
 		assert expected in bundle
@@ -63,6 +66,18 @@ def test_latest_runtime_installs_switcher_commands_density_and_menu_extras():
 		"preferredTarget(document)",
 	):
 		assert expected in mount
+
+	for expected in (
+		'SIDEBAR_OPEN_SECTION_KEY = "edgeOpenSidebarSection"',
+		"function enforceSidebar",
+		"shell.dataset.edgeMultiSection = \"true\"",
+		"sectionIdentity(section)",
+		"preferred || (active && sectionExpanded(active) ? active : expanded[0])",
+		"setSectionExpanded(shell, preferred, true)",
+		"delete shell.dataset[SIDEBAR_OPEN_SECTION_KEY]",
+		"scheduleEnforce()",
+	):
+		assert expected in sidebar
 
 	for expected in (
 		"function workflowSaveButton",
