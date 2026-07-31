@@ -2,6 +2,7 @@ const COMMAND_VERSION = "1.0.0";
 const DENSITY_VERSION = "v1";
 const DENSITY_MODES = new Set(["comfortable", "compact", "touch"]);
 const ACCORDION_RECONCILE_DELAY = 0;
+const PRODUCT_MENU_OPEN_SECTION_KEY = "edgeOpenSection";
 
 function targetDocument(target) {
   return target?.document || null;
@@ -268,12 +269,16 @@ function reconcileSidebar(shell, preferredSection = null) {
   expanded.filter((section) => section !== keep).forEach(closeSection);
 }
 
+function productSectionIdentity(section) {
+  return String(section?.getAttribute?.("aria-label") || "").trim();
+}
+
 function enhanceProductMenu(panel) {
   if (!panel || panel.dataset.edgeAccordionEnhanced === "1") return;
   panel.dataset.edgeAccordionEnhanced = "1";
   panel.addEventListener("click", (event) => {
     const heading = event.target?.closest?.(".edge-product-menu__section-heading");
-    if (!heading || event.target?.closest?.("button, a, input, select, textarea")) return;
+    if (!heading || event.target?.closest?.(".edge-product-menu__item")) return;
     const section = heading.closest(".edge-product-menu__section");
     const items = section?.querySelector(".edge-product-menu__items");
     if (!section || !items) return;
@@ -288,6 +293,8 @@ function enhanceProductMenu(panel) {
         collapse ? "false" : "true",
       );
     }
+    if (nextCollapsed) delete panel.dataset[PRODUCT_MENU_OPEN_SECTION_KEY];
+    else panel.dataset[PRODUCT_MENU_OPEN_SECTION_KEY] = productSectionIdentity(section);
   });
   panel.addEventListener("keydown", (event) => {
     if (!event.target?.matches?.(".edge-product-menu__section-heading")) return;
@@ -303,8 +310,13 @@ function reconcileProductMenu(panel) {
   const query = String(panel.querySelector(".edge-product-menu__search")?.value || "").trim();
   const sections = [...panel.querySelectorAll(".edge-product-menu__section")];
   if (!sections.length) return;
+  const preferredIdentity = panel.dataset[PRODUCT_MENU_OPEN_SECTION_KEY] || "";
+  const preferred = preferredIdentity
+    ? sections.find((section) => productSectionIdentity(section) === preferredIdentity)
+    : null;
+  if (preferredIdentity && !preferred) delete panel.dataset[PRODUCT_MENU_OPEN_SECTION_KEY];
   const active = sections.find((section) => section.querySelector(".edge-product-menu__item.is-active"));
-  const keep = query ? null : active || sections[0];
+  const keep = query ? null : preferred || active || sections[0];
   for (const section of sections) {
     const heading = section.querySelector(".edge-product-menu__section-heading");
     const items = section.querySelector(".edge-product-menu__items");
@@ -337,8 +349,14 @@ function installAccordionRuntime({ target = globalThis } = {}) {
     reconcileProductMenu(document.getElementById("edge-product-menu-dropdown"));
   };
 
-  document.addEventListener("page-change", reconcileAll);
-  target.frappe?.router?.on?.("change", reconcileAll);
+  const reconcileForNavigation = () => {
+    const panel = document.getElementById("edge-product-menu-dropdown");
+    if (panel) delete panel.dataset[PRODUCT_MENU_OPEN_SECTION_KEY];
+    reconcileAll();
+  };
+
+  document.addEventListener("page-change", reconcileForNavigation);
+  target.frappe?.router?.on?.("change", reconcileForNavigation);
   if (target.MutationObserver && document.body) {
     const observer = new target.MutationObserver(reconcileAll);
     observer.observe(document.body, { childList: true, subtree: true });
