@@ -24,6 +24,18 @@ function visibleElement(element) {
   return !box || (box.width > 0 && box.height > 0);
 }
 
+function stabilizeSlot(slot) {
+  if (!slot) return null;
+  slot.hidden = false;
+  slot.style.display = "inline-flex";
+  slot.style.alignItems = "center";
+  slot.style.flex = "0 0 auto";
+  slot.style.minWidth = "2.25rem";
+  slot.style.minHeight = "2.25rem";
+  slot.style.padding = "0";
+  return slot;
+}
+
 function shellActions(document) {
   const nodes = Array.from(
     document.querySelectorAll(
@@ -43,6 +55,7 @@ function ensureShellSlot(document) {
     slot.id = SLOT_ID;
     slot.className = "edge-product-menu-slot navbar";
   }
+  stabilizeSlot(slot);
   if (slot.parentElement !== actions) actions.insertBefore(slot, actions.firstChild || null);
   return slot;
 }
@@ -73,7 +86,7 @@ function ensureFallbackSlot(document) {
     slot.className = "edge-product-menu-slot edge-product-menu-slot--fallback navbar";
     document.body?.appendChild(slot);
   }
-  return slot;
+  return stabilizeSlot(slot);
 }
 
 function preferredTarget(document) {
@@ -114,9 +127,9 @@ export function installProductMenuMountEnhancements(edgeUI, target = globalThis)
 
   const mountAtPreferredTarget = () => {
     const menuTarget = preferredTarget(document);
-    const needsTemporaryNavbarClass = Boolean(
-      menuTarget && !menuTarget.classList.contains("navbar"),
-    );
+    if (!menuTarget) return false;
+    stabilizeSlot(menuTarget.id === SLOT_ID ? menuTarget : null);
+    const needsTemporaryNavbarClass = !menuTarget.classList.contains("navbar");
 
     if (needsTemporaryNavbarClass) menuTarget.classList.add("navbar");
     let result = false;
@@ -126,7 +139,10 @@ export function installProductMenuMountEnhancements(edgeUI, target = globalThis)
       if (needsTemporaryNavbarClass) menuTarget.classList.remove("navbar");
     }
 
-    return moveHost(document) || result;
+    const moved = moveHost(document);
+    const trigger = document.getElementById(TRIGGER_ID);
+    if (trigger) trigger.hidden = false;
+    return moved || result;
   };
 
   const scheduleMount = () => {
@@ -200,8 +216,9 @@ export function installProductMenuMountEnhancements(edgeUI, target = globalThis)
     observer = new target.MutationObserver(() => {
       const host = document.getElementById(HOST_ID);
       const panel = document.getElementById(PANEL_ID);
+      const trigger = document.getElementById(TRIGGER_ID);
       const targetNode = preferredTarget(document);
-      if (!host || !panel || (targetNode && host.parentElement !== targetNode)) scheduleMount();
+      if (!host || !panel || !trigger || (targetNode && host.parentElement !== targetNode)) scheduleMount();
     });
     observer.observe(document.body, { childList: true, subtree: true });
   }
