@@ -10,12 +10,16 @@ APP = ROOT / "edgesuite_ui"
 def test_shared_runtime_installs_keyboard_commands_density_and_accordion():
     bundle = (APP / "public/js/edgeui.bundle.js").read_text()
     interaction = (APP / "public/js/edgeui/interaction_runtime.js").read_text()
+    menu_extras = (APP / "public/js/edgeui/product_menu_extras.js").read_text()
     hooks = (APP / "hooks.py").read_text()
 
     for expected in (
         'import { installEdgeSuiteInteractionRuntime } from "./edgeui/interaction_runtime"',
+        'import { installProductMenuExtras } from "./edgeui/product_menu_extras"',
         "installEdgeSuiteInteractionRuntime(runtime, globalThis)",
+        "installProductMenuExtras(runtime, globalThis)",
         'export * from "./edgeui/interaction_runtime"',
+        'export * from "./edgeui/product_menu_extras"',
         'EDGE_SUITE_UI_VERSION = "0.5.6"',
     ):
         assert expected in bundle
@@ -34,6 +38,16 @@ def test_shared_runtime_installs_keyboard_commands_density_and_accordion():
         'runtime.setDensity = density.setDensity',
     ):
         assert expected in interaction
+
+    for expected in (
+        'const QUICK_ACTION_SECTION_KEY = "quick-actions"',
+        "normalizedQuickActions",
+        "withQuickActions",
+        'label: "Quick Actions"',
+        "runtime.setDensity?.(select.value)",
+        "runtime.getProductMenuSourceConfig",
+    ):
+        assert expected in menu_extras
 
     assert '"/assets/edgesuite_ui/css/edgeui_density.css"' in hooks
 
