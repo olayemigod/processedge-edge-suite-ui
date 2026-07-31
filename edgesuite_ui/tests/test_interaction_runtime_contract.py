@@ -81,7 +81,7 @@ def test_shared_accordion_keeps_one_sidebar_and_waffle_section_open():
         "expanded.filter((section) => section !== keep).forEach(closeSection)",
         "function reconcileProductMenu",
         'section.classList.toggle("is-collapsed", collapse)',
-        'heading.setAttribute("aria-expanded"',
+        'heading?.setAttribute("aria-expanded"',
     ):
         assert expected in interaction
 
