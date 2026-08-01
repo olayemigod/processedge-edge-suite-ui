@@ -54,6 +54,13 @@ def test_runtime_installs_deterministic_waffle_reliability():
 		'button.innerHTML = `${favoriteIconMarkup(pinned)}',
 		'"Add to Favorites"',
 		'"Current pinned"',
+		"function currentRoutePaths",
+		"function addRoutePath",
+		'if (text.startsWith("/desk/")) return `/app/${text.slice(6)}`',
+		"target?.frappe?.get_route?.()",
+		"target?.frappe?.router?.current_route",
+		"routePaths.has(itemRoute)",
+		"export { OPENED_EVENT, currentRoutePaths, normalizePath, refreshPanel }",
 		'target.addEventListener?.(OPENED_EVENT',
 		"observer.observe(panel, { childList: true, subtree: true })",
 	):
