@@ -49,16 +49,23 @@ def test_runtime_installs_deterministic_waffle_reliability():
 		"function toggleSection",
 		"currentlyOpen",
 		"runtime.toggleCurrentPageFavorite?.()",
-		'button.textContent = pinned ? "★ Current pinned" : "☆ Add current"',
+		"function favoriteIconMarkup",
+		'class="edge-product-menu__favorite-icon"',
+		'button.innerHTML = `${favoriteIconMarkup(pinned)}',
+		'"Add to Favorites"',
+		'"Current pinned"',
 		'target.addEventListener?.(OPENED_EVENT',
 		"observer.observe(panel, { childList: true, subtree: true })",
 	):
 		assert expected in reliability
 
+	assert 'button.textContent = pinned ? "★ Current pinned" : "☆ Add current"' not in reliability
 	assert '"/assets/edgesuite_ui/css/edgeui_product_menu_reliability.css"' in hooks
 	assert ".edge-topbar-actions > .edge-product-menu-slot" in styles
 	assert "order: -20 !important" in styles
 	assert "pointer-events: auto !important" in styles
 	assert ".edge-topbar-actions > .edge-topbar-action-wrap" in styles
 	assert ".edge-product-menu-slot--fallback" in styles
+	assert ".edge-product-menu__favorite-control" in styles
+	assert ".edge-product-menu__favorite-icon .edge-svg-icon" in styles
 	assert '@media (max-width: 48rem)' in styles
