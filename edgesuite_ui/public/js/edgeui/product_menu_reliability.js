@@ -15,6 +15,13 @@ function sectionIdentity(section) {
   return String(section?.getAttribute?.("aria-label") || "").trim();
 }
 
+function favoriteIconMarkup(pinned) {
+  const body = pinned
+    ? '<path d="m12 3.5 2.63 5.33 5.88.85-4.26 4.15 1.01 5.86L12 16.92l-5.26 2.77 1.01-5.86-4.26-4.15 5.88-.85L12 3.5Z" fill="currentColor"/>'
+    : '<path d="m12 3.5 2.63 5.33 5.88.85-4.26 4.15 1.01 5.86L12 16.92l-5.26 2.77 1.01-5.86-4.26-4.15 5.88-.85L12 3.5Z" fill="none" stroke="currentColor" stroke-linejoin="round" stroke-width="1.7"/>';
+  return `<span class="edge-product-menu__favorite-icon" aria-hidden="true"><svg class="edge-svg-icon" viewBox="0 0 24 24" focusable="false">${body}</svg></span>`;
+}
+
 function currentItem(runtime, target) {
   const config = runtime.getProductMenuSourceConfig?.() || runtime.getProductMenuConfig?.() || {};
   const pathname = normalizePath(target?.location?.pathname);
@@ -146,6 +153,7 @@ function installFavoriteControl(runtime, target, panel) {
     searchWrap.appendChild(button);
   }
   const pinned = itemPinned(runtime, item);
+  const state = pinned ? "pinned" : "unpinned";
   button.dataset.pinned = pinned ? "1" : "0";
   button.setAttribute("aria-pressed", pinned ? "true" : "false");
   button.setAttribute(
@@ -153,7 +161,10 @@ function installFavoriteControl(runtime, target, panel) {
     pinned ? "Remove current page from Favorites" : "Add current page to Favorites",
   );
   button.title = button.getAttribute("aria-label");
-  button.textContent = pinned ? "★ Current pinned" : "☆ Add current";
+  if (button.dataset.favoriteState !== state) {
+    button.dataset.favoriteState = state;
+    button.innerHTML = `${favoriteIconMarkup(pinned)}<span>${pinned ? "Current pinned" : "Add to Favorites"}</span>`;
+  }
 }
 
 function refreshPanel(runtime, target) {
