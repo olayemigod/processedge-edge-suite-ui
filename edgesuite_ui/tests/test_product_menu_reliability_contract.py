@@ -48,7 +48,8 @@ def test_runtime_installs_deterministic_waffle_reliability():
 		"function prepareAccordion",
 		"function toggleSection",
 		"currentlyOpen",
-		"runtime.toggleCurrentPageFavorite?.()",
+		"runtime.toggleFavoriteMenuItem?.(button.__edgeFavoriteItem)",
+		"button.__edgeFavoriteItem = item",
 		"function favoriteIconMarkup",
 		'class="edge-product-menu__favorite-icon"',
 		'button.innerHTML = `${favoriteIconMarkup(pinned)}',
@@ -66,6 +67,7 @@ def test_runtime_installs_deterministic_waffle_reliability():
 	):
 		assert expected in reliability
 
+	assert "runtime.toggleCurrentPageFavorite?.()" not in reliability
 	assert 'button.textContent = pinned ? "★ Current pinned" : "☆ Add current"' not in reliability
 	assert '"/assets/edgesuite_ui/css/edgeui_product_menu_reliability.css"' in hooks
 	assert ".edge-topbar-actions > .edge-product-menu-slot" in styles
