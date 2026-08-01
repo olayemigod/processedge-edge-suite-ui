@@ -8,7 +8,50 @@ function normalizePath(value) {
   let text = String(value || "").split(/[?#]/, 1)[0].trim();
   if (text.startsWith("route:")) text = text.slice(6);
   if (!text) return "";
-  return (text.startsWith("/") ? text : `/${text}`).replace(/\/+$/, "") || "/";
+  if (!text.startsWith("/")) text = `/${text}`;
+  text = text.replace(/\/{2,}/g, "/").replace(/\/+$/, "") || "/";
+  if (text === "/desk") return "/app";
+  if (text.startsWith("/desk/")) return `/app/${text.slice(6)}`;
+  return text;
+}
+
+function addRoutePath(paths, value, { frappeRoute = false } = {}) {
+  if (Array.isArray(value)) {
+    const parts = value.map((part) => String(part || "").trim()).filter(Boolean);
+    if (!parts.length) return;
+    const joined = parts.join("/");
+    const hasDeskPrefix = parts[0] === "app" || parts[0] === "desk";
+    paths.add(normalizePath(hasDeskPrefix ? `/${joined}` : `/app/${joined}`));
+    return;
+  }
+
+  const text = String(value || "").trim();
+  if (!text) return;
+  if (frappeRoute && !text.startsWith("/") && !text.startsWith("route:")) {
+    paths.add(normalizePath(`/app/${text}`));
+    return;
+  }
+  paths.add(normalizePath(text));
+}
+
+function currentRoutePaths(target) {
+  const paths = new Set();
+  addRoutePath(paths, target?.location?.pathname);
+
+  try {
+    addRoutePath(paths, target?.frappe?.get_route?.(), { frappeRoute: true });
+  } catch (_error) {
+    // Location pathname remains the safe fallback.
+  }
+
+  try {
+    addRoutePath(paths, target?.frappe?.router?.current_route, { frappeRoute: true });
+  } catch (_error) {
+    // Router state is optional across Frappe versions.
+  }
+
+  paths.delete("");
+  return paths;
 }
 
 function sectionIdentity(section) {
@@ -24,10 +67,11 @@ function favoriteIconMarkup(pinned) {
 
 function currentItem(runtime, target) {
   const config = runtime.getProductMenuSourceConfig?.() || runtime.getProductMenuConfig?.() || {};
-  const pathname = normalizePath(target?.location?.pathname);
+  const routePaths = currentRoutePaths(target);
   for (const section of Array.isArray(config.sections) ? config.sections : []) {
     for (const item of Array.isArray(section?.items) ? section.items : []) {
-      if (normalizePath(item?.route) === pathname) return item;
+      const itemRoute = normalizePath(item?.route);
+      if (itemRoute && routePaths.has(itemRoute)) return item;
     }
   }
   const active = target?.document?.querySelector?.(
@@ -241,4 +285,4 @@ export function installProductMenuReliability(runtime, target = globalThis) {
   return runtime;
 }
 
-export { OPENED_EVENT, refreshPanel };
+export { OPENED_EVENT, currentRoutePaths, normalizePath, refreshPanel };
