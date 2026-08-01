@@ -190,12 +190,13 @@ function installFavoriteControl(runtime, target, panel) {
     button.addEventListener("click", (event) => {
       event.preventDefault();
       event.stopPropagation();
-      runtime.toggleCurrentPageFavorite?.();
+      runtime.toggleFavoriteMenuItem?.(button.__edgeFavoriteItem);
       runtime.refreshProductMenu?.();
       target.requestAnimationFrame?.(() => refreshPanel(runtime, target));
     });
     searchWrap.appendChild(button);
   }
+  button.__edgeFavoriteItem = item;
   const pinned = itemPinned(runtime, item);
   const state = pinned ? "pinned" : "unpinned";
   button.dataset.pinned = pinned ? "1" : "0";
