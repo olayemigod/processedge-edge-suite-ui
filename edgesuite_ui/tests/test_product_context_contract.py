@@ -53,10 +53,12 @@ class TestProductContextContract(unittest.TestCase):
 		hooks = (APP_ROOT / "hooks.py").read_text(encoding="utf-8")
 		self.assertIn('"edgesuite_ui.bundle.js"', hooks)
 		self.assertIn('"/assets/edgesuite_ui/js/edgeui_ctrl_k_guard.js"', hooks)
+		self.assertIn('"/assets/edgesuite_ui/js/edgeui_ctrl_s_guard.js"', hooks)
 		self.assertNotIn('app_include_js = ["edgeui.bundle.js"]', hooks)
 		self.assertTrue((APP_ROOT / "public/js/edgesuite_ui.bundle.js").exists())
 		self.assertTrue((APP_ROOT / "public/js/edgeui.bundle.js").exists())
 		self.assertTrue((APP_ROOT / "public/js/edgeui_ctrl_k_guard.js").exists())
+		self.assertTrue((APP_ROOT / "public/js/edgeui_ctrl_s_guard.js").exists())
 
 
 if __name__ == "__main__":
