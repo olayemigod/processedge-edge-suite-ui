@@ -13,6 +13,7 @@ def test_latest_runtime_installs_switcher_commands_density_and_menu_extras():
 	sidebar = (APP / "public/js/edgeui/sidebar_accordion_runtime.js").read_text()
 	workflow_bridge = (APP / "public/js/edgeui/workflow_save_bridge.js").read_text()
 	ctrl_k_guard = (APP / "public/js/edgeui_ctrl_k_guard.js").read_text()
+	ctrl_s_guard = (APP / "public/js/edgeui_ctrl_s_guard.js").read_text()
 	hooks = (APP / "hooks.py").read_text()
 	package = PACKAGE.read_text()
 
@@ -82,9 +83,11 @@ def test_latest_runtime_installs_switcher_commands_density_and_menu_extras():
 
 	for expected in (
 		"function workflowSaveButton",
+		"function focusedEditContainer",
+		"function uniqueSaveButton",
+		"STANDARD_SAVE_LABELS",
+		"FORBIDDEN_SAVE_WORDS",
 		'".edge-workflow-bar__actions button.edge-button--primary:not([disabled])"',
-		'label === "save"',
-		'label === "save changes"',
 		'target.addEventListener("edgesuite:save-request"',
 		"event.detail.handled = true",
 		"button.click()",
@@ -100,21 +103,44 @@ def test_latest_runtime_installs_switcher_commands_density_and_menu_extras():
 	):
 		assert expected in ctrl_k_guard
 
+	for expected in (
+		'const GUARD_KEY = "__edgeSuiteCtrlSGuard"',
+		"function activeFrappeForm",
+		"function saveActiveFrappeForm",
+		"Number(form.doc.docstatus || 0) !== 0",
+		"Submitted documents cannot be changed with this shortcut.",
+		"No unsaved changes.",
+		"saveInFlight",
+		"editingSurface(event.target)",
+		"event.stopImmediatePropagation?.()",
+		"globalThis.addEventListener?.(\"keydown\", onKeydown, true)",
+	):
+		assert expected in ctrl_s_guard
+
 	assert '"/assets/edgesuite_ui/css/edgeui_density.css"' in hooks
 	assert '"/assets/edgesuite_ui/js/edgeui_ctrl_k_guard.js"' in hooks
+	assert '"/assets/edgesuite_ui/js/edgeui_ctrl_s_guard.js"' in hooks
 
 
 def test_ctrl_s_preserves_submitted_document_and_business_rule_safety():
 	interaction = (APP / "public/js/edgeui/interaction_runtime.js").read_text()
 	workflow_bridge = (APP / "public/js/edgeui/workflow_save_bridge.js").read_text()
+	ctrl_s_guard = (APP / "public/js/edgeui_ctrl_s_guard.js").read_text()
 	for expected in (
 		"Number(form.doc.docstatus || 0) !== 0",
 		"Submitted documents cannot be changed with this shortcut.",
 		"await form.save()",
-		'[data-edgesuite-save]:not([disabled])',
 		"textarea, [contenteditable='true']",
+		"routeType !== \"form\"",
+		"if (saveInFlight) return",
 	):
-		assert expected in interaction
+		assert expected in ctrl_s_guard
+	for expected in (
+		'[data-edgesuite-save]:not([disabled])',
+		"FORBIDDEN_SAVE_WORDS",
+		"candidates.length === 1",
+	):
+		assert expected in workflow_bridge
 	for forbidden in (
 		"frappe.db.set_value",
 		"ignore_permissions",
@@ -124,6 +150,7 @@ def test_ctrl_s_preserves_submitted_document_and_business_rule_safety():
 	):
 		assert forbidden not in interaction
 		assert forbidden not in workflow_bridge
+		assert forbidden not in ctrl_s_guard
 
 
 def test_latest_runtime_keeps_one_sidebar_and_user_selected_waffle_group_open():
