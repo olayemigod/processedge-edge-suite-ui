@@ -32,4 +32,7 @@ app_include_css = [
 	"/assets/edgesuite_ui/css/edgeui_child_table_layout.css",
 	"/assets/edgesuite_ui/css/edgeui_density.css",
 ]
-app_include_js = ["edgesuite_ui.bundle.js"]
+app_include_js = [
+	"edgesuite_ui.bundle.js",
+	"/assets/edgesuite_ui/js/edgeui_ctrl_k_guard.js",
+]
