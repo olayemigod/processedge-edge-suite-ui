@@ -35,4 +35,5 @@ app_include_css = [
 app_include_js = [
 	"edgesuite_ui.bundle.js",
 	"/assets/edgesuite_ui/js/edgeui_ctrl_k_guard.js",
+	"/assets/edgesuite_ui/js/edgeui_ctrl_s_guard.js",
 ]
