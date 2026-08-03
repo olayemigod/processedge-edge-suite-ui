@@ -12,6 +12,7 @@ def test_latest_runtime_installs_switcher_commands_density_and_menu_extras():
 	mount = (APP / "public/js/edgeui/product_menu_mount.js").read_text()
 	sidebar = (APP / "public/js/edgeui/sidebar_accordion_runtime.js").read_text()
 	workflow_bridge = (APP / "public/js/edgeui/workflow_save_bridge.js").read_text()
+	ctrl_k_guard = (APP / "public/js/edgeui_ctrl_k_guard.js").read_text()
 	hooks = (APP / "hooks.py").read_text()
 	package = PACKAGE.read_text()
 
@@ -90,7 +91,17 @@ def test_latest_runtime_installs_switcher_commands_density_and_menu_extras():
 	):
 		assert expected in workflow_bridge
 
+	for expected in (
+		'const GUARD_KEY = "__edgeSuiteCtrlKGuard"',
+		"globalThis.addEventListener?.(\"keydown\", onKeydown, true)",
+		"edgeRuntime.openProductMenu()",
+		"event.stopImmediatePropagation?.()",
+		'"#edge-product-menu-dropdown:not([hidden]) .edge-product-menu__search"',
+	):
+		assert expected in ctrl_k_guard
+
 	assert '"/assets/edgesuite_ui/css/edgeui_density.css"' in hooks
+	assert '"/assets/edgesuite_ui/js/edgeui_ctrl_k_guard.js"' in hooks
 
 
 def test_ctrl_s_preserves_submitted_document_and_business_rule_safety():
