@@ -1,0 +1,39 @@
+.edge-product-menu-navbar-bridge {
+  align-items: center;
+  display: flex;
+  flex: 0 0 auto;
+  min-height: 2.5rem;
+  min-width: 2.75rem;
+  padding: 0.125rem;
+  z-index: 1055;
+}
+
+.edge-product-menu-navbar-bridge--embedded {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  justify-content: flex-end;
+  margin-left: auto;
+  width: fit-content;
+}
+
+.edge-product-menu-navbar-bridge--floating {
+  background: var(--edge-color-surface, var(--card-bg, #ffffff));
+  border: 1px solid var(--edge-color-border, var(--border-color, #dfe6ec));
+  border-radius: 0.75rem;
+  box-shadow: 0 10px 30px rgb(16 34 53 / 16%);
+  position: fixed;
+  right: 0.75rem;
+  top: 0.65rem;
+}
+
+.edge-product-menu-navbar-bridge .edge-product-menu__host {
+  margin: 0;
+}
+
+@media (max-width: 48rem) {
+  .edge-product-menu-navbar-bridge--floating {
+    right: 0.5rem;
+    top: 0.5rem;
+  }
+}
