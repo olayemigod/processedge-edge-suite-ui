@@ -35,6 +35,19 @@ def test_runtime_restores_stat_card_and_data_table_compatibility():
 		assert contract in compat
 
 
+def test_legacy_stat_emoji_icons_normalize_to_shared_svg_names():
+	compat = read(APP_ROOT / "public" / "js" / "edgeui" / "runtime_component_compat.js")
+	for legacy_icon, shared_icon in (
+		("❌", "close"),
+		("⚠️", "activity"),
+		("📦", "layers"),
+		("🏬", "building"),
+		("🚨", "shield"),
+		("🔄", "activity"),
+	):
+		assert f'"{legacy_icon}": "{shared_icon}"' in compat
+
+
 def test_frappe_v16_product_menu_host_bridge_is_loaded_after_runtime():
 	hooks = read(APP_ROOT / "hooks.py")
 	bridge = read(APP_ROOT / "public" / "js" / "edgeui_product_menu_host_bridge.js")
