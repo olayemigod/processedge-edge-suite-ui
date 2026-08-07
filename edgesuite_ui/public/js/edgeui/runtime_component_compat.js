@@ -5,6 +5,13 @@ const STAT_ICON_ALIASES = Object.freeze({
   "credit-card": "wallet",
   "clipboard-check": "clipboard",
   "circle-check": "check",
+  "❌": "close",
+  "⚠️": "activity",
+  "⚠": "activity",
+  "📦": "layers",
+  "🏬": "building",
+  "🚨": "shield",
+  "🔄": "activity",
 });
 
 export function normalizeEdgeStatIcon(icon) {
