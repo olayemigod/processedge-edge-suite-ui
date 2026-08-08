@@ -53,16 +53,29 @@ export function normalizeEdgeIconName(name) {
   return ALIASES[value] || value || "list";
 }
 
+function localIconMarkup(iconName) {
+  const body = SVG_ICONS[iconName];
+  if (!body) return "";
+  return `<svg class="edge-svg-icon" width="1em" height="1em" viewBox="0 0 24 24" aria-hidden="true" focusable="false" style="display:block;flex:none;overflow:visible">${body}</svg>`;
+}
+
 export function edgeIconMarkup(name, { size = "sm", target = globalThis } = {}) {
   const iconName = normalizeEdgeIconName(name);
+
+  // EdgeSuite-owned icons are authoritative. Frappe may return a non-empty
+  // sprite reference for an unknown/missing symbol, which renders as a blank
+  // box. Prefer our inline SVG registry whenever the icon is known locally.
+  const localMarkup = localIconMarkup(iconName);
+  if (localMarkup) return localMarkup;
+
   try {
     const frappeIcon = target?.frappe?.utils?.icon?.(iconName, size);
     if (typeof frappeIcon === "string" && frappeIcon.trim()) return frappeIcon;
   } catch (_error) {
-    // Continue to the independent local SVG set.
+    // Continue to the independent local SVG fallback.
   }
-  const body = SVG_ICONS[iconName] || SVG_ICONS.list;
-  return `<svg class="edge-svg-icon" width="1em" height="1em" viewBox="0 0 24 24" aria-hidden="true" focusable="false" style="display:block;flex:none;overflow:visible">${body}</svg>`;
+
+  return localIconMarkup("list");
 }
 
 export function productInitials(value) {
