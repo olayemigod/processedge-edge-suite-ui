@@ -17,6 +17,7 @@ app_include_css = [
 	"edgeui_compat.bundle.css",
 	"/assets/edgesuite_ui/css/edgeui_product_menu.css",
 	"/assets/edgesuite_ui/css/edgeui_product_menu_reliability.css",
+	"/assets/edgesuite_ui/css/edgeui_product_menu_host_bridge.css",
 	"/assets/edgesuite_ui/css/edgeui_professional.css",
 	"/assets/edgesuite_ui/css/edgeui_sidebar_refinement.css",
 	"/assets/edgesuite_ui/css/edgeui_action_contrast.css",
@@ -34,6 +35,7 @@ app_include_css = [
 ]
 app_include_js = [
 	"edgesuite_ui.bundle.js",
+	"/assets/edgesuite_ui/js/edgeui_product_menu_host_bridge.js",
 	"/assets/edgesuite_ui/js/edgeui_ctrl_k_guard.js",
 	"/assets/edgesuite_ui/js/edgeui_ctrl_s_guard.js",
 ]

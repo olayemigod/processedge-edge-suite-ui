@@ -21,7 +21,7 @@ const SVG_ICONS = Object.freeze({
   settings: '<circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M19 12a7 7 0 0 0-.1-1l2-1.5-2-3.4-2.4 1A8 8 0 0 0 14.8 6l-.3-2.6h-4L10.2 6a8 8 0 0 0-1.7 1.1l-2.4-1-2 3.4 2 1.5a7 7 0 0 0 0 2l-2 1.5 2 3.4 2.4-1a8 8 0 0 0 1.7 1.1l.3 2.6h4l.3-2.6a8 8 0 0 0 1.7-1.1l2.4 1 2-3.4-2-1.5a7 7 0 0 0 .1-1Z" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.35"/>',
   shield: '<path d="M12 3 20 6v5c0 5-3.3 8.5-8 10-4.7-1.5-8-5-8-10V6l8-3Z" fill="none" stroke="currentColor" stroke-linejoin="round" stroke-width="1.7"/><path d="m8.5 12 2.2 2.2 4.8-5" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7"/>',
   stethoscope: '<path d="M6 3v5a4 4 0 0 0 8 0V3M4 3h4M12 3h4M10 12v2.5a5.5 5.5 0 0 0 11 0V13" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7"/><circle cx="19" cy="10.5" r="2.3" fill="none" stroke="currentColor" stroke-width="1.7"/>',
-  students: '<circle cx="9" cy="8" r="3" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M3.5 20v-2a5.5 5.5 0 0 1 11 0v2M16 5.5a3 3 0 0 1 0 5.8M16.5 14a5 5 0 0 1 4 4.9V20" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.7"/>',
+  students: '<circle cx="9" cy="8" r="3" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M3.5 20v-2a5.5 5.5 0 0 1 11 0v2M16 5.5a3 3 0 0 1 0 5.8M16.5 14a5 5 0 0 1 4 4.9V20" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7"/>',
   user: '<circle cx="12" cy="8" r="3.5" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M5 21v-2a7 7 0 0 1 14 0v2" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.7"/>',
   wallet: '<path d="M4 6.5h13a2 2 0 0 1 2 2V19H5a2 2 0 0 1-2-2V6.5Z" fill="none" stroke="currentColor" stroke-linejoin="round" stroke-width="1.7"/><path d="M4 6.5 16 3v3.5M15 11h6v5h-6a2.5 2.5 0 0 1 0-5Z" fill="none" stroke="currentColor" stroke-linejoin="round" stroke-width="1.7"/>',
 });
@@ -53,16 +53,29 @@ export function normalizeEdgeIconName(name) {
   return ALIASES[value] || value || "list";
 }
 
+function localIconMarkup(iconName) {
+  const body = SVG_ICONS[iconName];
+  if (!body) return "";
+  return `<svg class="edge-svg-icon" width="1em" height="1em" viewBox="0 0 24 24" aria-hidden="true" focusable="false" style="display:block;flex:none;overflow:visible">${body}</svg>`;
+}
+
 export function edgeIconMarkup(name, { size = "sm", target = globalThis } = {}) {
   const iconName = normalizeEdgeIconName(name);
+
+  // EdgeSuite-owned icons are authoritative. Frappe may return a non-empty
+  // sprite reference for an unknown/missing symbol, which renders as a blank
+  // box. Prefer our inline SVG registry whenever the icon is known locally.
+  const localMarkup = localIconMarkup(iconName);
+  if (localMarkup) return localMarkup;
+
   try {
     const frappeIcon = target?.frappe?.utils?.icon?.(iconName, size);
     if (typeof frappeIcon === "string" && frappeIcon.trim()) return frappeIcon;
   } catch (_error) {
-    // Continue to the independent local SVG set.
+    // Continue to the independent local SVG fallback.
   }
-  const body = SVG_ICONS[iconName] || SVG_ICONS.list;
-  return `<svg class="edge-svg-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">${body}</svg>`;
+
+  return localIconMarkup("list");
 }
 
 export function productInitials(value) {

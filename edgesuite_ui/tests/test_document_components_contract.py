@@ -74,10 +74,11 @@ def test_document_components_are_registered_and_versioned():
 	hooks = read(HOOKS)
 	version = read(VERSION)
 	assert 'from "./edgeui/document_components"' in bundle
-	assert "...documentComponents" in bundle
+	assert "createCompatibleRuntimeComponents" in bundle
+	assert "documentComponents," in bundle
 	assert 'export * from "./edgeui/document_components"' in bundle
-	assert 'EDGE_SUITE_UI_VERSION = "0.6.1"' in bundle
-	assert '__version__ = "0.6.1"' in version
+	assert 'EDGE_SUITE_UI_VERSION = "0.6.2"' in bundle
+	assert '__version__ = "0.6.2"' in version
 	assert 'export * from "./edgeui.bundle"' in standalone_bundle
 	assert 'export { default } from "./edgeui.bundle"' in standalone_bundle
 	assert "/assets/edgesuite_ui/css/edgeui_documents.css" in hooks

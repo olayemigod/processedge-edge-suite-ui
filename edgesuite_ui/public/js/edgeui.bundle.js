@@ -16,26 +16,29 @@ import { installProductMenuMountEnhancements } from "./edgeui/product_menu_mount
 import { installProductMenuReliability } from "./edgeui/product_menu_reliability";
 import { professionalComponents } from "./edgeui/professional_components";
 import { createEdgeSuiteRuntime, exposeEdgeSuiteRuntime } from "./edgeui/runtime";
+import { createCompatibleRuntimeComponents } from "./edgeui/runtime_component_compat";
 import { installSharedShellEnhancements } from "./edgeui/shell_enhancements";
 import { installSidebarAccordionRuntime } from "./edgeui/sidebar_accordion_runtime";
 import { installSidebarFocusLifecycle } from "./edgeui/sidebar_focus";
 import { installWorkflowSaveBridge } from "./edgeui/workflow_save_bridge";
 
-export const EDGE_SUITE_UI_VERSION = "0.6.1";
+export const EDGE_SUITE_UI_VERSION = "0.6.2";
 
 applyFrappeCompatibility(professionalComponents);
 applyModalCrossRuntimeCompatibility(modalComponents);
 applyMultiSelectCompatibility(modalComponents);
 
-const components = Object.freeze({
-  ...baseComponents,
-  ...professionalComponents,
-  ...modalComponents,
-  ...formComponents,
-  ...contextComponents,
-  ...documentComponents,
-  ...emptyStateComponents,
-});
+const components = Object.freeze(
+  createCompatibleRuntimeComponents({
+    baseComponents,
+    professionalComponents,
+    modalComponents,
+    formComponents,
+    contextComponents,
+    documentComponents,
+    emptyStateComponents,
+  }),
+);
 
 const runtime = createEdgeSuiteRuntime({
   version: EDGE_SUITE_UI_VERSION,
@@ -78,6 +81,7 @@ export * from "./edgeui/product_menu_mount";
 export * from "./edgeui/product_menu_reliability";
 export * from "./edgeui/professional_components";
 export * from "./edgeui/runtime";
+export * from "./edgeui/runtime_component_compat";
 export * from "./edgeui/shell_enhancements";
 export * from "./edgeui/sidebar_accordion_runtime";
 export * from "./edgeui/sidebar_focus";

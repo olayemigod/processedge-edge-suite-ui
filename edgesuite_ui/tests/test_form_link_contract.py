@@ -71,7 +71,8 @@ def test_dropdowns_are_exported_and_styled_globally():
 	styles = read(CSS)
 
 	assert 'from "./edgeui/form_components"' in bundle
-	assert "...formComponents" in bundle
+	assert "createCompatibleRuntimeComponents" in bundle
+	assert "formComponents," in bundle
 	assert 'export * from "./edgeui/form_components"' in bundle
 	assert "/assets/edgesuite_ui/css/edgeui_form_controls.css" in hooks
 	for selector in (
