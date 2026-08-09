@@ -1,4 +1,7 @@
+import json
 from pathlib import Path
+
+from edgesuite_ui import __version__
 
 ROOT = Path(__file__).resolve().parents[2]
 JS = ROOT / "edgesuite_ui" / "public" / "js" / "edgeui" / "context_components.js"
@@ -18,8 +21,8 @@ def test_branch_switcher_is_product_neutral_and_provider_controlled():
 	for contract in (
 		"EdgeBranchContextSwitcher",
 		"normalizeBranchContextOption",
-		'\"update:modelValue\"',
-		'\"switch\"',
+		'"update:modelValue"',
+		'"switch"',
 		"currentCompany",
 		"currentCode",
 		"canSwitch",
@@ -53,6 +56,7 @@ def test_branch_switcher_is_registered_and_styled():
 
 
 def test_branch_context_runtime_versions_are_aligned():
-	assert 'EDGE_SUITE_UI_VERSION = "0.4.1"' in read(BUNDLE)
-	assert '__version__ = "0.4.1"' in read(INIT)
-	assert '"version": "0.4.1"' in read(PACKAGE)
+	package = json.loads(read(PACKAGE))
+	assert f'EDGE_SUITE_UI_VERSION = "{__version__}"' in read(BUNDLE)
+	assert f'__version__ = "{__version__}"' in read(INIT)
+	assert package["version"] == __version__

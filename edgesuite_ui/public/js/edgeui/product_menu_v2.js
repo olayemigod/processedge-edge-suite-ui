@@ -1,8 +1,10 @@
 import { edgeIconMarkup, productInitials } from "./icons";
+import { normalizeProductKey } from "./product_context";
 
 const TRIGGER_ID = "edge-product-menu-trigger";
 const HOST_ID = "edge-product-menu-host";
 const PANEL_ID = "edge-product-menu-dropdown";
+const SWITCHER_ID = "edge-product-app-switcher";
 const OPEN_CLASS = "edge-product-menu--open";
 
 function escapeHtml(value) {
@@ -56,7 +58,9 @@ function normalizeConfig(config = {}) {
     throw new TypeError("registerProductMenu() requires a configuration object");
   }
 
-  const product = String(config.product || "EdgeSuite").trim() || "EdgeSuite";
+  const product = String(config.product || config.label || "EdgeSuite").trim() || "EdgeSuite";
+  const productKey = normalizeProductKey(config.product_key || config.key || product);
+  if (!productKey) throw new TypeError("Product menu requires a stable product key");
   const sections = (Array.isArray(config.sections) ? config.sections : [])
     .map((section) => ({
       label: String(section?.label || "").trim(),
@@ -67,11 +71,22 @@ function normalizeConfig(config = {}) {
     .filter((section) => section.label && section.items.length);
 
   return {
+    ...config,
+    product_key: productKey,
+    key: productKey,
     product,
+    label: String(config.label || product).trim() || product,
+    icon: String(config.icon || "apps").trim() || "apps",
     subtitle: String(config.subtitle || config.description || "").trim(),
     sections,
     profile: config.profile && typeof config.profile === "object" ? { ...config.profile } : {},
     navigate: typeof config.navigate === "function" ? config.navigate : null,
+    activate: typeof config.activate === "function" ? config.activate : null,
+    home_route: String(config.home_route || config.homeRoute || "").trim(),
+    route_patterns: Array.isArray(config.route_patterns || config.routePatterns)
+      ? [...(config.route_patterns || config.routePatterns)].filter(Boolean).map(String)
+      : [],
+    available: config.available !== false,
     menu_source: String(config.menu_source || "product").trim() || "product",
   };
 }
@@ -130,7 +145,7 @@ function visibleNavbar(document) {
 }
 
 function routeTo(target, config, item) {
-  if (config.navigate) {
+  if (config?.navigate) {
     config.navigate(item);
     return;
   }
@@ -164,9 +179,11 @@ function matchesQuery(section, item, query) {
   return haystack.includes(query);
 }
 
-export function createProductMenuController({ target = globalThis } = {}) {
+export function createProductMenuController({ target = globalThis, productContext = null } = {}) {
+  const configs = new Map();
   let config = null;
   let eventsBound = false;
+  let contextBound = false;
   let mountQueued = false;
   let observer = null;
   let query = "";
@@ -174,6 +191,29 @@ export function createProductMenuController({ target = globalThis } = {}) {
   const document = () => target.document;
   const trigger = () => document()?.getElementById(TRIGGER_ID) || null;
   const panel = () => document()?.getElementById(PANEL_ID) || null;
+  const switcher = () => document()?.getElementById(SWITCHER_ID) || null;
+
+  function availableProducts() {
+    if (productContext?.getAvailableProducts) return productContext.getAvailableProducts();
+    return Array.from(configs.values()).map((item) => ({
+      key: item.product_key,
+      product_key: item.product_key,
+      label: item.label,
+      product: item.product,
+      icon: item.icon,
+      home_route: item.home_route,
+    }));
+  }
+
+  function activeProductKey() {
+    return productContext?.getActiveProduct?.()?.key || config?.product_key || "";
+  }
+
+  function syncActiveConfig() {
+    const activeKey = activeProductKey();
+    config = configs.get(activeKey) || config || configs.values().next().value || null;
+    return config;
+  }
 
   function positionPanel() {
     const menuTrigger = trigger();
@@ -203,6 +243,7 @@ export function createProductMenuController({ target = globalThis } = {}) {
   }
 
   function render() {
+    syncActiveConfig();
     const menuPanel = panel();
     if (!menuPanel || !config) return;
 
@@ -212,6 +253,7 @@ export function createProductMenuController({ target = globalThis } = {}) {
     const sections = visibleSections();
     const itemCount = sections.reduce((total, section) => total + section.items.length, 0);
 
+    menuPanel.setAttribute("aria-label", `${config.product} product menu`);
     menuPanel.innerHTML = `
       <header class="edge-product-menu__header">
         <div class="edge-product-menu__brand">
@@ -304,9 +346,10 @@ export function createProductMenuController({ target = globalThis } = {}) {
   }
 
   function open() {
+    syncActiveConfig();
     const menuPanel = panel();
     const menuTrigger = trigger();
-    if (!menuPanel || !menuTrigger) return false;
+    if (!config || !menuPanel || !menuTrigger || menuTrigger.hidden) return false;
     query = "";
     render();
     menuPanel.hidden = false;
@@ -323,13 +366,69 @@ export function createProductMenuController({ target = globalThis } = {}) {
     return panel()?.hidden ? open() : (close(), false);
   }
 
+  function syncSwitcher(host) {
+    const products = availableProducts();
+    let wrapper = host.querySelector(".edge-product-switcher");
+    if (products.length <= 1) {
+      wrapper?.remove();
+      return;
+    }
+    if (!wrapper) {
+      wrapper = document().createElement("label");
+      wrapper.className = "edge-product-switcher";
+      wrapper.setAttribute("aria-label", "Product App");
+      wrapper.innerHTML = `
+        <span class="edge-product-switcher__icon" aria-hidden="true">${edgeIconMarkup("apps", { target })}</span>
+        <select id="${SWITCHER_ID}" class="edge-product-switcher__select" aria-label="Product App"></select>
+        <span class="edge-product-switcher__chevron" aria-hidden="true">${edgeIconMarkup("down", { target })}</span>`;
+      host.prepend(wrapper);
+    }
+    const select = switcher();
+    if (!select) return;
+    const selectedKey = activeProductKey();
+    select.innerHTML = products
+      .map((product) => {
+        const key = product.key || product.product_key;
+        const label = product.label || product.product || key;
+        return `<option value="${escapeHtml(key)}"${key === selectedKey ? " selected" : ""}>${escapeHtml(label)}</option>`;
+      })
+      .join("");
+    select.value = selectedKey;
+    select.onchange = async () => {
+      const nextKey = select.value;
+      select.disabled = true;
+      close();
+      try {
+        await productContext?.switchProduct?.(nextKey, { navigate: true });
+      } catch (error) {
+        select.value = activeProductKey();
+        const message = error?.message || "Unable to switch Product App.";
+        if (target.frappe?.msgprint) target.frappe.msgprint(message);
+        else target.console?.error?.(message);
+      } finally {
+        select.disabled = false;
+      }
+    };
+  }
+
+  function syncHost(host) {
+    syncActiveConfig();
+    syncSwitcher(host);
+    const menuTrigger = host.querySelector(`#${TRIGGER_ID}`);
+    if (!menuTrigger) return;
+    menuTrigger.hidden = !config || !config.sections.length;
+    menuTrigger.setAttribute("aria-label", `Open ${config?.product || "active product"} menu`);
+  }
+
   function mount() {
     const doc = document();
-    if (!doc || !config || !config.sections.length) return false;
+    syncActiveConfig();
+    if (!doc || (!config && !availableProducts().length)) return false;
 
     let host = doc.getElementById(HOST_ID);
     let menuPanel = panel();
     if (host && menuPanel) {
+      syncHost(host);
       render();
       return true;
     }
@@ -347,11 +446,11 @@ export function createProductMenuController({ target = globalThis } = {}) {
     menuTrigger.id = TRIGGER_ID;
     menuTrigger.type = "button";
     menuTrigger.className = "edge-product-menu__trigger";
-    menuTrigger.setAttribute("aria-label", `Open ${config.product} product menu`);
     menuTrigger.setAttribute("aria-haspopup", "menu");
     menuTrigger.setAttribute("aria-expanded", "false");
     menuTrigger.innerHTML = edgeIconMarkup("grid", { target });
     host.appendChild(menuTrigger);
+    syncHost(host);
     navbar.appendChild(host);
 
     menuPanel = doc.createElement("aside");
@@ -360,7 +459,6 @@ export function createProductMenuController({ target = globalThis } = {}) {
     menuPanel.hidden = true;
     menuPanel.setAttribute("role", "dialog");
     menuPanel.setAttribute("aria-modal", "false");
-    menuPanel.setAttribute("aria-label", `${config.product} product menu`);
     doc.body.appendChild(menuPanel);
 
     menuTrigger.addEventListener("click", (event) => {
@@ -386,7 +484,7 @@ export function createProductMenuController({ target = globalThis } = {}) {
         return;
       }
       const itemNode = event.target.closest(".edge-product-menu__item");
-      if (!itemNode) return;
+      if (!itemNode || !config) return;
       routeTo(target, config, {
         link_type: itemNode.dataset.linkType || "Page",
         link_to: itemNode.dataset.linkTo || "",
@@ -407,6 +505,16 @@ export function createProductMenuController({ target = globalThis } = {}) {
     schedule?.(() => {
       mountQueued = false;
       mount();
+    });
+  }
+
+  function bindContext() {
+    if (contextBound || !productContext?.onChange) return;
+    contextBound = true;
+    productContext.onChange(() => {
+      syncActiveConfig();
+      close();
+      scheduleMount();
     });
   }
 
@@ -437,6 +545,8 @@ export function createProductMenuController({ target = globalThis } = {}) {
       doc.addEventListener(eventName, scheduleMount);
     });
     target.frappe?.router?.on?.("change", () => {
+      productContext?.activateFromRoute?.();
+      syncActiveConfig();
       close();
       scheduleMount();
     });
@@ -450,14 +560,30 @@ export function createProductMenuController({ target = globalThis } = {}) {
   }
 
   function register(nextConfig) {
-    config = normalizeConfig(nextConfig);
+    const normalized = normalizeConfig(nextConfig);
+    configs.set(normalized.product_key, normalized);
+    productContext?.registerProduct?.({
+      key: normalized.product_key,
+      label: normalized.label,
+      product: normalized.product,
+      icon: normalized.icon,
+      home_route: normalized.home_route,
+      route_patterns: normalized.route_patterns,
+      available: normalized.available,
+      active: normalized.active,
+      activate: normalized.activate,
+    });
+    productContext?.activateFromRoute?.();
+    syncActiveConfig();
+    bindContext();
     bindEvents();
     mount();
     scheduleMount();
-    return config;
+    return normalized;
   }
 
   function refresh() {
+    syncActiveConfig();
     render();
     return mount();
   }
@@ -470,6 +596,7 @@ export function createProductMenuController({ target = globalThis } = {}) {
     observer = null;
     config = null;
     query = "";
+    configs.clear();
   }
 
   return {
@@ -480,8 +607,9 @@ export function createProductMenuController({ target = globalThis } = {}) {
     close,
     toggle,
     destroy,
-    getConfig: () => config,
+    getConfig: () => syncActiveConfig(),
+    getConfigs: () => Object.fromEntries(configs.entries()),
   };
 }
 
-export { HOST_ID, PANEL_ID, TRIGGER_ID };
+export { HOST_ID, PANEL_ID, SWITCHER_ID, TRIGGER_ID };

@@ -1,5 +1,6 @@
 import * as Vue from "vue";
 
+import { createProductContextController } from "./product_context";
 import { createProductMenuController } from "./product_menu";
 
 function assertName(name, kind) {
@@ -16,9 +17,9 @@ export function createEdgeSuiteRuntime({ version, components = {} } = {}) {
 
   const componentRegistry = Object.create(null);
   const adapterRegistry = Object.create(null);
-  const productMenu = createProductMenuController({
-    target: typeof globalThis !== "undefined" ? globalThis : {},
-  });
+  const target = typeof globalThis !== "undefined" ? globalThis : {};
+  const productContext = createProductContextController({ target });
+  const productMenu = createProductMenuController({ target, productContext });
 
   const runtime = {
     version: version.trim(),
@@ -86,6 +87,50 @@ export function createEdgeSuiteRuntime({ version, components = {} } = {}) {
 
     getAdapter(name) {
       return adapterRegistry[name] || null;
+    },
+
+    registerProduct(descriptor) {
+      return productContext.registerProduct(descriptor);
+    },
+
+    setAvailableProducts(payload) {
+      return productContext.setAvailableProducts(payload);
+    },
+
+    clearAvailableProducts() {
+      return productContext.clearAvailableProducts();
+    },
+
+    setProductSwitchHandler(handler) {
+      return productContext.setSwitchHandler(handler);
+    },
+
+    getAvailableProducts() {
+      return productContext.getAvailableProducts();
+    },
+
+    getActiveProduct() {
+      return productContext.getActiveProduct();
+    },
+
+    getProductContextState() {
+      return productContext.getState();
+    },
+
+    switchProduct(productKey, options = {}) {
+      return productContext.switchProduct(productKey, options);
+    },
+
+    resolveProductFromRoute(route) {
+      return productContext.resolveProductFromRoute(route);
+    },
+
+    refreshActiveProductFromRoute(route) {
+      return productContext.activateFromRoute(route);
+    },
+
+    onProductContextChange(listener) {
+      return productContext.onChange(listener);
     },
 
     registerProductMenu(config) {

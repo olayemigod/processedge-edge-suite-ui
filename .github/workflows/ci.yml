@@ -29,15 +29,46 @@ jobs:
       - name: Compile Python
         run: python -m compileall -q edgesuite_ui
       - name: Ruff
-        run: ruff check .
-      - name: Validate package, runtime, shell, forms, context, and boundaries
+        id: ruff
+        continue-on-error: true
         run: |
+          set -o pipefail
+          ruff check . 2>&1 | tee ruff.log
+      - name: Upload Ruff diagnostics
+        if: steps.ruff.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ruff-diagnostics
+          path: ruff.log
+      - name: Enforce Ruff result
+        if: steps.ruff.outcome == 'failure'
+        run: exit 1
+      - name: Validate package, runtime, product context, interactions, shell, forms, documents, context, and boundaries
+        id: contracts
+        continue-on-error: true
+        run: |
+          set -o pipefail
           python -m pytest -q \
             edgesuite_ui/tests/test_edgeui_asset_contract.py \
+            edgesuite_ui/tests/test_product_menu_contract.py \
+            edgesuite_ui/tests/test_product_context_contract.py \
+            edgesuite_ui/tests/test_interaction_runtime_contract.py \
             edgesuite_ui/tests/test_shell_enhancement_contract.py \
             edgesuite_ui/tests/test_dashboard_alignment_and_waffle_contract.py \
             edgesuite_ui/tests/test_form_link_contract.py \
-            edgesuite_ui/tests/test_branch_context_contract.py
+            edgesuite_ui/tests/test_document_components_contract.py \
+            edgesuite_ui/tests/test_branch_context_contract.py \
+            edgesuite_ui/tests/test_empty_state_icon_contract.py \
+            2>&1 | tee contract-tests.log
+      - name: Upload contract diagnostics
+        if: steps.contracts.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: contract-test-diagnostics
+          path: contract-tests.log
+      - name: Enforce contract result
+        if: steps.contracts.outcome == 'failure'
+        run: exit 1
 
   frontend:
     name: Frontend validation
@@ -108,7 +139,7 @@ jobs:
           bench set-config -g redis_cache redis://127.0.0.1:6379
           bench set-config -g redis_queue redis://127.0.0.1:6379
           bench set-config -g redis_socketio redis://127.0.0.1:6379
-          bench get-app --skip-assets "$GITHUB_WORKSPACE"
+          bench get-app --skip-assets "file://$GITHUB_WORKSPACE"
       - name: Create site and install EdgeSuite UI only
         working-directory: frappe-bench
         run: |

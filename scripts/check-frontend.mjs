@@ -1,12 +1,13 @@
+import { spawnSync } from "node:child_process";
 import { readFile, readdir } from "node:fs/promises";
 import { resolve } from "node:path";
-import { spawnSync } from "node:child_process";
 
 import { build } from "esbuild";
 
 const repositoryRoot = resolve(import.meta.dirname, "..");
 const javascriptRoot = resolve(repositoryRoot, "edgesuite_ui/public/js");
 const entrypoint = resolve(javascriptRoot, "edgeui.bundle.js");
+const productContextEntrypoint = resolve(javascriptRoot, "edgeui/product_context.js");
 
 async function javascriptFiles(directory) {
   const entries = await readdir(directory, { withFileTypes: true });
@@ -23,6 +24,33 @@ for (const path of await javascriptFiles(javascriptRoot)) {
   await readFile(path, "utf8");
   const result = spawnSync(process.execPath, ["--check", path], { stdio: "inherit" });
   if (result.status !== 0) process.exit(result.status ?? 1);
+}
+
+const productContextBuild = await build({
+  entryPoints: [productContextEntrypoint],
+  bundle: true,
+  format: "esm",
+  logLevel: "warning",
+  platform: "node",
+  write: false,
+});
+const productContextModule = await import(
+  `data:text/javascript;base64,${Buffer.from(productContextBuild.outputFiles[0].text).toString("base64")}`
+);
+const routeCases = [
+  ["/app/retailedge*", "/app/retailedge-home"],
+  ["/app/retailedge*", "retailedge-home"],
+  ["/app/veterinary-*", "/app/veterinary-consultation"],
+  ["/app/veterinary-*", "veterinary-consultation"],
+  ["/app/query-report/RetailEdge*", "query-report/RetailEdge Branch Performance Summary"],
+];
+for (const [pattern, route] of routeCases) {
+  if (!productContextModule.routeMatches(pattern, route)) {
+    throw new Error(`Product route did not match: ${pattern} -> ${route}`);
+  }
+}
+if (productContextModule.routeMatches("/app/retailedge*", "vetedge")) {
+  throw new Error("RetailEdge route pattern incorrectly matched VetEdge.");
 }
 
 await build({
@@ -60,4 +88,4 @@ await build({
   write: false,
 });
 
-console.log("Frontend syntax, runtime bundle, and Vue bridge validation passed.");
+console.log("Frontend syntax, product routes, runtime bundle, and Vue bridge validation passed.");

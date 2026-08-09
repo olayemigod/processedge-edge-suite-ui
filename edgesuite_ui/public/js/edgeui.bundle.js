@@ -1,19 +1,27 @@
 import { baseComponents } from "./edgeui/components";
 import { contextComponents } from "./edgeui/context_components";
 import { installContextIdentityResolver } from "./edgeui/context_identity";
+import { documentComponents } from "./edgeui/document_components";
+import { emptyStateComponents } from "./edgeui/empty_state_components";
 import { applyFrappeCompatibility } from "./edgeui/frappe_compat";
 import { formComponents } from "./edgeui/form_components";
+import { installEdgeSuiteInteractionRuntime } from "./edgeui/interaction_runtime";
 import { modalComponents } from "./edgeui/modal_components";
 import { applyModalCrossRuntimeCompatibility } from "./edgeui/modal_cross_runtime";
 import { applyMultiSelectCompatibility } from "./edgeui/multiselect_compat";
 import { suppressNativeNotificationRuntime } from "./edgeui/notification_runtime";
+import { installProductContextBridge } from "./edgeui/product_context_bridge";
+import { installProductMenuExtras } from "./edgeui/product_menu_extras";
 import { installProductMenuMountEnhancements } from "./edgeui/product_menu_mount";
+import { installProductMenuReliability } from "./edgeui/product_menu_reliability";
 import { professionalComponents } from "./edgeui/professional_components";
 import { createEdgeSuiteRuntime, exposeEdgeSuiteRuntime } from "./edgeui/runtime";
 import { installSharedShellEnhancements } from "./edgeui/shell_enhancements";
+import { installSidebarAccordionRuntime } from "./edgeui/sidebar_accordion_runtime";
 import { installSidebarFocusLifecycle } from "./edgeui/sidebar_focus";
+import { installWorkflowSaveBridge } from "./edgeui/workflow_save_bridge";
 
-export const EDGE_SUITE_UI_VERSION = "0.4.1";
+export const EDGE_SUITE_UI_VERSION = "0.6.1";
 
 applyFrappeCompatibility(professionalComponents);
 applyModalCrossRuntimeCompatibility(modalComponents);
@@ -25,6 +33,8 @@ const components = Object.freeze({
   ...modalComponents,
   ...formComponents,
   ...contextComponents,
+  ...documentComponents,
+  ...emptyStateComponents,
 });
 
 const runtime = createEdgeSuiteRuntime({
@@ -34,28 +44,43 @@ const runtime = createEdgeSuiteRuntime({
 
 if (typeof globalThis !== "undefined") {
   exposeEdgeSuiteRuntime(runtime, globalThis);
+  installProductContextBridge(runtime, globalThis);
   installProductMenuMountEnhancements(runtime);
   installSharedShellEnhancements(runtime);
   installSidebarFocusLifecycle(runtime);
   suppressNativeNotificationRuntime(runtime);
   installContextIdentityResolver();
+  installEdgeSuiteInteractionRuntime(runtime, globalThis);
+  installSidebarAccordionRuntime(globalThis);
+  installWorkflowSaveBridge(globalThis);
+  installProductMenuExtras(runtime, globalThis);
+  installProductMenuReliability(runtime, globalThis);
 }
 
 export * from "./edgeui/components";
 export * from "./edgeui/context_components";
 export * from "./edgeui/context_identity";
+export * from "./edgeui/document_components";
+export { EdgeEmptyState, emptyStateComponents } from "./edgeui/empty_state_components";
 export * from "./edgeui/form_components";
 export * from "./edgeui/frappe_compat";
 export * from "./edgeui/icons";
+export * from "./edgeui/interaction_runtime";
 export * from "./edgeui/modal_components";
 export * from "./edgeui/modal_cross_runtime";
 export * from "./edgeui/multiselect_compat";
 export * from "./edgeui/notification_runtime";
+export * from "./edgeui/product_context";
+export * from "./edgeui/product_context_bridge";
 export * from "./edgeui/product_menu";
+export * from "./edgeui/product_menu_extras";
 export * from "./edgeui/product_menu_mount";
+export * from "./edgeui/product_menu_reliability";
 export * from "./edgeui/professional_components";
 export * from "./edgeui/runtime";
 export * from "./edgeui/shell_enhancements";
+export * from "./edgeui/sidebar_accordion_runtime";
 export * from "./edgeui/sidebar_focus";
+export * from "./edgeui/workflow_save_bridge";
 
 export default runtime;
