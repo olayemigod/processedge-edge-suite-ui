@@ -43,7 +43,8 @@ def test_branch_switcher_is_registered_and_styled():
 	hooks = read(HOOKS)
 	styles = read(CSS)
 	assert 'from "./edgeui/context_components"' in bundle
-	assert "...contextComponents" in bundle
+	assert "createCompatibleRuntimeComponents" in bundle
+	assert "contextComponents," in bundle
 	assert 'export * from "./edgeui/context_components"' in bundle
 	assert "/assets/edgesuite_ui/css/edgeui_context.css" in hooks
 	for selector in (
