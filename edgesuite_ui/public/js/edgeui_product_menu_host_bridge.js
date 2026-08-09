@@ -2,6 +2,8 @@
   "use strict";
 
   const BRIDGE_ID = "edge-product-menu-navbar-bridge";
+  const PRODUCT_MENU_HOST_ID = "edge-product-menu-host";
+  const PRODUCT_MENU_TRIGGER_ID = "edge-product-menu-trigger";
   const MAX_ATTEMPTS = 40;
   const RETRY_MS = 150;
   const state = {
@@ -17,6 +19,17 @@
     if (style?.display === "none" || style?.visibility === "hidden") return false;
     const box = node.getBoundingClientRect?.();
     return Boolean(box && box.width > 0 && box.height > 0);
+  }
+
+  function existingProductMenuExists(doc) {
+    const bridge = doc.getElementById(BRIDGE_ID);
+    const host = doc.getElementById(PRODUCT_MENU_HOST_ID);
+    const trigger = doc.getElementById(PRODUCT_MENU_TRIGGER_ID);
+    const outsideBridge = (node) => Boolean(node && (!bridge || !bridge.contains(node)));
+    return Boolean(
+      (outsideBridge(trigger) && isVisible(trigger)) ||
+        (outsideBridge(host) && isVisible(host)),
+    );
   }
 
   function supportedNavbarExists(doc) {
@@ -53,6 +66,14 @@
   function ensureBridge() {
     const doc = global.document;
     if (!doc?.body) return false;
+
+    if (existingProductMenuExists(doc)) {
+      doc.getElementById(BRIDGE_ID)?.remove();
+      state.installed = false;
+      state.mode = "existing-product-menu";
+      state.target = `#${PRODUCT_MENU_HOST_ID}`;
+      return true;
+    }
 
     if (supportedNavbarExists(doc)) {
       doc.getElementById(BRIDGE_ID)?.remove();
@@ -114,8 +135,9 @@
 
   if (global.MutationObserver && global.document?.body) {
     const observer = new global.MutationObserver(() => {
-      const trigger = global.document.getElementById("edge-product-menu-trigger");
-      if (!trigger) scheduleEnsure();
+      const bridge = global.document.getElementById(BRIDGE_ID);
+      const trigger = global.document.getElementById(PRODUCT_MENU_TRIGGER_ID);
+      if ((trigger && bridge && !bridge.contains(trigger)) || !trigger) scheduleEnsure();
     });
     observer.observe(global.document.body, { childList: true, subtree: true });
     state.observer = observer;
