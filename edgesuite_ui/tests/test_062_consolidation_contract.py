@@ -64,3 +64,16 @@ def test_frappe_v16_product_menu_host_bridge_is_loaded_after_runtime():
 		assert contract in bridge
 	assert "coreedge" not in bridge.lower()
 	assert "switch_product_app" not in bridge.lower()
+
+
+def test_product_menu_host_bridge_suppresses_duplicate_floating_host():
+	bridge = read(APP_ROOT / "public" / "js" / "edgeui_product_menu_host_bridge.js")
+	for contract in (
+		'PRODUCT_MENU_HOST_ID = "edge-product-menu-host"',
+		'PRODUCT_MENU_TRIGGER_ID = "edge-product-menu-trigger"',
+		"existingProductMenuExists",
+		'state.mode = "existing-product-menu"',
+		"doc.getElementById(BRIDGE_ID)?.remove()",
+		"!bridge.contains(node)",
+	):
+		assert contract in bridge
