@@ -21,9 +21,10 @@ def test_bundle_registers_icon_aware_override_after_base_components():
 	entrypoint = (JS_ROOT / "edgeui.bundle.js").read_text(encoding="utf-8")
 
 	assert 'import { emptyStateComponents } from "./edgeui/empty_state_components"' in entrypoint
-	assert "...baseComponents" in entrypoint
-	assert "...emptyStateComponents" in entrypoint
-	assert entrypoint.index("...baseComponents") < entrypoint.index("...emptyStateComponents")
+	assert "createCompatibleRuntimeComponents" in entrypoint
+	assert "baseComponents," in entrypoint
+	assert "emptyStateComponents," in entrypoint
+	assert entrypoint.index("baseComponents,") < entrypoint.index("emptyStateComponents,")
 	assert (
 		'export { EdgeEmptyState, emptyStateComponents } from "./edgeui/empty_state_components"'
 		in entrypoint
