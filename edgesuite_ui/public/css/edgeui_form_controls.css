@@ -1,5 +1,8 @@
 .edge-dropdown,
-.edge-link-field {
+.edge-link-field,
+.edge-input,
+.edge-textarea,
+.edge-checkbox {
   display: grid;
   gap: .35rem;
   min-width: 0;
@@ -8,7 +11,9 @@
 }
 
 .edge-dropdown__label,
-.edge-link-field__label {
+.edge-link-field__label,
+.edge-input__label,
+.edge-textarea__label {
   color: var(--edge-color-ink-700, #415469);
   font-size: .75rem;
   font-weight: 700;
@@ -16,7 +21,9 @@
 }
 
 .edge-dropdown__required,
-.edge-link-field__required {
+.edge-link-field__required,
+.edge-input__required,
+.edge-textarea__required {
   color: var(--edge-color-danger, #c53a3a);
 }
 
@@ -66,8 +73,57 @@
   width: 100%;
 }
 
+.edge-input__control,
+.edge-textarea__control {
+  appearance: none;
+  background: var(--edge-color-surface, #fff);
+  border: 1px solid var(--edge-color-border-strong, #cbd7e5);
+  border-radius: var(--edge-radius-md, .75rem);
+  box-sizing: border-box;
+  color: var(--edge-color-ink-950, #122033);
+  font: inherit;
+  font-size: .8rem;
+  line-height: 1.35;
+  min-height: 2.55rem;
+  min-width: 0;
+  outline: none;
+  padding: .65rem .75rem;
+  transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
+  width: 100%;
+}
+
+.edge-textarea__control {
+  min-height: 5.5rem;
+  resize: vertical;
+}
+
+.edge-input__control::placeholder,
+.edge-textarea__control::placeholder {
+  color: var(--edge-color-ink-400, #8998a8);
+}
+
+.edge-input__control:focus,
+.edge-textarea__control:focus {
+  border-color: var(--edge-color-brand-500, #1677c8);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--edge-color-brand-500, #1677c8) 14%, transparent);
+}
+
+.edge-input__control:disabled,
+.edge-textarea__control:disabled {
+  cursor: not-allowed;
+  opacity: .6;
+}
+
+.edge-input.is-readonly .edge-input__control,
+.edge-textarea.is-readonly .edge-textarea__control {
+  background: var(--edge-color-surface-muted, #f6f8fa);
+  color: var(--edge-color-ink-700, #415469);
+}
+
 .edge-dropdown.has-error .edge-dropdown__trigger,
-.edge-link-field.has-error .edge-link-field__input {
+.edge-link-field.has-error .edge-link-field__input,
+.edge-input.has-error .edge-input__control,
+.edge-textarea.has-error .edge-textarea__control {
   border-color: var(--edge-color-danger, #c53a3a);
 }
 
@@ -105,7 +161,10 @@
 }
 
 .edge-dropdown__helper,
-.edge-link-field__helper {
+.edge-link-field__helper,
+.edge-input__helper,
+.edge-textarea__helper,
+.edge-checkbox__helper {
   color: var(--edge-color-ink-500, #6b7d90);
   font-size: .7rem;
   line-height: 1.35;
@@ -113,8 +172,67 @@
 }
 
 .edge-dropdown__helper.is-error,
-.edge-link-field__helper.is-error {
+.edge-link-field__helper.is-error,
+.edge-input__helper.is-error,
+.edge-textarea__helper.is-error,
+.edge-checkbox__helper.is-error {
   color: var(--edge-color-danger, #c53a3a);
+}
+
+.edge-checkbox__surface {
+  align-items: flex-start;
+  background: var(--edge-color-surface-soft, var(--edge-color-surface-muted, #f6f8fa));
+  border: 1px solid var(--edge-color-border-strong, #cbd7e5);
+  border-radius: var(--edge-radius-md, .75rem);
+  box-sizing: border-box;
+  cursor: pointer;
+  display: flex;
+  gap: .65rem;
+  min-height: 2.55rem;
+  padding: .7rem .75rem;
+  transition: border-color .15s ease, background .15s ease, box-shadow .15s ease;
+  width: 100%;
+}
+
+.edge-checkbox__surface:focus-within {
+  border-color: var(--edge-color-brand-500, #1677c8);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--edge-color-brand-500, #1677c8) 14%, transparent);
+}
+
+.edge-checkbox__control {
+  accent-color: var(--edge-color-brand-500, #1677c8);
+  flex: 0 0 auto;
+  height: 1rem;
+  margin: .12rem 0 0;
+  width: 1rem;
+}
+
+.edge-checkbox__copy {
+  display: grid;
+  gap: .2rem;
+  min-width: 0;
+}
+
+.edge-checkbox__label {
+  color: var(--edge-color-ink-800, #26374a);
+  font-size: .75rem;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.edge-checkbox__description {
+  color: var(--edge-color-ink-500, #6b7d90);
+  font-size: .7rem;
+  line-height: 1.35;
+}
+
+.edge-checkbox.has-error .edge-checkbox__surface {
+  border-color: var(--edge-color-danger, #c53a3a);
+}
+
+.edge-checkbox.is-readonly .edge-checkbox__surface {
+  cursor: default;
+  opacity: .78;
 }
 
 .edge-dropdown__menu,
