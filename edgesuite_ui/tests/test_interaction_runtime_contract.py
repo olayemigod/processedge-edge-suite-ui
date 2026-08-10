@@ -23,14 +23,14 @@ def test_latest_runtime_installs_switcher_commands_density_and_menu_extras():
 		'installSidebarAccordionRuntime(globalThis)',
 		'installWorkflowSaveBridge(globalThis)',
 		'installProductMenuExtras(runtime, globalThis)',
-		'EDGE_SUITE_UI_VERSION = "0.6.2"',
+		'EDGE_SUITE_UI_VERSION = "0.6.3"',
 		'export * from "./edgeui/interaction_runtime"',
 		'export * from "./edgeui/product_menu_extras"',
 		'export * from "./edgeui/sidebar_accordion_runtime"',
 		'export * from "./edgeui/workflow_save_bridge"',
 	):
 		assert expected in bundle
-	assert '"version": "0.6.2"' in package
+	assert '"version": "0.6.3"' in package
 
 	for expected in (
 		'const COMMAND_VERSION = "1.0.0"',
