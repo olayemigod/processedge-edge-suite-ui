@@ -5,6 +5,7 @@ import { documentComponents } from "./edgeui/document_components";
 import { emptyStateComponents } from "./edgeui/empty_state_components";
 import { applyFrappeCompatibility } from "./edgeui/frappe_compat";
 import { formComponents } from "./edgeui/form_components";
+import { formPrimitiveComponents } from "./edgeui/form_primitives";
 import { installEdgeSuiteInteractionRuntime } from "./edgeui/interaction_runtime";
 import { modalComponents } from "./edgeui/modal_components";
 import { applyModalCrossRuntimeCompatibility } from "./edgeui/modal_cross_runtime";
@@ -22,7 +23,7 @@ import { installSidebarAccordionRuntime } from "./edgeui/sidebar_accordion_runti
 import { installSidebarFocusLifecycle } from "./edgeui/sidebar_focus";
 import { installWorkflowSaveBridge } from "./edgeui/workflow_save_bridge";
 
-export const EDGE_SUITE_UI_VERSION = "0.6.2";
+export const EDGE_SUITE_UI_VERSION = "0.6.3";
 
 applyFrappeCompatibility(professionalComponents);
 applyModalCrossRuntimeCompatibility(modalComponents);
@@ -33,7 +34,7 @@ const components = Object.freeze(
     baseComponents,
     professionalComponents,
     modalComponents,
-    formComponents,
+    formComponents: { ...formComponents, ...formPrimitiveComponents },
     contextComponents,
     documentComponents,
     emptyStateComponents,
@@ -66,6 +67,7 @@ export * from "./edgeui/context_identity";
 export * from "./edgeui/document_components";
 export { EdgeEmptyState, emptyStateComponents } from "./edgeui/empty_state_components";
 export * from "./edgeui/form_components";
+export * from "./edgeui/form_primitives";
 export * from "./edgeui/frappe_compat";
 export * from "./edgeui/icons";
 export * from "./edgeui/interaction_runtime";
