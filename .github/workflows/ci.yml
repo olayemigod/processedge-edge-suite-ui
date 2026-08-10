@@ -56,6 +56,7 @@ jobs:
             edgesuite_ui/tests/test_shell_enhancement_contract.py \
             edgesuite_ui/tests/test_dashboard_alignment_and_waffle_contract.py \
             edgesuite_ui/tests/test_form_link_contract.py \
+            edgesuite_ui/tests/test_063_form_primitives_contract.py \
             edgesuite_ui/tests/test_document_components_contract.py \
             edgesuite_ui/tests/test_branch_context_contract.py \
             edgesuite_ui/tests/test_empty_state_icon_contract.py \
