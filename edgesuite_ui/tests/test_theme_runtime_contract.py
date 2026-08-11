@@ -5,6 +5,7 @@ BUNDLE = ROOT / "edgesuite_ui" / "public" / "js" / "edgeui.bundle.js"
 RUNTIME = ROOT / "edgesuite_ui" / "public" / "js" / "edgeui" / "theme_runtime.js"
 BOOTSTRAP = ROOT / "edgesuite_ui" / "public" / "js" / "edgeui_theme_bootstrap.js"
 STYLES = ROOT / "edgesuite_ui" / "public" / "css" / "edgeui_theme.css"
+TRANSITION_GUARD = ROOT / "edgesuite_ui" / "public" / "css" / "edgeui_theme_transition_guard.css"
 HOOKS = ROOT / "edgesuite_ui" / "hooks.py"
 
 
@@ -13,7 +14,7 @@ def read(path: Path) -> str:
 
 
 def test_theme_assets_are_exported_and_loaded_globally():
-	for path in (RUNTIME, BOOTSTRAP, STYLES):
+	for path in (RUNTIME, BOOTSTRAP, STYLES, TRANSITION_GUARD):
 		assert path.exists(), path
 
 	bundle = read(BUNDLE)
@@ -23,8 +24,10 @@ def test_theme_assets_are_exported_and_loaded_globally():
 	assert 'export * from "./edgeui/theme_runtime"' in bundle
 	assert "/assets/edgesuite_ui/js/edgeui_theme_bootstrap.js" in hooks
 	assert "/assets/edgesuite_ui/css/edgeui_theme.css" in hooks
+	assert "/assets/edgesuite_ui/css/edgeui_theme_transition_guard.css" in hooks
 	assert hooks.index("edgeui_theme_bootstrap.js") < hooks.index("edgesuite_ui.bundle.js")
 	assert hooks.index("edgeui_density.css") < hooks.index("edgeui_theme.css")
+	assert hooks.index("edgeui_theme_dark_compat.css") < hooks.index("edgeui_theme_transition_guard.css")
 
 
 def test_theme_runtime_supports_approved_appearance_modes_and_processedge_palettes():
@@ -51,6 +54,7 @@ def test_theme_preference_is_local_first_user_scoped_and_cross_tab_aware():
 	for contract in (
 		'const STORAGE_PREFIX = "edgeui:theme:v1"',
 		"frappe?.session?.user",
+		"frappe?.boot?.user?.name",
 		"localStorage?.getItem",
 		"localStorage?.setItem",
 		'addEventListener?.("storage", handleStorage)',
@@ -87,6 +91,26 @@ def test_theme_runtime_applies_semantic_root_attributes_and_avatar_menu_controls
 		'wrapper.setAttribute("aria-label", "Theme preferences")',
 	):
 		assert contract in content
+
+
+def test_theme_application_suppresses_transitions_during_semantic_token_swap():
+	runtime = read(RUNTIME)
+	guard = read(TRANSITION_GUARD)
+	for contract in (
+		'const THEME_APPLY_CLASS = "edge-theme-applying"',
+		"root.classList?.add(THEME_APPLY_CLASS)",
+		'if (typeof root.offsetWidth === "number") void root.offsetWidth',
+		"root.classList?.remove(THEME_APPLY_CLASS)",
+		"applyThemeAttributes(target?.document?.documentElement, preference, resolvedAppearance)",
+	):
+		assert contract in runtime
+
+	for contract in (
+		":root.edge-theme-applying *",
+		"transition: none !important",
+		"transition-duration: 0s !important",
+	):
+		assert contract in guard
 
 
 def test_theme_styles_define_light_dark_tokens_and_override_legacy_product_palettes():
