@@ -10,12 +10,11 @@
   const APPEARANCES = new Set(["light", "dark", "auto", "system"]);
 
   function currentUser() {
-    return globalThis.frappe?.session?.user || "";
+    return globalThis.frappe?.session?.user || "Guest";
   }
 
   function storageKey() {
-    const user = currentUser();
-    return user ? `${STORAGE_PREFIX}:${user}` : `${STORAGE_PREFIX}:last`;
+    return `${STORAGE_PREFIX}:${currentUser()}`;
   }
 
   function validClock(value, fallback) {
@@ -34,10 +33,6 @@
   function readPreference() {
     try {
       const raw = globalThis.localStorage?.getItem(storageKey());
-      if (!raw && currentUser()) {
-        const fallback = globalThis.localStorage?.getItem(`${STORAGE_PREFIX}:last`);
-        return normalizePreference(fallback ? JSON.parse(fallback) : {});
-      }
       return normalizePreference(raw ? JSON.parse(raw) : {});
     } catch (_error) {
       return { ...DEFAULT_PREFERENCE };
