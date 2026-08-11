@@ -218,21 +218,55 @@ test("dark mode keeps representative shared surfaces readable", async ({ browser
     const styles = await page.locator(selector).evaluate((node) => {
       const style = getComputedStyle(node);
       const rootStyle = getComputedStyle(document.documentElement);
+      const matchedBackgroundRules = [];
+      const visitRules = (rules, href) => {
+        for (const rule of rules) {
+          if (rule.cssRules) {
+            visitRules(rule.cssRules, href);
+            continue;
+          }
+          if (!rule.selectorText || !node.matches(rule.selectorText)) continue;
+          const background = rule.style?.getPropertyValue?.("background") || "";
+          const backgroundColor = rule.style?.getPropertyValue?.("background-color") || "";
+          if (!background && !backgroundColor) continue;
+          matchedBackgroundRules.push({
+            href,
+            selector: rule.selectorText,
+            background,
+            backgroundColor,
+            importantBackground: rule.style.getPropertyPriority("background"),
+            importantBackgroundColor: rule.style.getPropertyPriority("background-color"),
+          });
+        }
+      };
+      for (const sheet of document.styleSheets) {
+        try {
+          visitRules(sheet.cssRules, String(sheet.href || "inline"));
+        } catch (_error) {
+          // Same-origin fixture styles are readable; ignore anything else.
+        }
+      }
       return {
         background: style.backgroundColor,
         backgroundImage: style.backgroundImage,
         color: style.color,
         appearance: style.appearance,
+        opacity: style.opacity,
+        disabled: Boolean(node.disabled),
         controlSurface: rootStyle.getPropertyValue("--edge-color-control-surface").trim(),
+        nodeControlSurface: style.getPropertyValue("--edge-color-control-surface").trim(),
         surface: rootStyle.getPropertyValue("--edge-color-surface").trim(),
+        nodeSurface: style.getPropertyValue("--edge-color-surface").trim(),
         darkCompatLoaded: [...document.styleSheets].some((sheet) => String(sheet.href || "").includes("edgeui_theme_dark_compat.css")),
+        darkSelectorMatches: Boolean(document.querySelector(':root[data-edge-appearance="dark"] .edge-input__control')),
+        matchedBackgroundRules,
       };
     });
     const ratio = contrastRatio(styles.color, styles.background);
     expect(styles.background, `${selector} should not use a white dark-mode background`).not.toBe("rgb(255, 255, 255)");
     expect(
       ratio,
-      `${selector} contrast ${ratio.toFixed(2)}: ${styles.color} on ${styles.background}; appearance=${styles.appearance}; controlSurface=${styles.controlSurface}; surface=${styles.surface}; darkCompatLoaded=${styles.darkCompatLoaded}; backgroundImage=${styles.backgroundImage}`,
+      `${selector} contrast ${ratio.toFixed(2)}: ${styles.color} on ${styles.background}; appearance=${styles.appearance}; opacity=${styles.opacity}; disabled=${styles.disabled}; controlSurface=${styles.controlSurface}; nodeControlSurface=${styles.nodeControlSurface}; surface=${styles.surface}; nodeSurface=${styles.nodeSurface}; darkCompatLoaded=${styles.darkCompatLoaded}; darkSelectorMatches=${styles.darkSelectorMatches}; backgroundImage=${styles.backgroundImage}; matchedRules=${JSON.stringify(styles.matchedBackgroundRules)}`,
     ).toBeGreaterThanOrEqual(4.5);
   }
 
