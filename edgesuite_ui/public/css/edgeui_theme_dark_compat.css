@@ -54,6 +54,18 @@
   --edge-color-on-brand: #ffffff;
 }
 
+/* Legacy product and Frappe layers may assign their own foreground colors to
+   containers. Dark mode owns the semantic foreground on shared EdgeSuite
+   surfaces so readable text does not depend on inherited light-mode values. */
+:root[data-edge-appearance="dark"] .edge-stat-card,
+:root[data-edge-appearance="dark"] .edge-product-menu,
+:root[data-edge-appearance="dark"] .edge-modal,
+:root[data-edge-appearance="dark"] .edge-form-control,
+:root[data-edge-appearance="dark"] .edge-input__control,
+:root[data-edge-appearance="dark"] .edge-textarea__control {
+  color: var(--edge-color-ink-950) !important;
+}
+
 /* Brand-700 is intentionally retained as a strong filled-button hover token.
    Textual actions use the dedicated dark-safe brand text token instead. */
 :root[data-edge-appearance="dark"] .edge-eyebrow,
