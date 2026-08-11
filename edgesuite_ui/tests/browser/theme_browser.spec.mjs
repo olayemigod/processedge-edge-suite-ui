@@ -17,6 +17,8 @@ const MIME = new Map([
 let server;
 let baseURL;
 
+test.setTimeout(12_000);
+
 function insideRoot(path) {
   return path === ROOT || path.startsWith(`${ROOT}${sep}`);
 }
@@ -100,6 +102,8 @@ test.beforeAll(async () => {
 
 test.afterAll(async () => {
   if (!server) return;
+  server.closeIdleConnections?.();
+  server.closeAllConnections?.();
   await new Promise((resolveClose, rejectClose) => server.close((error) => error ? rejectClose(error) : resolveClose()));
 });
 
