@@ -35,6 +35,7 @@ app_include_css = [
 	"/assets/edgesuite_ui/css/edgeui_theme.css",
 	"/assets/edgesuite_ui/css/edgeui_theme_controls.css",
 	"/assets/edgesuite_ui/css/edgeui_theme_dark_compat.css",
+	"/assets/edgesuite_ui/css/edgeui_theme_transition_guard.css",
 ]
 app_include_js = [
 	"/assets/edgesuite_ui/js/edgeui_theme_bootstrap.js",
