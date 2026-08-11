@@ -88,6 +88,25 @@ jobs:
       - name: Check JavaScript and compile bundle in memory
         run: npm test
 
+  browser-theme:
+    name: Theme browser smoke
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+          cache: npm
+      - name: Install project dependencies
+        run: npm ci
+      - name: Install Playwright test runner
+        run: npm install --no-save --package-lock=false @playwright/test@1.55.0
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Run EdgeSuite theme browser QA
+        run: npx playwright test edgesuite_ui/tests/browser/theme_browser.spec.mjs --reporter=line --workers=1
+
   frappe-v16:
     name: Frappe v16 integration
     if: github.event_name == 'workflow_dispatch'
