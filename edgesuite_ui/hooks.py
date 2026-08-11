@@ -33,6 +33,7 @@ app_include_css = [
 	"/assets/edgesuite_ui/css/edgeui_child_table_layout.css",
 	"/assets/edgesuite_ui/css/edgeui_density.css",
 	"/assets/edgesuite_ui/css/edgeui_theme.css",
+	"/assets/edgesuite_ui/css/edgeui_theme_dark_compat.css",
 ]
 app_include_js = [
 	"/assets/edgesuite_ui/js/edgeui_theme_bootstrap.js",
