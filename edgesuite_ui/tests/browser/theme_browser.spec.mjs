@@ -217,13 +217,22 @@ test("dark mode keeps representative shared surfaces readable", async ({ browser
   for (const selector of [".edge-stat-card", ".edge-input__control", "#qa-product-menu", "#qa-modal"]) {
     const styles = await page.locator(selector).evaluate((node) => {
       const style = getComputedStyle(node);
-      return { background: style.backgroundColor, color: style.color };
+      const rootStyle = getComputedStyle(document.documentElement);
+      return {
+        background: style.backgroundColor,
+        backgroundImage: style.backgroundImage,
+        color: style.color,
+        appearance: style.appearance,
+        controlSurface: rootStyle.getPropertyValue("--edge-color-control-surface").trim(),
+        surface: rootStyle.getPropertyValue("--edge-color-surface").trim(),
+        darkCompatLoaded: [...document.styleSheets].some((sheet) => String(sheet.href || "").includes("edgeui_theme_dark_compat.css")),
+      };
     });
     const ratio = contrastRatio(styles.color, styles.background);
     expect(styles.background, `${selector} should not use a white dark-mode background`).not.toBe("rgb(255, 255, 255)");
     expect(
       ratio,
-      `${selector} contrast ${ratio.toFixed(2)}: ${styles.color} on ${styles.background}`,
+      `${selector} contrast ${ratio.toFixed(2)}: ${styles.color} on ${styles.background}; appearance=${styles.appearance}; controlSurface=${styles.controlSurface}; surface=${styles.surface}; darkCompatLoaded=${styles.darkCompatLoaded}; backgroundImage=${styles.backgroundImage}`,
     ).toBeGreaterThanOrEqual(4.5);
   }
 
