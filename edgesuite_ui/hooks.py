@@ -32,8 +32,10 @@ app_include_css = [
 	"/assets/edgesuite_ui/css/edgeui_documents.css",
 	"/assets/edgesuite_ui/css/edgeui_child_table_layout.css",
 	"/assets/edgesuite_ui/css/edgeui_density.css",
+	"/assets/edgesuite_ui/css/edgeui_theme.css",
 ]
 app_include_js = [
+	"/assets/edgesuite_ui/js/edgeui_theme_bootstrap.js",
 	"edgesuite_ui.bundle.js",
 	"/assets/edgesuite_ui/js/edgeui_product_menu_host_bridge.js",
 	"/assets/edgesuite_ui/js/edgeui_ctrl_k_guard.js",
