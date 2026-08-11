@@ -43,7 +43,7 @@ jobs:
       - name: Enforce Ruff result
         if: steps.ruff.outcome == 'failure'
         run: exit 1
-      - name: Validate package, runtime, product context, interactions, shell, forms, documents, context, and boundaries
+      - name: Validate package, runtime, product context, interactions, shell, forms, documents, context, themes, and boundaries
         id: contracts
         continue-on-error: true
         run: |
@@ -60,6 +60,7 @@ jobs:
             edgesuite_ui/tests/test_document_components_contract.py \
             edgesuite_ui/tests/test_branch_context_contract.py \
             edgesuite_ui/tests/test_empty_state_icon_contract.py \
+            edgesuite_ui/tests/test_theme_runtime_contract.py \
             2>&1 | tee contract-tests.log
       - name: Upload contract diagnostics
         if: steps.contracts.outcome == 'failure'
