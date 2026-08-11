@@ -10,7 +10,8 @@
   const APPEARANCES = new Set(["light", "dark", "auto", "system"]);
 
   function currentUser() {
-    return globalThis.frappe?.session?.user || "Guest";
+    const frappe = globalThis.frappe || {};
+    return frappe.session?.user || frappe.boot?.user?.name || frappe.boot?.user?.email || "Guest";
   }
 
   function storageKey() {
