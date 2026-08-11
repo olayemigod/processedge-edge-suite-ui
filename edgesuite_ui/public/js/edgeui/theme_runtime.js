@@ -28,12 +28,11 @@ const paletteIds = new Set(EDGE_THEME_PALETTES.map((item) => item.id));
 const appearanceIds = new Set(EDGE_THEME_APPEARANCES.map((item) => item.id));
 
 function currentUser(target) {
-  return target?.frappe?.session?.user || "";
+  return target?.frappe?.session?.user || "Guest";
 }
 
 function storageKey(target) {
-  const user = currentUser(target);
-  return user ? `${STORAGE_PREFIX}:${user}` : `${STORAGE_PREFIX}:last`;
+  return `${STORAGE_PREFIX}:${currentUser(target)}`;
 }
 
 function validClock(value, fallback) {
@@ -78,9 +77,7 @@ export function resolveThemeAppearance(preference, target = globalThis, now = ne
 
 function readStoredPreference(target) {
   try {
-    const key = storageKey(target);
-    let raw = target?.localStorage?.getItem(key);
-    if (!raw && currentUser(target)) raw = target?.localStorage?.getItem(`${STORAGE_PREFIX}:last`);
+    const raw = target?.localStorage?.getItem(storageKey(target));
     return normalizeThemePreference(raw ? JSON.parse(raw) : {});
   } catch (_error) {
     return { ...EDGE_THEME_DEFAULT };
@@ -89,9 +86,7 @@ function readStoredPreference(target) {
 
 function writeStoredPreference(target, preference) {
   try {
-    const payload = JSON.stringify(preference);
-    target?.localStorage?.setItem(storageKey(target), payload);
-    if (currentUser(target)) target?.localStorage?.setItem(`${STORAGE_PREFIX}:last`, payload);
+    target?.localStorage?.setItem(storageKey(target), JSON.stringify(preference));
   } catch (_error) {
     // Theme selection must remain usable when browser storage is unavailable.
   }
@@ -218,6 +213,7 @@ export function createThemeController(target = globalThis) {
   const listeners = new Set();
   let autoTimer = null;
   let mediaQuery = null;
+  let mediaListenerMode = "";
 
   function apply({ persist = false, notify = true } = {}) {
     preference = normalizeThemePreference(preference);
@@ -254,8 +250,7 @@ export function createThemeController(target = globalThis) {
   }
 
   function handleStorage(event) {
-    const keys = new Set([storageKey(target), `${STORAGE_PREFIX}:last`]);
-    if (!keys.has(event?.key)) return;
+    if (event?.key !== storageKey(target)) return;
     preference = readStoredPreference(target);
     apply({ persist: false, notify: true });
   }
@@ -266,8 +261,13 @@ export function createThemeController(target = globalThis) {
 
   target?.addEventListener?.("storage", handleStorage);
   mediaQuery = target?.matchMedia?.("(prefers-color-scheme: dark)") || null;
-  mediaQuery?.addEventListener?.("change", handleSystemAppearanceChange);
-  mediaQuery?.addListener?.(handleSystemAppearanceChange);
+  if (typeof mediaQuery?.addEventListener === "function") {
+    mediaQuery.addEventListener("change", handleSystemAppearanceChange);
+    mediaListenerMode = "event";
+  } else if (typeof mediaQuery?.addListener === "function") {
+    mediaQuery.addListener(handleSystemAppearanceChange);
+    mediaListenerMode = "legacy";
+  }
 
   const controller = {
     palettes: EDGE_THEME_PALETTES,
@@ -305,8 +305,11 @@ export function createThemeController(target = globalThis) {
     destroy() {
       if (autoTimer) target?.clearTimeout?.(autoTimer);
       target?.removeEventListener?.("storage", handleStorage);
-      mediaQuery?.removeEventListener?.("change", handleSystemAppearanceChange);
-      mediaQuery?.removeListener?.(handleSystemAppearanceChange);
+      if (mediaListenerMode === "event") {
+        mediaQuery?.removeEventListener?.("change", handleSystemAppearanceChange);
+      } else if (mediaListenerMode === "legacy") {
+        mediaQuery?.removeListener?.(handleSystemAppearanceChange);
+      }
       listeners.clear();
     },
   };
