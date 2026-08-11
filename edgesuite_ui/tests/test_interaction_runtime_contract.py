@@ -74,8 +74,9 @@ def test_latest_runtime_installs_switcher_commands_density_and_menu_extras():
 		"function enforceSidebar",
 		"shell.dataset.edgeMultiSection = \"true\"",
 		"sectionIdentity(section)",
-		"preferred || (active && sectionExpanded(active) ? active : expanded[0])",
-		"setSectionExpanded(shell, preferred, true)",
+		"preferred || active || expanded[0]",
+		"if (keep && !sectionExpanded(keep))",
+		"setSectionExpanded(shell, keep, true)",
 		"delete shell.dataset[SIDEBAR_OPEN_SECTION_KEY]",
 		"scheduleEnforce()",
 	):
