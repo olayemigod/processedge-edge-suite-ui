@@ -47,10 +47,18 @@ def test_theme_controls_keep_open_avatar_menu_in_sync_with_runtime_changes():
 		"updateStatus",
 		"syncAutoSchedule",
 		'addEventListener?.(THEME_EVENT, syncMenu)',
-		'MutationObserver',
+		"MutationObserver",
 		'addEventListener?.("page-change", syncMenu)',
 	):
 		assert contract in content
+
+
+def test_theme_control_sync_does_not_rewrite_unchanged_dom_and_loop_observer():
+	content = read(CONTROLS)
+	assert 'if (status.textContent !== text) status.textContent = text' in content
+	assert 'if (button.getAttribute("aria-pressed") !== value)' in content
+	assert "inputs[0].value !== preference.autoLightStart" in content
+	assert "inputs[1].value !== preference.autoDarkStart" in content
 
 
 def test_theme_time_fields_follow_shared_semantic_tokens():
