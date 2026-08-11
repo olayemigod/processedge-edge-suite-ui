@@ -66,6 +66,19 @@
   color: var(--edge-color-ink-950) !important;
 }
 
+/* Native/Frappe control styling can retain a light form surface even after the
+   theme root switches to dark. Shared controls therefore own their dark
+   background and border explicitly rather than relying on inheritance. */
+:root[data-edge-appearance="dark"] .edge-form-control,
+:root[data-edge-appearance="dark"] .edge-input__control,
+:root[data-edge-appearance="dark"] .edge-textarea__control,
+:root[data-edge-appearance="dark"] .edge-dropdown__trigger,
+:root[data-edge-appearance="dark"] .edge-link-field__input {
+  background: var(--edge-color-surface) !important;
+  border-color: var(--edge-color-border-strong) !important;
+  color: var(--edge-color-ink-950) !important;
+}
+
 /* Brand-700 is intentionally retained as a strong filled-button hover token.
    Textual actions use the dedicated dark-safe brand text token instead. */
 :root[data-edge-appearance="dark"] .edge-eyebrow,
