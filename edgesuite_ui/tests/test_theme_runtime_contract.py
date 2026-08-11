@@ -112,6 +112,9 @@ def test_bootstrap_can_apply_remembered_theme_before_main_runtime():
 	content = read(BOOTSTRAP)
 	for contract in (
 		'const STORAGE_PREFIX = "edgeui:theme:v1"',
+		"frappe.session?.user",
+		"frappe.boot?.user?.name",
+		"frappe.boot?.user?.email",
 		"localStorage?.getItem(storageKey())",
 		"root.dataset.edgePalette",
 		"root.dataset.edgeAppearanceMode",
@@ -119,3 +122,5 @@ def test_bootstrap_can_apply_remembered_theme_before_main_runtime():
 		"resolveAppearance(preference)",
 	):
 		assert contract in content
+
+	assert ":last" not in content
