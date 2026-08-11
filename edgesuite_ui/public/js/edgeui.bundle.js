@@ -21,6 +21,7 @@ import { createCompatibleRuntimeComponents } from "./edgeui/runtime_component_co
 import { installSharedShellEnhancements } from "./edgeui/shell_enhancements";
 import { installSidebarAccordionRuntime } from "./edgeui/sidebar_accordion_runtime";
 import { installSidebarFocusLifecycle } from "./edgeui/sidebar_focus";
+import { installThemeRuntime } from "./edgeui/theme_runtime";
 import { installWorkflowSaveBridge } from "./edgeui/workflow_save_bridge";
 
 export const EDGE_SUITE_UI_VERSION = "0.6.3";
@@ -48,6 +49,7 @@ const runtime = createEdgeSuiteRuntime({
 
 if (typeof globalThis !== "undefined") {
   exposeEdgeSuiteRuntime(runtime, globalThis);
+  installThemeRuntime(runtime, globalThis);
   installProductContextBridge(runtime, globalThis);
   installProductMenuMountEnhancements(runtime);
   installSharedShellEnhancements(runtime);
@@ -87,6 +89,7 @@ export * from "./edgeui/runtime_component_compat";
 export * from "./edgeui/shell_enhancements";
 export * from "./edgeui/sidebar_accordion_runtime";
 export * from "./edgeui/sidebar_focus";
+export * from "./edgeui/theme_runtime";
 export * from "./edgeui/workflow_save_bridge";
 
 export default runtime;
