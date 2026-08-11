@@ -1,6 +1,7 @@
 const STORAGE_PREFIX = "edgeui:theme:v1";
 const THEME_EVENT = "edgesuite:theme-changed";
 const THEME_MENU_CLASS = "edge-theme-menu";
+const THEME_APPLY_CLASS = "edge-theme-applying";
 
 export const EDGE_THEME_PALETTES = Object.freeze([
   { id: "edge-blue", label: "Edge Blue" },
@@ -28,7 +29,7 @@ const paletteIds = new Set(EDGE_THEME_PALETTES.map((item) => item.id));
 const appearanceIds = new Set(EDGE_THEME_APPEARANCES.map((item) => item.id));
 
 function currentUser(target) {
-  return target?.frappe?.session?.user || "Guest";
+  return target?.frappe?.session?.user || target?.frappe?.boot?.user?.name || "Guest";
 }
 
 function storageKey(target) {
@@ -99,6 +100,23 @@ function dispatchThemeChanged(target, preference, resolvedAppearance) {
       detail: { ...preference, resolvedAppearance },
     }),
   );
+}
+
+function applyThemeAttributes(root, preference, resolvedAppearance) {
+  if (!root) return;
+
+  // Shared controls animate background and border changes during normal user
+  // interaction. A theme swap changes foreground tokens immediately, however,
+  // which can otherwise create a short low-contrast frame while backgrounds
+  // are still transitioning. Disable transitions for the style-flush that owns
+  // the semantic token change, then restore normal interaction transitions.
+  root.classList?.add(THEME_APPLY_CLASS);
+  root.dataset.edgePalette = preference.palette;
+  root.dataset.edgeAppearanceMode = preference.appearance;
+  root.dataset.edgeAppearance = resolvedAppearance;
+  root.style.colorScheme = resolvedAppearance;
+  if (typeof root.offsetWidth === "number") void root.offsetWidth;
+  root.classList?.remove(THEME_APPLY_CLASS);
 }
 
 function createChoiceButton(document, item, active, onClick, extraClass = "") {
@@ -218,13 +236,7 @@ export function createThemeController(target = globalThis) {
   function apply({ persist = false, notify = true } = {}) {
     preference = normalizeThemePreference(preference);
     resolvedAppearance = resolveThemeAppearance(preference, target);
-    const root = target?.document?.documentElement;
-    if (root) {
-      root.dataset.edgePalette = preference.palette;
-      root.dataset.edgeAppearanceMode = preference.appearance;
-      root.dataset.edgeAppearance = resolvedAppearance;
-      root.style.colorScheme = resolvedAppearance;
-    }
+    applyThemeAttributes(target?.document?.documentElement, preference, resolvedAppearance);
     if (persist) writeStoredPreference(target, preference);
     if (notify) {
       const snapshot = { ...preference, resolvedAppearance };
@@ -333,4 +345,4 @@ export function installThemeRuntime(runtime, target = globalThis) {
   return controller;
 }
 
-export { STORAGE_PREFIX, THEME_EVENT, THEME_MENU_CLASS };
+export { STORAGE_PREFIX, THEME_EVENT, THEME_MENU_CLASS, THEME_APPLY_CLASS };
