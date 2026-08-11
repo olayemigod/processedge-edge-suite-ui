@@ -1,6 +1,7 @@
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
+BASE = ROOT / "edgesuite_ui" / "public" / "css" / "edgeui.bundle.css"
 COMPAT = ROOT / "edgesuite_ui" / "public" / "css" / "edgeui_theme_dark_compat.css"
 HOOKS = ROOT / "edgesuite_ui" / "hooks.py"
 
@@ -14,6 +15,12 @@ def test_dark_theme_compatibility_layer_is_loaded_after_theme_registry():
 	hooks = read(HOOKS)
 	assert "/assets/edgesuite_ui/css/edgeui_theme_dark_compat.css" in hooks
 	assert hooks.index("edgeui_theme.css") < hooks.index("edgeui_theme_dark_compat.css")
+
+
+def test_filter_title_uses_semantic_foreground_token():
+	content = read(BASE)
+	assert ".edge-filter-title" in content
+	assert "color: var(--edge-color-ink-950);" in content
 
 
 def test_every_approved_palette_has_dark_specific_soft_brand_tokens():
