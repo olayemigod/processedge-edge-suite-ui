@@ -1,0 +1,108 @@
+/* EdgeSuite Theme System V1 — dark compatibility layer.
+   Loaded after edgeui_theme.css so every approved ProcessEdge palette has
+   dark-appropriate tint surfaces and readable action text. */
+
+:root[data-edge-appearance="dark"][data-edge-palette="edge-blue"] {
+  --edge-color-brand-25: #0d1721;
+  --edge-color-brand-50: #112334;
+  --edge-color-brand-100: #173248;
+  --edge-color-brand-200: #244d68;
+  --edge-color-brand-text: #78c8ff;
+  --edge-color-accent-soft: #123125;
+}
+
+:root[data-edge-appearance="dark"][data-edge-palette="edge-indigo"] {
+  --edge-color-brand-25: #111522;
+  --edge-color-brand-50: #181d34;
+  --edge-color-brand-100: #222947;
+  --edge-color-brand-200: #343d65;
+  --edge-color-brand-text: #aab5ff;
+  --edge-color-accent-soft: #152b38;
+}
+
+:root[data-edge-appearance="dark"][data-edge-palette="edge-teal"] {
+  --edge-color-brand-25: #0d191b;
+  --edge-color-brand-50: #10272a;
+  --edge-color-brand-100: #17383c;
+  --edge-color-brand-200: #23545a;
+  --edge-color-brand-text: #7cd9df;
+  --edge-color-accent-soft: #162c39;
+}
+
+:root[data-edge-appearance="dark"][data-edge-palette="edge-emerald"] {
+  --edge-color-brand-25: #0f1915;
+  --edge-color-brand-50: #13271e;
+  --edge-color-brand-100: #1b382a;
+  --edge-color-brand-200: #28533d;
+  --edge-color-brand-text: #84d7ae;
+  --edge-color-accent-soft: #152b3c;
+}
+
+:root[data-edge-appearance="dark"][data-edge-palette="edge-slate"] {
+  --edge-color-brand-25: #121820;
+  --edge-color-brand-50: #18222d;
+  --edge-color-brand-100: #243140;
+  --edge-color-brand-200: #35495c;
+  --edge-color-brand-text: #a9bed0;
+  --edge-color-accent-soft: #142a3c;
+}
+
+:root[data-edge-appearance="dark"] {
+  --edge-color-danger-surface: #351d22;
+  --edge-color-danger-border: #6b3138;
+  --edge-color-danger-text: #ff9a9a;
+  --edge-color-on-brand: #ffffff;
+}
+
+/* Brand-700 is intentionally retained as a strong filled-button hover token.
+   Textual actions use the dedicated dark-safe brand text token instead. */
+:root[data-edge-appearance="dark"] .edge-eyebrow,
+:root[data-edge-appearance="dark"] .edge-product-menu__product,
+:root[data-edge-appearance="dark"] .edge-sidebar-item.active,
+:root[data-edge-appearance="dark"] .edge-product-menu__item.is-active,
+:root[data-edge-appearance="dark"] .edge-product-menu__item.is-active .edge-product-menu__item-icon,
+:root[data-edge-appearance="dark"] .edge-topbar-menu__link,
+:root[data-edge-appearance="dark"] .edge-notification-text-action,
+:root[data-edge-appearance="dark"] .edge-modal__full-form,
+:root[data-edge-appearance="dark"] .edge-link-field__create {
+  color: var(--edge-color-brand-text, var(--edge-color-info)) !important;
+}
+
+:root[data-edge-appearance="dark"] .edge-product-menu__trigger:hover,
+:root[data-edge-appearance="dark"] .edge-product-menu__trigger[aria-expanded="true"],
+:root[data-edge-appearance="dark"] .edge-notification-bell:hover,
+:root[data-edge-appearance="dark"] .edge-notification-bell[aria-expanded="true"],
+:root[data-edge-appearance="dark"] .edge-user-avatar-button:hover,
+:root[data-edge-appearance="dark"] .edge-user-avatar-button[aria-expanded="true"],
+:root[data-edge-appearance="dark"] .edge-theme-menu__choice[aria-pressed="true"] {
+  color: var(--edge-color-brand-text, var(--edge-color-info));
+}
+
+:root[data-edge-appearance="dark"] .edge-form-global-error {
+  background: var(--edge-color-danger-surface) !important;
+  border-color: var(--edge-color-danger-border) !important;
+  color: var(--edge-color-danger-text) !important;
+}
+
+:root[data-edge-appearance="dark"] .edge-form-error,
+:root[data-edge-appearance="dark"] .edge-topbar-menu__state--error,
+:root[data-edge-appearance="dark"] .edge-shared-notification-state.is-error,
+:root[data-edge-appearance="dark"] .edge-user-menu__logout {
+  color: var(--edge-color-danger-text) !important;
+}
+
+:root[data-edge-appearance="dark"] .edge-modal-backdrop {
+  background: rgb(2 8 15 / 68%);
+}
+
+:root[data-edge-appearance="dark"] .edge-product-switcher__select,
+:root[data-edge-appearance="dark"] .edge-form-control,
+:root[data-edge-appearance="dark"] .edge-input__control,
+:root[data-edge-appearance="dark"] .edge-textarea__control {
+  caret-color: var(--edge-color-brand-text, var(--edge-color-info));
+}
+
+:root[data-edge-appearance="dark"] ::selection {
+  background: color-mix(in srgb, var(--edge-color-brand-500) 46%, transparent);
+  color: var(--edge-color-ink-950);
+}
