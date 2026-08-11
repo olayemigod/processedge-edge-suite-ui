@@ -6,23 +6,29 @@
     return globalThis.EdgeUI?.theme || globalThis.EdgeSuiteUI?.theme || null;
   }
 
+  function setPressed(button, active) {
+    const value = active ? "true" : "false";
+    if (button.getAttribute("aria-pressed") !== value) button.setAttribute("aria-pressed", value);
+  }
+
   function updatePressedState(menu, preference) {
     menu.querySelectorAll(".edge-theme-menu__choices .edge-theme-menu__choice").forEach((button) => {
-      button.setAttribute("aria-pressed", button.dataset.value === preference.appearance ? "true" : "false");
+      setPressed(button, button.dataset.value === preference.appearance);
     });
     menu.querySelectorAll(".edge-theme-menu__palette-list .edge-theme-menu__choice").forEach((button) => {
-      button.setAttribute("aria-pressed", button.dataset.value === preference.palette ? "true" : "false");
+      setPressed(button, button.dataset.value === preference.palette);
     });
   }
 
   function updateStatus(menu, preference, resolvedAppearance) {
     const status = menu.querySelector(".edge-theme-menu__status");
     if (!status) return;
-    status.textContent = preference.appearance === "auto"
+    const text = preference.appearance === "auto"
       ? `Auto · ${resolvedAppearance} now`
       : preference.appearance === "system"
         ? `System · ${resolvedAppearance} now`
         : `${resolvedAppearance} appearance`;
+    if (status.textContent !== text) status.textContent = text;
   }
 
   function makeTimeField(document, labelText, value) {
@@ -47,8 +53,12 @@
 
     if (existing) {
       const inputs = existing.querySelectorAll("input[type='time']");
-      if (inputs[0] && inputs[0] !== globalThis.document?.activeElement) inputs[0].value = preference.autoLightStart;
-      if (inputs[1] && inputs[1] !== globalThis.document?.activeElement) inputs[1].value = preference.autoDarkStart;
+      if (inputs[0] && inputs[0] !== globalThis.document?.activeElement && inputs[0].value !== preference.autoLightStart) {
+        inputs[0].value = preference.autoLightStart;
+      }
+      if (inputs[1] && inputs[1] !== globalThis.document?.activeElement && inputs[1].value !== preference.autoDarkStart) {
+        inputs[1].value = preference.autoDarkStart;
+      }
       return;
     }
 
