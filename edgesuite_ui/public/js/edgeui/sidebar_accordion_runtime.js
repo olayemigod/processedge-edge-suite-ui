@@ -44,9 +44,9 @@ function enforceSidebar(shell) {
 
   const active = sections.find((section) => section.querySelector(".edge-sidebar-item.active"));
   const expanded = sections.filter(sectionExpanded);
-  const keep = preferred || (active && sectionExpanded(active) ? active : expanded[0]) || null;
+  const keep = preferred || active || expanded[0] || null;
 
-  if (preferred && !sectionExpanded(preferred)) setSectionExpanded(shell, preferred, true);
+  if (keep && !sectionExpanded(keep)) setSectionExpanded(shell, keep, true);
   for (const section of sections) {
     if (section !== keep && sectionExpanded(section)) setSectionExpanded(shell, section, false);
   }
@@ -95,11 +95,23 @@ export function installSidebarAccordionRuntime(target = globalThis) {
   target.frappe?.router?.on?.("change", resetForNavigation);
   if (target.MutationObserver && document.body) {
     const observer = new target.MutationObserver((records) => {
-      if (records.some((record) => record.addedNodes?.length || record.removedNodes?.length)) {
+      if (
+        records.some(
+          (record) =>
+            record.addedNodes?.length ||
+            record.removedNodes?.length ||
+            (record.type === "attributes" && ["class", "hidden", "aria-expanded"].includes(record.attributeName)),
+        )
+      ) {
         scheduleEnforce();
       }
     });
-    observer.observe(document.body, { childList: true, subtree: true });
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["class", "hidden", "aria-expanded"],
+    });
     target.__edgeSuiteSidebarAccordionObserver = observer;
   }
   scheduleEnforce();
