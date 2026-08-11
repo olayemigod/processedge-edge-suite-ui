@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>EdgeSuite Theme Browser QA</title>
+  <link rel="stylesheet" href="/edgesuite_ui/public/css/edgeui.bundle.css">
+  <link rel="stylesheet" href="/edgesuite_ui/public/css/edgeui_product_menu.css">
+  <link rel="stylesheet" href="/edgesuite_ui/public/css/edgeui_professional.css">
+  <link rel="stylesheet" href="/edgesuite_ui/public/css/edgeui_flat_chrome.css">
+  <link rel="stylesheet" href="/edgesuite_ui/public/css/edgeui_modal.css">
+  <link rel="stylesheet" href="/edgesuite_ui/public/css/edgeui_form_controls.css">
+  <link rel="stylesheet" href="/edgesuite_ui/public/css/edgeui_theme.css">
+  <link rel="stylesheet" href="/edgesuite_ui/public/css/edgeui_theme_controls.css">
+  <link rel="stylesheet" href="/edgesuite_ui/public/css/edgeui_theme_dark_compat.css">
+  <script src="/edgesuite_ui/public/js/edgeui_theme_bootstrap.js"></script>
+  <script>
+    globalThis.__edgeThemeBootstrapSnapshot = {
+      palette: document.documentElement.dataset.edgePalette,
+      appearanceMode: document.documentElement.dataset.edgeAppearanceMode,
+      appearance: document.documentElement.dataset.edgeAppearance,
+    };
+  </script>
+</head>
+<body class="edge-suite-shell-active">
+  <div class="edge-app-shell" data-edge-product="vetedge">
+    <header class="edge-topbar edge-app-shell__topbar">
+      <div class="edge-topbar__brand"><strong>VetEdge</strong></div>
+      <div class="edge-topbar-context"><span class="edge-context-chip">QA Branch</span></div>
+      <div class="edge-topbar-actions">
+        <button class="edge-notification-bell" type="button">N</button>
+        <div class="edge-user-menu-wrap">
+          <button class="edge-user-avatar-button" type="button">QA</button>
+          <section class="edge-topbar-menu edge-user-menu" role="menu" aria-label="User menu">
+            <header class="edge-user-menu__identity">
+              <span class="edge-user-avatar edge-user-avatar--static">QA</span>
+              <span class="edge-user-menu__copy"><strong>Theme QA User</strong><small>qa@example.com</small></span>
+            </header>
+            <div class="edge-user-menu__items">
+              <button type="button" role="menuitem">My profile</button>
+              <button type="button" role="menuitem">User settings</button>
+              <button type="button" role="menuitem" class="edge-user-menu__logout">Log out</button>
+            </div>
+          </section>
+        </div>
+      </div>
+    </header>
+
+    <div class="edge-shell-body">
+      <aside class="edge-sidebar">
+        <nav class="edge-sidebar__nav">
+          <button class="edge-sidebar-item active" type="button"><span>Active navigation</span></button>
+          <button class="edge-sidebar-item" type="button"><span>Other navigation</span></button>
+        </nav>
+      </aside>
+      <main class="edge-shell-main">
+        <section class="edge-page-layout">
+          <header class="edge-page-header"><div><p class="edge-eyebrow">Theme QA</p><h1 class="edge-page-header__title">Shared surface smoke test</h1></div></header>
+          <div class="edge-dashboard-layout">
+            <article class="edge-stat-card"><p class="edge-stat-card__label">Revenue</p><p class="edge-stat-card__value">₦125,000</p><p class="edge-stat-card__helper">Representative dashboard card</p></article>
+          </div>
+          <div class="edge-filter-bar">
+            <label class="edge-input"><span class="edge-input__label">Search</span><input class="edge-input__control" placeholder="Search records"></label>
+          </div>
+          <div class="edge-product-menu" id="qa-product-menu">
+            <div class="edge-product-menu__profile"><span class="edge-product-menu__avatar">QA</span><div class="edge-product-menu__identity"><strong>Theme QA</strong><small>Product menu</small></div></div>
+            <div class="edge-product-menu__sections"><button class="edge-product-menu__item is-active" type="button"><span class="edge-product-menu__item-label">Active menu item</span></button></div>
+          </div>
+          <div class="edge-notification-row is-unread"><span class="edge-notification-row__indicator"></span><span class="edge-notification-row__copy"><strong>Unread notification</strong><small>Theme-aware notification surface</small></span></div>
+          <div class="edge-modal" id="qa-modal"><header class="edge-modal__header"><div class="edge-modal__heading"><h2>Theme modal</h2><p>Representative modal surface</p></div></header><div class="edge-modal__body"><button class="edge-button edge-button--primary" type="button">Primary action</button></div></div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script type="module">
+    import { installThemeRuntime } from "/edgesuite_ui/public/js/edgeui/theme_runtime.js";
+    const runtime = {};
+    globalThis.EdgeUI = runtime;
+    globalThis.EdgeSuiteUI = runtime;
+    installThemeRuntime(runtime, globalThis);
+    await import("/edgesuite_ui/public/js/edgeui_theme_controls.js");
+    globalThis.__edgeThemeReady = true;
+  </script>
+</body>
+</html>
