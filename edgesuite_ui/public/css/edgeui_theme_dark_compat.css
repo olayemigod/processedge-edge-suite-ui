@@ -52,6 +52,9 @@
   --edge-color-danger-border: #6b3138;
   --edge-color-danger-text: #ff9a9a;
   --edge-color-on-brand: #ffffff;
+  --edge-color-control-surface: #111b26;
+  --edge-color-control-border: #3a4e61;
+  --edge-color-control-text: #f1f6fb;
 }
 
 /* Legacy product and Frappe layers may assign their own foreground colors to
@@ -59,24 +62,21 @@
    surfaces so readable text does not depend on inherited light-mode values. */
 :root[data-edge-appearance="dark"] .edge-stat-card,
 :root[data-edge-appearance="dark"] .edge-product-menu,
-:root[data-edge-appearance="dark"] .edge-modal,
-:root[data-edge-appearance="dark"] .edge-form-control,
-:root[data-edge-appearance="dark"] .edge-input__control,
-:root[data-edge-appearance="dark"] .edge-textarea__control {
+:root[data-edge-appearance="dark"] .edge-modal {
   color: var(--edge-color-ink-950) !important;
 }
 
 /* Native/Frappe control styling can retain a light form surface even after the
-   theme root switches to dark. Shared controls therefore own their dark
-   background and border explicitly rather than relying on inheritance. */
+   theme root switches to dark. Controls use dedicated dark semantic tokens so
+   their rendered surface is independent from native or legacy generic colors. */
 :root[data-edge-appearance="dark"] .edge-form-control,
 :root[data-edge-appearance="dark"] .edge-input__control,
 :root[data-edge-appearance="dark"] .edge-textarea__control,
 :root[data-edge-appearance="dark"] .edge-dropdown__trigger,
 :root[data-edge-appearance="dark"] .edge-link-field__input {
-  background: var(--edge-color-surface) !important;
-  border-color: var(--edge-color-border-strong) !important;
-  color: var(--edge-color-ink-950) !important;
+  background-color: var(--edge-color-control-surface) !important;
+  border-color: var(--edge-color-control-border) !important;
+  color: var(--edge-color-control-text) !important;
 }
 
 /* Brand-700 is intentionally retained as a strong filled-button hover token.
