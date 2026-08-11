@@ -199,6 +199,10 @@
   padding: var(--edge-space-4);
 }
 
+.edge-filter-title {
+  color: var(--edge-color-ink-950);
+}
+
 .edge-filter-bar__fields {
   align-items: end;
   display: flex;
