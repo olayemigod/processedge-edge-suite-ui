@@ -219,8 +219,12 @@ test("dark mode keeps representative shared surfaces readable", async ({ browser
       const style = getComputedStyle(node);
       return { background: style.backgroundColor, color: style.color };
     });
-    expect(styles.background).not.toBe("rgb(255, 255, 255)");
-    expect(contrastRatio(styles.color, styles.background)).toBeGreaterThanOrEqual(4.5);
+    const ratio = contrastRatio(styles.color, styles.background);
+    expect(styles.background, `${selector} should not use a white dark-mode background`).not.toBe("rgb(255, 255, 255)");
+    expect(
+      ratio,
+      `${selector} contrast ${ratio.toFixed(2)}: ${styles.color} on ${styles.background}`,
+    ).toBeGreaterThanOrEqual(4.5);
   }
 
   const primaryColor = await page.locator(".edge-button--primary").evaluate((node) => getComputedStyle(node).color);
