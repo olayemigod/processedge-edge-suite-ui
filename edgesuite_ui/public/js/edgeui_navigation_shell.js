@@ -328,13 +328,14 @@
     observer = new MutationObserver((records) => {
       for (const record of records) {
         for (const node of record.addedNodes || []) {
-          if (node.nodeType === 1) scan(node);
+          if (node.nodeType !== 1) continue;
+          if (node.matches?.(SHELL_SELECTOR) || node.querySelector?.(SHELL_SELECTOR)) scan(node);
         }
       }
     });
-    // Observe mounts/replacements only. Route changes are covered by Frappe
-    // events and patched history methods; watching our own class mutations can
-    // create a feedback loop on live Vue shells.
+    // Observe shell mounts/replacements only. Route changes are covered by
+    // Frappe events and patched history methods. Internal sidebar DOM updates
+    // (including the collapse SVG) must never retrigger shell installation.
     observer.observe(document.body, { childList: true, subtree: true });
   }
 
