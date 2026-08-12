@@ -168,3 +168,34 @@ test("navigation handoff collapses old section and opens current section", async
   await expect(operations).toHaveClass(/is-collapsed/);
   await expect(reports).toHaveClass(/is-collapsed/);
 });
+
+test("resource query focuses matching submenu and keeps one section open", async ({ page }) => {
+  await page.goto(baseURL, { waitUntil: "networkidle" });
+  await page.waitForFunction(() => globalThis.__edgeThemeReady === true);
+
+  const sections = page.locator(".edge-sidebar__section");
+  const operations = sections.nth(0);
+  const clinical = sections.nth(1);
+  const reports = sections.nth(2);
+  const appointments = operations.locator(".edge-sidebar-item").filter({ hasText: "Appointments" });
+
+  // Resource Center changes logical resources with history.replaceState rather
+  // than a full Frappe route event. Navigation must still follow that state.
+  await page.evaluate(() => {
+    history.replaceState({}, "", "/desk/vetedge-resource-center?resource=appointments");
+  });
+
+  await expect(appointments).toHaveClass(/active/);
+  await expect(appointments).toHaveAttribute("aria-current", "page");
+  await expect(operations).toHaveClass(/is-expanded/);
+  await expect(clinical).toHaveClass(/is-collapsed/);
+  await expect(reports).toHaveClass(/is-collapsed/);
+
+  // The active item and its parent section must expose theme focus state.
+  const activeColor = await appointments.evaluate((element) => getComputedStyle(element).color);
+  const sectionColor = await operations
+    .locator(".edge-sidebar__section-toggle")
+    .evaluate((element) => getComputedStyle(element).color);
+  expect(activeColor).not.toBe("rgb(65, 84, 105)");
+  expect(sectionColor).not.toBe("rgb(65, 84, 105)");
+});
