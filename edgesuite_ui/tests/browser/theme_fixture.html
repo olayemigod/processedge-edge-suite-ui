@@ -120,11 +120,13 @@
   <script src="/edgesuite_ui/public/js/edgeui_navigation_shell.js"></script>
   <script src="/edgesuite_ui/public/js/edgeui_navigation_component_bridge.js"></script>
   <script type="module">
+    import { installSidebarAccordionRuntime } from "/edgesuite_ui/public/js/edgeui/sidebar_accordion_runtime.js";
     import { installThemeRuntime } from "/edgesuite_ui/public/js/edgeui/theme_runtime.js";
     const runtime = {};
     globalThis.EdgeUI = runtime;
     globalThis.EdgeSuiteUI = runtime;
     installThemeRuntime(runtime, globalThis);
+    installSidebarAccordionRuntime(globalThis);
     await import("/edgesuite_ui/public/js/edgeui_theme_controls.js");
     globalThis.EdgeSuiteNavigation?.install?.();
     globalThis.EdgeSuiteNavigationComponentBridge?.install?.();
