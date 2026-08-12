@@ -257,6 +257,47 @@ test("navigation shell collapses to a persistent theme-aware icon rail", async (
   await context.close();
 });
 
+test("active section and submenu follow the selected theme palette", async ({ browser }) => {
+  const context = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+  const page = await openThemePage(context, "active-path@example.com");
+
+  const readActivePath = () => page.evaluate(() => {
+    const root = getComputedStyle(document.documentElement);
+    const brandValue = root.getPropertyValue("--edge-color-brand-700").trim();
+    const probe = document.createElement("span");
+    probe.style.color = brandValue;
+    document.body.appendChild(probe);
+    const brand = getComputedStyle(probe).color;
+    probe.remove();
+
+    const activeSection = document.querySelector(".edge-sidebar__section:has(.edge-sidebar-item.active) .edge-sidebar__section-toggle");
+    const activeLabel = document.querySelector(".edge-sidebar-item.active .edge-sidebar-item__label");
+    return {
+      brand,
+      section: getComputedStyle(activeSection).color,
+      submenu: getComputedStyle(activeLabel).color,
+      sectionBackground: getComputedStyle(activeSection).backgroundColor,
+      submenuBackground: getComputedStyle(document.querySelector(".edge-sidebar-item.active")).backgroundColor,
+    };
+  });
+
+  const blue = await readActivePath();
+  expect(blue.section).toBe(blue.brand);
+  expect(blue.submenu).toBe(blue.brand);
+  expect(blue.sectionBackground).not.toBe("rgba(0, 0, 0, 0)");
+  expect(blue.submenuBackground).not.toBe("rgba(0, 0, 0, 0)");
+
+  await page.locator('.edge-theme-menu__palette-list [data-value="edge-teal"]').click();
+  const teal = await readActivePath();
+  expect(teal.section).toBe(teal.brand);
+  expect(teal.submenu).toBe(teal.brand);
+  expect(teal.brand).not.toBe(blue.brand);
+  expect(teal.sectionBackground).not.toBe(blue.sectionBackground);
+  expect(teal.submenuBackground).not.toBe(blue.submenuBackground);
+
+  await context.close();
+});
+
 test("dark mode keeps representative shared surfaces readable", async ({ browser }) => {
   const context = await browser.newContext();
   const page = await openThemePage(context, "contrast@example.com");
