@@ -177,7 +177,8 @@ test("resource query focuses matching submenu and keeps one section open", async
   const operations = sections.nth(0);
   const clinical = sections.nth(1);
   const reports = sections.nth(2);
-  const appointments = operations.locator(".edge-sidebar-item").filter({ hasText: "Appointments" });
+  const appointmentsLabel = operations.locator(".edge-sidebar-item__label").filter({ hasText: /^Appointments$/ });
+  const appointments = appointmentsLabel.locator("..").locator("..");
 
   // Resource Center changes logical resources with history.replaceState rather
   // than a full Frappe route event. Navigation must still follow that state.
