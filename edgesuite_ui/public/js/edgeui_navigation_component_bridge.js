@@ -4,6 +4,7 @@
   if (typeof window === "undefined") return;
 
   const BRIDGE_MARK = "__edgeNavigationComponentBridge";
+  const ROUTE_EVENT = "edgesuite-navigation-route-change";
 
   function runtime() {
     return window.EdgeSuiteUI || window.EdgeUI || null;
@@ -18,7 +19,7 @@
       if (url.pathname === "/app" || url.pathname.startsWith("/app/")) {
         url.pathname = `/desk${url.pathname.slice(4)}`;
       }
-      const pathname = (url.pathname.replace(/\/+$/, "") || "/");
+      const pathname = url.pathname.replace(/\/+$/, "") || "/";
       const params = [...url.searchParams.entries()].sort(([aKey, aValue], [bKey, bValue]) => {
         const keyOrder = aKey.localeCompare(bKey);
         return keyOrder || aValue.localeCompare(bValue);
@@ -69,6 +70,10 @@
     return true;
   }
 
+  function parameterCount(params) {
+    return [...params.keys()].length;
+  }
+
   function resolveActiveRoute(attrs) {
     const items = flattenItems(attrs?.menuItems);
     if (!items.length) return attrs?.activeRoute || "";
@@ -82,28 +87,53 @@
     const exactCurrent = candidates.find((entry) => entry.parts.normalized === current.normalized);
     if (exactCurrent) return exactCurrent.item.route;
 
-    const suppliedMatch = candidates.find((entry) => entry.parts.normalized === supplied.normalized);
-    if (suppliedMatch) return suppliedMatch.item.route;
-
     const samePath = candidates.filter((entry) => entry.parts.pathname === current.pathname);
     if (samePath.length) {
       const subsetMatches = samePath
         .filter((entry) => paramsSubset(entry.parts.params, current.params))
-        .sort((a, b) => [...b.parts.params.keys()].length - [...a.parts.params.keys()].length || a.index - b.index);
+        .sort((a, b) => parameterCount(b.parts.params) - parameterCount(a.parts.params) || a.index - b.index);
       if (subsetMatches.length) return subsetMatches[0].item.route;
 
-      // A route such as /desk/vetedge-resource-center defaults to the first
-      // resource item when no query-string discriminator has been supplied.
-      if (![...current.params.keys()].length) return samePath[0].item.route;
+      if (!parameterCount(current.params)) return samePath[0].item.route;
     }
 
-    return attrs?.activeRoute || "";
+    // Native Frappe document/detail routes extend the list route with a record
+    // segment. Keep the corresponding sidebar item active for those child routes.
+    const prefixMatches = candidates
+      .filter(
+        (entry) =>
+          entry.parts.pathname !== "/" &&
+          current.pathname.startsWith(`${entry.parts.pathname}/`) &&
+          paramsSubset(entry.parts.params, current.params),
+      )
+      .sort(
+        (a, b) =>
+          b.parts.pathname.length - a.parts.pathname.length ||
+          parameterCount(b.parts.params) - parameterCount(a.parts.params) ||
+          a.index - b.index,
+      );
+    if (prefixMatches.length) return prefixMatches[0].item.route;
+
+    // A supplied route is only trustworthy when it describes the same browser
+    // path. A stale Dashboard activeRoute must never override the current page.
+    const suppliedMatch = candidates.find((entry) => entry.parts.normalized === supplied.normalized);
+    if (suppliedMatch && supplied.pathname === current.pathname) return suppliedMatch.item.route;
+
+    return "";
   }
 
   function refreshDomNavigation() {
     window.setTimeout(() => {
       window.EdgeSuiteNavigation?.install?.();
     }, 0);
+  }
+
+  function announceRouteChange() {
+    try {
+      document.dispatchEvent(new CustomEvent(ROUTE_EVENT));
+    } catch (_error) {
+      document.dispatchEvent?.(new Event(ROUTE_EVENT));
+    }
   }
 
   function installComponentBridge() {
@@ -117,9 +147,32 @@
       name: "NavigationAwareEdgeAppShell",
       inheritAttrs: false,
       setup(_props, context) {
-        Vue.onMounted?.(refreshDomNavigation);
+        const routeRevision = Vue.ref?.(0) || { value: 0 };
+        const syncRoute = () => {
+          routeRevision.value += 1;
+          announceRouteChange();
+          refreshDomNavigation();
+        };
+
+        Vue.onMounted?.(() => {
+          document.addEventListener("page-change", syncRoute);
+          window.addEventListener?.("popstate", syncRoute);
+          window.addEventListener?.("hashchange", syncRoute);
+          window.frappe?.router?.on?.("change", syncRoute);
+          syncRoute();
+        });
         Vue.onUpdated?.(refreshDomNavigation);
+        Vue.onBeforeUnmount?.(() => {
+          document.removeEventListener("page-change", syncRoute);
+          window.removeEventListener?.("popstate", syncRoute);
+          window.removeEventListener?.("hashchange", syncRoute);
+          window.frappe?.router?.off?.("change", syncRoute);
+        });
+
         return () => {
+          // Reading the revision makes the wrapper reactive to Frappe route
+          // changes even when product props themselves do not change.
+          void routeRevision.value;
           const attrs = context.attrs || {};
           const activeRoute = resolveActiveRoute(attrs);
           return Vue.h(
