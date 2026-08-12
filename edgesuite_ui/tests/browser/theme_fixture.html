@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="/edgesuite_ui/public/css/edgeui.bundle.css">
   <link rel="stylesheet" href="/edgesuite_ui/public/css/edgeui_product_menu.css">
   <link rel="stylesheet" href="/edgesuite_ui/public/css/edgeui_professional.css">
+  <link rel="stylesheet" href="/edgesuite_ui/public/css/edgeui_sidebar_refinement.css">
   <link rel="stylesheet" href="/edgesuite_ui/public/css/edgeui_action_contrast.css">
   <link rel="stylesheet" href="/edgesuite_ui/public/css/edgeui_flat_chrome.css">
   <link rel="stylesheet" href="/edgesuite_ui/public/css/edgeui_modal.css">
@@ -15,6 +16,7 @@
   <link rel="stylesheet" href="/edgesuite_ui/public/css/edgeui_theme_controls.css">
   <link rel="stylesheet" href="/edgesuite_ui/public/css/edgeui_theme_dark_compat.css">
   <link rel="stylesheet" href="/edgesuite_ui/public/css/edgeui_theme_transition_guard.css">
+  <link rel="stylesheet" href="/edgesuite_ui/public/css/edgeui_navigation_shell.css">
   <script src="/edgesuite_ui/public/js/edgeui_theme_bootstrap.js"></script>
   <script>
     globalThis.__edgeThemeBootstrapSnapshot = {
@@ -50,10 +52,49 @@
 
     <div class="edge-shell-body">
       <aside class="edge-sidebar">
-        <nav class="edge-sidebar__nav">
-          <button class="edge-sidebar-item active" type="button"><span>Active navigation</span></button>
-          <button class="edge-sidebar-item" type="button"><span>Other navigation</span></button>
+        <div class="edge-sidebar__brand">
+          <span class="edge-sidebar__mark">V</span>
+          <span class="edge-sidebar__brand-copy"><strong>VetEdge</strong><small>Veterinary operations</small></span>
+        </div>
+        <nav class="edge-sidebar__nav" aria-label="Product navigation">
+          <section class="edge-sidebar__section is-expanded">
+            <button class="edge-sidebar__section-toggle" type="button" aria-expanded="true">
+              <span class="edge-icon" aria-hidden="true">O</span><span>Operations</span><span class="edge-icon" aria-hidden="true">⌄</span>
+            </button>
+            <div class="edge-sidebar__items">
+              <button class="edge-sidebar-item active" type="button" aria-current="page">
+                <span class="edge-icon" aria-hidden="true">F</span><span class="edge-sidebar-item__copy"><span class="edge-sidebar-item__label">Front Desk</span><span class="edge-sidebar-item__description">Appointments and queue</span></span>
+              </button>
+              <button class="edge-sidebar-item" type="button">
+                <span class="edge-icon" aria-hidden="true">A</span><span class="edge-sidebar-item__copy"><span class="edge-sidebar-item__label">Appointments</span><span class="edge-sidebar-item__description">Schedule and manage visits</span></span>
+              </button>
+            </div>
+          </section>
+          <section class="edge-sidebar__section is-collapsed">
+            <button class="edge-sidebar__section-toggle" type="button" aria-expanded="false">
+              <span class="edge-icon" aria-hidden="true">C</span><span>Clinical</span><span class="edge-icon" aria-hidden="true">⌄</span>
+            </button>
+            <div class="edge-sidebar__items" hidden>
+              <button class="edge-sidebar-item" type="button">
+                <span class="edge-icon" aria-hidden="true">M</span><span class="edge-sidebar-item__copy"><span class="edge-sidebar-item__label">Medical History</span><span class="edge-sidebar-item__description">Longitudinal patient record</span></span>
+              </button>
+            </div>
+          </section>
+          <section class="edge-sidebar__section is-collapsed">
+            <button class="edge-sidebar__section-toggle" type="button" aria-expanded="false">
+              <span class="edge-icon" aria-hidden="true">R</span><span>Reports</span><span class="edge-icon" aria-hidden="true">⌄</span>
+            </button>
+            <div class="edge-sidebar__items" hidden>
+              <button class="edge-sidebar-item" type="button">
+                <span class="edge-icon" aria-hidden="true">E</span><span class="edge-sidebar-item__copy"><span class="edge-sidebar-item__label">Executive Dashboard</span></span>
+              </button>
+            </div>
+          </section>
         </nav>
+        <div class="edge-sidebar__user">
+          <span class="edge-sidebar__avatar">QA</span>
+          <span class="edge-sidebar__user-copy"><strong>Theme QA User</strong><small>Administrator</small></span>
+        </div>
       </aside>
       <main class="edge-shell-main">
         <section class="edge-page-layout">
@@ -75,6 +116,7 @@
     </div>
   </div>
 
+  <script src="/edgesuite_ui/public/js/edgeui_navigation_shell.js"></script>
   <script type="module">
     import { installThemeRuntime } from "/edgesuite_ui/public/js/edgeui/theme_runtime.js";
     const runtime = {};
@@ -82,6 +124,7 @@
     globalThis.EdgeSuiteUI = runtime;
     installThemeRuntime(runtime, globalThis);
     await import("/edgesuite_ui/public/js/edgeui_theme_controls.js");
+    globalThis.EdgeSuiteNavigation?.install?.();
     globalThis.__edgeThemeReady = true;
   </script>
 </body>
