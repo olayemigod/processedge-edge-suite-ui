@@ -1,5 +1,7 @@
 const SIDEBAR_OPEN_SECTION_KEY = "edgeOpenSidebarSection";
 const SIDEBAR_RECONCILING_KEY = "edgeSidebarReconciling";
+const SIDEBAR_ROUTE_PENDING_KEY = "edgeRoutePending";
+const ROUTE_EVENT = "edgesuite-navigation-route-change";
 
 function sectionIdentity(section) {
   if (!section) return "";
@@ -30,6 +32,12 @@ function setSectionExpanded(shell, section, expanded) {
   }
 }
 
+function activeSection(sections) {
+  return sections.find((section) =>
+    section.querySelector('.edge-sidebar-item.active, .edge-sidebar-item[aria-current="page"]'),
+  );
+}
+
 function enforceSidebar(shell) {
   if (!shell) return;
   shell.dataset.edgeMultiSection = "true";
@@ -42,9 +50,18 @@ function enforceSidebar(shell) {
     : null;
   if (preferredIdentity && !preferred) delete shell.dataset[SIDEBAR_OPEN_SECTION_KEY];
 
-  const active = sections.find((section) => section.querySelector(".edge-sidebar-item.active"));
+  const active = activeSection(sections);
+  const routePending = shell.dataset[SIDEBAR_ROUTE_PENDING_KEY] === "1";
   const expanded = sections.filter(sectionExpanded);
-  const keep = preferred || active || expanded[0] || null;
+
+  // Navigation has priority exactly once. After the route has settled, users
+  // may manually inspect another section until the next navigation occurs.
+  let keep = preferred || active || expanded[0] || null;
+  if (routePending && active) {
+    keep = active;
+    delete shell.dataset[SIDEBAR_OPEN_SECTION_KEY];
+    delete shell.dataset[SIDEBAR_ROUTE_PENDING_KEY];
+  }
 
   if (keep && !sectionExpanded(keep)) setSectionExpanded(shell, keep, true);
   for (const section of sections) {
@@ -87,11 +104,13 @@ export function installSidebarAccordionRuntime(target = globalThis) {
   const resetForNavigation = () => {
     document.querySelectorAll(".edge-app-shell").forEach((shell) => {
       delete shell.dataset[SIDEBAR_OPEN_SECTION_KEY];
+      shell.dataset[SIDEBAR_ROUTE_PENDING_KEY] = "1";
     });
     scheduleEnforce();
   };
 
   document.addEventListener("page-change", resetForNavigation);
+  document.addEventListener(ROUTE_EVENT, resetForNavigation);
   target.frappe?.router?.on?.("change", resetForNavigation);
   if (target.MutationObserver && document.body) {
     const observer = new target.MutationObserver((records) => {
@@ -100,7 +119,7 @@ export function installSidebarAccordionRuntime(target = globalThis) {
           (record) =>
             record.addedNodes?.length ||
             record.removedNodes?.length ||
-            (record.type === "attributes" && ["class", "hidden", "aria-expanded"].includes(record.attributeName)),
+            (record.type === "attributes" && ["class", "hidden", "aria-expanded", "aria-current"].includes(record.attributeName)),
         )
       ) {
         scheduleEnforce();
@@ -110,7 +129,7 @@ export function installSidebarAccordionRuntime(target = globalThis) {
       childList: true,
       subtree: true,
       attributes: true,
-      attributeFilter: ["class", "hidden", "aria-expanded"],
+      attributeFilter: ["class", "hidden", "aria-expanded", "aria-current"],
     });
     target.__edgeSuiteSidebarAccordionObserver = observer;
   }
