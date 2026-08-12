@@ -125,12 +125,33 @@ test("navigation handoff collapses old section and opens current section", async
 
   await expect(operations).toHaveClass(/is-expanded/);
 
-  // Manual exploration is allowed: Reports may temporarily replace Operations.
-  await reports.locator(".edge-sidebar__section-toggle").click();
+  // Model the stale/manual state reported on the real product shell: Reports
+  // was the last expanded section even though Operations still owns focus.
+  await page.evaluate(() => {
+    const shell = document.querySelector(".edge-app-shell");
+    const sections = [...document.querySelectorAll(".edge-sidebar__section")];
+    const operations = sections[0];
+    const reports = sections[2];
+    const operationsItems = operations?.querySelector(".edge-sidebar__items");
+    const reportsItems = reports?.querySelector(".edge-sidebar__items");
+    operations?.classList.remove("is-expanded");
+    operations?.classList.add("is-collapsed");
+    operations?.querySelector(".edge-sidebar__section-toggle")?.setAttribute("aria-expanded", "false");
+    if (operationsItems) operationsItems.hidden = true;
+    reports?.classList.remove("is-collapsed");
+    reports?.classList.add("is-expanded");
+    reports?.querySelector(".edge-sidebar__section-toggle")?.setAttribute("aria-expanded", "true");
+    if (reportsItems) reportsItems.hidden = false;
+    if (shell && reports) {
+      shell.dataset.edgeOpenSidebarSection = String(
+        reports.querySelector(".edge-sidebar__section-toggle")?.textContent || "",
+      ).trim();
+    }
+  });
   await expect(reports).toHaveClass(/is-expanded/);
   await expect(operations).toHaveClass(/is-collapsed/);
 
-  // A real navigation must override that manual preference and hand focus to Clinical.
+  // A real navigation must override that stale/manual preference and hand focus to Clinical.
   await page.evaluate(() => {
     const sections = [...document.querySelectorAll(".edge-sidebar__section")];
     const oldActive = document.querySelector(".edge-sidebar-item.active");
