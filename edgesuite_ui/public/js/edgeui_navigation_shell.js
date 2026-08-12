@@ -153,7 +153,16 @@
         if (!shell.classList.contains(COLLAPSED_CLASS)) return;
         const sectionToggle = event.target?.closest?.(SECTION_TOGGLE_SELECTOR);
         if (!sectionToggle) return;
+
+        const alreadyExpanded = sectionToggle.getAttribute("aria-expanded") === "true";
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation();
         applyState(shell, false);
+
+        if (!alreadyExpanded) {
+          window.setTimeout(() => sectionToggle.click(), 0);
+        }
       },
       true,
     );
@@ -190,6 +199,8 @@
   function scan(root = document) {
     root.querySelectorAll?.(SHELL_SELECTOR).forEach(installShell);
     if (root.matches?.(SHELL_SELECTOR)) installShell(root);
+    const ownerShell = root.closest?.(SHELL_SELECTOR);
+    if (ownerShell) installShell(ownerShell);
   }
 
   function startObserver() {
