@@ -200,3 +200,40 @@ test("resource query focuses matching submenu and keeps one section open", async
   expect(activeColor).not.toBe("rgb(65, 84, 105)");
   expect(sectionColor).not.toBe("rgb(65, 84, 105)");
 });
+
+test("operational resources outrank similarly named reports", async ({ page }) => {
+  await page.goto(baseURL, { waitUntil: "networkidle" });
+  await page.waitForFunction(() => globalThis.__edgeThemeReady === true);
+
+  await page.evaluate(() => {
+    const sections = [...document.querySelectorAll(".edge-sidebar__section")];
+    const operationsItems = sections[0]?.querySelector(".edge-sidebar__items");
+    const reportsItems = sections[2]?.querySelector(".edge-sidebar__items");
+
+    const makeItem = (label) => {
+      const item = document.createElement("button");
+      item.type = "button";
+      item.className = "edge-sidebar-item";
+      item.innerHTML = `<span class="edge-icon" aria-hidden="true">•</span><span class="edge-sidebar-item__copy"><span class="edge-sidebar-item__label">${label}</span></span>`;
+      return item;
+    };
+
+    operationsItems?.appendChild(makeItem("Pet Boarding Booking"));
+    operationsItems?.appendChild(makeItem("Pet Grooming Appointment"));
+    reportsItems?.appendChild(makeItem("Boarding Report"));
+    reportsItems?.appendChild(makeItem("Grooming Report"));
+    globalThis.EdgeSuiteNavigation?.install?.();
+  });
+
+  const activeLabel = page.locator(".edge-sidebar-item.active .edge-sidebar-item__label");
+
+  await page.evaluate(() => {
+    history.replaceState({}, "", "/desk/vetedge-resource-center?resource=boarding");
+  });
+  await expect(activeLabel).toHaveText("Pet Boarding Booking");
+
+  await page.evaluate(() => {
+    history.replaceState({}, "", "/desk/vetedge-resource-center?resource=grooming");
+  });
+  await expect(activeLabel).toHaveText("Pet Grooming Appointment");
+});
