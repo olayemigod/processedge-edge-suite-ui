@@ -224,7 +224,7 @@ test("navigation shell collapses to a persistent theme-aware icon rail", async (
   await expect(shell).toHaveClass(/edge-nav-shell--collapsed/);
   await expect(toggle).toHaveAttribute("aria-label", "Expand navigation");
   await expect(page.locator(".edge-sidebar__brand-copy")).toBeHidden();
-  expect(await sidebar.evaluate((node) => Math.round(node.getBoundingClientRect().width))).toBe(72);
+  await expect.poll(() => sidebar.evaluate((node) => Math.round(node.getBoundingClientRect().width))).toBe(72);
   expect(await page.evaluate(() => localStorage.getItem("edgeui:navigation@example.com:vetedge:navigation-collapsed"))).toBe("1");
 
   await page.locator(".edge-sidebar__section-toggle").first().click();
