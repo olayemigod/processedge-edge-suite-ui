@@ -118,6 +118,7 @@
   </div>
 
   <script src="/edgesuite_ui/public/js/edgeui_navigation_shell.js"></script>
+  <script src="/edgesuite_ui/public/js/edgeui_navigation_component_bridge.js"></script>
   <script type="module">
     import { installThemeRuntime } from "/edgesuite_ui/public/js/edgeui/theme_runtime.js";
     const runtime = {};
@@ -126,6 +127,7 @@
     installThemeRuntime(runtime, globalThis);
     await import("/edgesuite_ui/public/js/edgeui_theme_controls.js");
     globalThis.EdgeSuiteNavigation?.install?.();
+    globalThis.EdgeSuiteNavigationComponentBridge?.install?.();
     globalThis.__edgeThemeReady = true;
   </script>
 </body>
