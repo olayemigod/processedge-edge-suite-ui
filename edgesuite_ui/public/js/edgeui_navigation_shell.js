@@ -16,6 +16,7 @@
   const DESKTOP_QUERY = "(min-width: 62rem)";
   const installed = new WeakSet();
   let observer = null;
+  let historyPatched = false;
 
   function currentUser() {
     return String(window.frappe?.session?.user || "guest").trim() || "guest";
@@ -68,6 +69,55 @@
 
   function itemLabel(item) {
     return String(item?.querySelector?.(".edge-sidebar-item__label")?.textContent || item?.textContent || "Navigation item").trim();
+  }
+
+  function slug(value) {
+    return String(value || "")
+      .trim()
+      .toLowerCase()
+      .replace(/&/g, " and ")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "");
+  }
+
+  function currentResourceSlug() {
+    try {
+      return slug(new URL(window.location.href).searchParams.get("resource") || "");
+    } catch (_error) {
+      return "";
+    }
+  }
+
+  function resourceItem(shell) {
+    const resource = currentResourceSlug();
+    if (!resource) return null;
+    const items = [...shell.querySelectorAll(ITEM_SELECTOR)];
+    const scored = items
+      .map((item, index) => {
+        const label = slug(itemLabel(item));
+        let score = 0;
+        if (label === resource) score = 100;
+        else if (label.startsWith(`${resource}-`)) score = 80;
+        else if (resource.startsWith(`${label}-`)) score = 70;
+        else if (label.includes(resource)) score = 50;
+        return { item, index, score };
+      })
+      .filter((entry) => entry.score > 0)
+      .sort((a, b) => b.score - a.score || a.index - b.index);
+    return scored[0]?.item || null;
+  }
+
+  function syncActiveItemFromLocation(shell) {
+    const candidate = resourceItem(shell);
+    if (!candidate) return shell.querySelector(ACTIVE_ITEM_SELECTOR) || null;
+
+    shell.querySelectorAll(ITEM_SELECTOR).forEach((item) => {
+      const active = item === candidate;
+      item.classList.toggle("active", active);
+      if (active) item.setAttribute("aria-current", "page");
+      else item.removeAttribute("aria-current");
+    });
+    return candidate;
   }
 
   function updateTooltips(shell, collapsed) {
@@ -171,6 +221,7 @@
 
   function syncAccordionToActive(shell) {
     if (shell.classList.contains(COLLAPSED_CLASS)) return;
+    syncActiveItemFromLocation(shell);
     const section = activeSection(shell);
     if (!section) return;
     const toggle = section.querySelector(SECTION_TOGGLE_SELECTOR);
@@ -287,7 +338,23 @@
     });
   }
 
+  function patchHistory() {
+    if (historyPatched || !window.history) return;
+    historyPatched = true;
+    for (const methodName of ["pushState", "replaceState"]) {
+      const original = window.history[methodName];
+      if (typeof original !== "function") continue;
+      window.history[methodName] = function (...args) {
+        const result = original.apply(this, args);
+        window.setTimeout(install, 0);
+        return result;
+      };
+    }
+    window.addEventListener("popstate", () => window.setTimeout(install, 0));
+  }
+
   function install() {
+    patchHistory();
     scan();
     startObserver();
   }
