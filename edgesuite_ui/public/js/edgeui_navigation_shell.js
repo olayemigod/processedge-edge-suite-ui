@@ -96,7 +96,11 @@
     const scored = items
       .map((item, index) => {
         const label = slug(itemLabel(item));
-        const isDashboard = label.endsWith("-dashboard") || label.includes("dashboard-");
+        const isAnalytical =
+          label.endsWith("-dashboard") ||
+          label.includes("dashboard-") ||
+          label.endsWith("-report") ||
+          label.includes("-report-");
         let score = 0;
         if (label === resource) score = 120;
         else if (singular !== resource && label === singular) score = 110;
@@ -105,7 +109,7 @@
         else if (resource.startsWith(`${label}-`)) score = 70;
         else if (label.includes(resource)) score = 55;
         else if (singular !== resource && label.includes(singular)) score = 50;
-        if (isDashboard && score) score = Math.min(score, 20);
+        if (isAnalytical && score) score = Math.min(score, 20);
         return { item, index, score };
       })
       .filter((entry) => entry.score > 0)
