@@ -20,13 +20,30 @@ function sectionExpanded(section) {
   return Boolean(section && !section.classList.contains("is-collapsed") && !items?.hidden);
 }
 
+function applySectionDomState(section, expanded) {
+  if (!section) return;
+  const toggle = section.querySelector?.(".edge-sidebar__section-toggle");
+  const items = section.querySelector?.(".edge-sidebar__items");
+  section.classList.toggle("is-expanded", expanded);
+  section.classList.toggle("is-collapsed", !expanded);
+  toggle?.setAttribute("aria-expanded", expanded ? "true" : "false");
+  if (items) items.hidden = !expanded;
+}
+
 function setSectionExpanded(shell, section, expanded) {
   if (!shell || !section || sectionExpanded(section) === expanded) return;
   const toggle = section.querySelector?.(".edge-sidebar__section-toggle");
-  if (!toggle) return;
+  if (!toggle) {
+    applySectionDomState(section, expanded);
+    return;
+  }
   shell.dataset[SIDEBAR_RECONCILING_KEY] = "1";
   try {
     toggle.click();
+    // Vue normally owns this state. During remounts or legacy/static shells the
+    // click handler may not be attached yet, so reconcile the DOM immediately
+    // instead of leaving a stale section expanded.
+    if (sectionExpanded(section) !== expanded) applySectionDomState(section, expanded);
   } finally {
     delete shell.dataset[SIDEBAR_RECONCILING_KEY];
   }
