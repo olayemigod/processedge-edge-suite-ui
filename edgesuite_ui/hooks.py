@@ -44,6 +44,7 @@ app_include_js = [
 	"edgesuite_ui.bundle.js",
 	"/assets/edgesuite_ui/js/edgeui_theme_controls.js",
 	"/assets/edgesuite_ui/js/edgeui_navigation_shell.js",
+	"/assets/edgesuite_ui/js/edgeui_navigation_component_bridge.js",
 	"/assets/edgesuite_ui/js/edgeui_product_menu_host_bridge.js",
 	"/assets/edgesuite_ui/js/edgeui_ctrl_k_guard.js",
 	"/assets/edgesuite_ui/js/edgeui_ctrl_s_guard.js",
