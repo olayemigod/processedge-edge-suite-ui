@@ -209,6 +209,49 @@ test("theme changes synchronize across tabs while preferences remain isolated by
   await context.close();
 });
 
+test("navigation shell collapses to a persistent theme-aware icon rail", async ({ browser }) => {
+  const context = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+  const page = await openThemePage(context, "navigation@example.com");
+  const shell = page.locator(".edge-app-shell");
+  const sidebar = page.locator(".edge-sidebar");
+  const toggle = page.locator(".edge-nav-shell-toggle");
+
+  await expect(shell).toHaveClass(/edge-nav-shell-v2/);
+  await expect(toggle).toBeVisible();
+  await expect(toggle).toHaveAttribute("aria-label", "Collapse navigation");
+
+  await toggle.click();
+  await expect(shell).toHaveClass(/edge-nav-shell--collapsed/);
+  await expect(toggle).toHaveAttribute("aria-label", "Expand navigation");
+  await expect(page.locator(".edge-sidebar__brand-copy")).toBeHidden();
+  expect(await sidebar.evaluate((node) => Math.round(node.getBoundingClientRect().width))).toBe(72);
+  expect(await page.evaluate(() => localStorage.getItem("edgeui:navigation@example.com:vetedge:navigation-collapsed"))).toBe("1");
+
+  await page.locator(".edge-sidebar__section-toggle").first().click();
+  await expect(shell).not.toHaveClass(/edge-nav-shell--collapsed/);
+  await expect(page.locator(".edge-sidebar__brand-copy")).toBeVisible();
+  await expect(page.locator(".edge-sidebar__items").first()).toBeVisible();
+
+  await toggle.click();
+  await page.reload({ waitUntil: "networkidle" });
+  await page.waitForFunction(() => globalThis.__edgeThemeReady === true);
+  await expect(page.locator(".edge-app-shell")).toHaveClass(/edge-nav-shell--collapsed/);
+
+  await page.locator('.edge-theme-menu__choices [data-value="dark"]').click();
+  await page.locator('.edge-theme-menu__palette-list [data-value="edge-emerald"]').click();
+  const themeColors = await page.evaluate(() => {
+    const root = getComputedStyle(document.documentElement);
+    const nav = getComputedStyle(document.querySelector(".edge-sidebar"));
+    return {
+      surface: root.getPropertyValue("--edge-color-surface").trim(),
+      sidebar: nav.backgroundColor,
+    };
+  });
+  expect(themeColors.sidebar).toBe(themeColors.surface);
+  expect(themeColors.sidebar).not.toBe("rgb(255, 255, 255)");
+  await context.close();
+});
+
 test("dark mode keeps representative shared surfaces readable", async ({ browser }) => {
   const context = await browser.newContext();
   const page = await openThemePage(context, "contrast@example.com");
