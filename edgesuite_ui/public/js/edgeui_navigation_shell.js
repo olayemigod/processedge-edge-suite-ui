@@ -6,8 +6,10 @@
   const SHELL_SELECTOR = ".edge-app-shell";
   const SIDEBAR_SELECTOR = ".edge-sidebar";
   const BRAND_SELECTOR = ".edge-sidebar__brand";
+  const SECTION_SELECTOR = ".edge-sidebar__section";
   const SECTION_TOGGLE_SELECTOR = ".edge-sidebar__section-toggle";
   const ITEM_SELECTOR = ".edge-sidebar-item";
+  const ACTIVE_ITEM_SELECTOR = ".edge-sidebar-item.active, .edge-sidebar-item[aria-current='page']";
   const ENHANCED_CLASS = "edge-nav-shell-v2";
   const COLLAPSED_CLASS = "edge-nav-shell--collapsed";
   const TOGGLE_CLASS = "edge-nav-shell-toggle";
@@ -98,10 +100,17 @@
     const media = desktopMedia();
     const desktop = media ? media.matches : true;
     const effectiveCollapsed = Boolean(collapsed && desktop);
+    const widthToken = effectiveCollapsed
+      ? "var(--edge-navigation-collapsed-width)"
+      : "var(--edge-navigation-expanded-width)";
 
     shell.classList.toggle(COLLAPSED_CLASS, effectiveCollapsed);
     shell.dataset.edgeNavCollapsed = effectiveCollapsed ? "1" : "0";
-    if (sidebar) sidebar.dataset.edgeNavCollapsed = effectiveCollapsed ? "1" : "0";
+    shell.style.setProperty("--edge-sidebar-width", widthToken);
+    if (sidebar) {
+      sidebar.dataset.edgeNavCollapsed = effectiveCollapsed ? "1" : "0";
+      sidebar.style.width = widthToken;
+    }
 
     if (button) {
       button.setAttribute("aria-expanded", effectiveCollapsed ? "false" : "true");
@@ -142,6 +151,52 @@
     return button;
   }
 
+  function expandedSectionToggles(shell) {
+    return [...shell.querySelectorAll(SECTION_TOGGLE_SELECTOR)].filter(
+      (toggle) => toggle.getAttribute("aria-expanded") === "true",
+    );
+  }
+
+  function activeSection(shell) {
+    return shell.querySelector(ACTIVE_ITEM_SELECTOR)?.closest?.(SECTION_SELECTOR) || null;
+  }
+
+  function collapseOtherSections(shell, keepSection) {
+    expandedSectionToggles(shell).forEach((toggle) => {
+      const section = toggle.closest(SECTION_SELECTOR);
+      if (!section || section === keepSection) return;
+      toggle.click();
+    });
+  }
+
+  function syncAccordionToActive(shell) {
+    if (shell.classList.contains(COLLAPSED_CLASS)) return;
+    const section = activeSection(shell);
+    if (!section) return;
+    const toggle = section.querySelector(SECTION_TOGGLE_SELECTOR);
+    if (!toggle) return;
+
+    if (toggle.getAttribute("aria-expanded") !== "true") toggle.click();
+    window.setTimeout(() => collapseOtherSections(shell, section), 0);
+  }
+
+  function bindSectionAccordion(shell) {
+    const sidebar = shell.querySelector(SIDEBAR_SELECTOR);
+    if (!sidebar || sidebar.dataset.edgeNavAccordionBound === "1") return;
+    sidebar.dataset.edgeNavAccordionBound = "1";
+
+    sidebar.addEventListener("click", (event) => {
+      const sectionToggle = event.target?.closest?.(SECTION_TOGGLE_SELECTOR);
+      if (!sectionToggle || shell.classList.contains(COLLAPSED_CLASS)) return;
+      const section = sectionToggle.closest(SECTION_SELECTOR);
+      window.setTimeout(() => {
+        if (sectionToggle.getAttribute("aria-expanded") === "true") {
+          collapseOtherSections(shell, section);
+        }
+      }, 0);
+    });
+  }
+
   function bindRailSectionExpansion(shell) {
     const sidebar = shell.querySelector(SIDEBAR_SELECTOR);
     if (!sidebar || sidebar.dataset.edgeNavRailBound === "1") return;
@@ -154,15 +209,17 @@
         const sectionToggle = event.target?.closest?.(SECTION_TOGGLE_SELECTOR);
         if (!sectionToggle) return;
 
+        const section = sectionToggle.closest(SECTION_SELECTOR);
         const alreadyExpanded = sectionToggle.getAttribute("aria-expanded") === "true";
         event.preventDefault();
         event.stopPropagation();
         event.stopImmediatePropagation();
         applyState(shell, false);
 
-        if (!alreadyExpanded) {
-          window.setTimeout(() => sectionToggle.click(), 0);
-        }
+        window.setTimeout(() => {
+          if (!alreadyExpanded) sectionToggle.click();
+          window.setTimeout(() => collapseOtherSections(shell, section), 0);
+        }, 0);
       },
       true,
     );
@@ -185,6 +242,7 @@
     if (!(shell instanceof Element)) return;
     shell.classList.add(ENHANCED_CLASS);
     createCollapseToggle(shell);
+    bindSectionAccordion(shell);
     bindRailSectionExpansion(shell);
     bindResponsiveState(shell);
 
@@ -194,6 +252,8 @@
     } else {
       updateTooltips(shell, shell.classList.contains(COLLAPSED_CLASS));
     }
+
+    window.setTimeout(() => syncAccordionToActive(shell), 0);
   }
 
   function scan(root = document) {
@@ -206,13 +266,25 @@
   function startObserver() {
     if (observer || !document.body || !window.MutationObserver) return;
     observer = new MutationObserver((records) => {
+      const shells = new Set();
       for (const record of records) {
+        const targetShell = record.target?.closest?.(SHELL_SELECTOR);
+        if (targetShell) shells.add(targetShell);
         for (const node of record.addedNodes || []) {
-          if (node.nodeType === 1) scan(node);
+          if (node.nodeType !== 1) continue;
+          scan(node);
+          const owner = node.closest?.(SHELL_SELECTOR);
+          if (owner) shells.add(owner);
         }
       }
+      shells.forEach((shell) => window.setTimeout(() => syncAccordionToActive(shell), 0));
     });
-    observer.observe(document.body, { childList: true, subtree: true });
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["class", "aria-current"],
+    });
   }
 
   function install() {
@@ -227,6 +299,9 @@
     },
     isCollapsed(shell) {
       return Boolean(shell instanceof Element && shell.classList.contains(COLLAPSED_CLASS));
+    },
+    syncActiveSection(shell) {
+      if (shell instanceof Element) syncAccordionToActive(shell);
     },
   });
 
