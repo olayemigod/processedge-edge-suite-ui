@@ -241,10 +241,15 @@ test("navigation shell collapses to a persistent theme-aware icon rail", async (
   await page.locator('.edge-theme-menu__palette-list [data-value="edge-emerald"]').click();
   const themeColors = await page.evaluate(() => {
     const root = getComputedStyle(document.documentElement);
-    const nav = getComputedStyle(document.querySelector(".edge-sidebar"));
+    const surface = root.getPropertyValue("--edge-color-surface").trim();
+    const probe = document.createElement("span");
+    probe.style.backgroundColor = surface;
+    document.body.appendChild(probe);
+    const resolvedSurface = getComputedStyle(probe).backgroundColor;
+    probe.remove();
     return {
-      surface: root.getPropertyValue("--edge-color-surface").trim(),
-      sidebar: nav.backgroundColor,
+      surface: resolvedSurface,
+      sidebar: getComputedStyle(document.querySelector(".edge-sidebar")).backgroundColor,
     };
   });
   expect(themeColors.sidebar).toBe(themeColors.surface);
