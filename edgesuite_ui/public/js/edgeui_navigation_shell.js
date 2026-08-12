@@ -119,9 +119,12 @@
 
     shell.querySelectorAll(ITEM_SELECTOR).forEach((item) => {
       const active = item === candidate;
-      item.classList.toggle("active", active);
-      if (active) item.setAttribute("aria-current", "page");
-      else item.removeAttribute("aria-current");
+      if (item.classList.contains("active") !== active) item.classList.toggle("active", active);
+      if (active) {
+        if (item.getAttribute("aria-current") !== "page") item.setAttribute("aria-current", "page");
+      } else if (item.hasAttribute("aria-current")) {
+        item.removeAttribute("aria-current");
+      }
     });
     return candidate;
   }
@@ -160,7 +163,9 @@
       ? "var(--edge-navigation-collapsed-width)"
       : "var(--edge-navigation-expanded-width)";
 
-    shell.classList.toggle(COLLAPSED_CLASS, effectiveCollapsed);
+    if (shell.classList.contains(COLLAPSED_CLASS) !== effectiveCollapsed) {
+      shell.classList.toggle(COLLAPSED_CLASS, effectiveCollapsed);
+    }
     shell.dataset.edgeNavCollapsed = effectiveCollapsed ? "1" : "0";
     shell.style.setProperty("--edge-sidebar-width", widthToken);
     if (sidebar) {
@@ -321,25 +326,16 @@
   function startObserver() {
     if (observer || !document.body || !window.MutationObserver) return;
     observer = new MutationObserver((records) => {
-      const shells = new Set();
       for (const record of records) {
-        const targetShell = record.target?.closest?.(SHELL_SELECTOR);
-        if (targetShell) shells.add(targetShell);
         for (const node of record.addedNodes || []) {
-          if (node.nodeType !== 1) continue;
-          scan(node);
-          const owner = node.closest?.(SHELL_SELECTOR);
-          if (owner) shells.add(owner);
+          if (node.nodeType === 1) scan(node);
         }
       }
-      shells.forEach((shell) => window.setTimeout(() => installShell(shell), 0));
     });
-    observer.observe(document.body, {
-      childList: true,
-      subtree: true,
-      attributes: true,
-      attributeFilter: ["class", "aria-current"],
-    });
+    // Observe mounts/replacements only. Route changes are covered by Frappe
+    // events and patched history methods; watching our own class mutations can
+    // create a feedback loop on live Vue shells.
+    observer.observe(document.body, { childList: true, subtree: true });
   }
 
   function patchHistory() {
