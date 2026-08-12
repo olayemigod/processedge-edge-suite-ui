@@ -91,15 +91,21 @@
   function resourceItem(shell) {
     const resource = currentResourceSlug();
     if (!resource) return null;
+    const singular = resource.endsWith("s") ? resource.slice(0, -1) : resource;
     const items = [...shell.querySelectorAll(ITEM_SELECTOR)];
     const scored = items
       .map((item, index) => {
         const label = slug(itemLabel(item));
+        const isDashboard = label.endsWith("-dashboard") || label.includes("dashboard-");
         let score = 0;
-        if (label === resource) score = 100;
-        else if (label.startsWith(`${resource}-`)) score = 80;
+        if (label === resource) score = 120;
+        else if (singular !== resource && label === singular) score = 110;
+        else if (label.startsWith(`${resource}-`)) score = 90;
+        else if (singular !== resource && label.startsWith(`${singular}-`)) score = 85;
         else if (resource.startsWith(`${label}-`)) score = 70;
-        else if (label.includes(resource)) score = 50;
+        else if (label.includes(resource)) score = 55;
+        else if (singular !== resource && label.includes(singular)) score = 50;
+        if (isDashboard && score) score = Math.min(score, 20);
         return { item, index, score };
       })
       .filter((entry) => entry.score > 0)
@@ -297,13 +303,11 @@
     bindRailSectionExpansion(shell);
     bindResponsiveState(shell);
 
-    if (!installed.has(shell)) {
-      installed.add(shell);
-      applyState(shell, readCollapsed(shell), { persist: false });
-    } else {
-      updateTooltips(shell, shell.classList.contains(COLLAPSED_CLASS));
-    }
-
+    if (!installed.has(shell)) installed.add(shell);
+    // Vue product shells may rewrite the root class/style list on rerender. The
+    // saved preference is therefore reapplied on every scan, not only on the
+    // first mount, so desktop icon-rail state remains authoritative.
+    applyState(shell, readCollapsed(shell), { persist: false });
     window.setTimeout(() => syncAccordionToActive(shell), 0);
   }
 
@@ -328,7 +332,7 @@
           if (owner) shells.add(owner);
         }
       }
-      shells.forEach((shell) => window.setTimeout(() => syncAccordionToActive(shell), 0));
+      shells.forEach((shell) => window.setTimeout(() => installShell(shell), 0));
     });
     observer.observe(document.body, {
       childList: true,
