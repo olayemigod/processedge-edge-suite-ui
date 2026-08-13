@@ -57,6 +57,24 @@
   --edge-color-control-text: #f1f6fb;
 }
 
+/* Product apps are progressively moving from Frappe visual variables to
+   EdgeSuite semantic tokens. During that migration, keep legacy/local product
+   surfaces inside an EdgeSuite shell theme-safe instead of letting light-mode
+   Frappe variables leak into Dark appearance. This also provides the historical
+   surface-subtle alias used by some product components. */
+:root[data-edge-appearance="dark"] .edge-app-shell {
+  --card-bg: var(--edge-color-surface);
+  --control-bg: var(--edge-color-surface-soft);
+  --border-color: var(--edge-color-border);
+  --text-color: var(--edge-color-ink-950);
+  --text-muted: var(--edge-color-ink-500);
+  --primary: var(--edge-color-brand-text, var(--edge-color-info));
+  --red-400: var(--edge-color-danger-border);
+  --red-600: var(--edge-color-danger-text);
+  --edge-color-surface-subtle: var(--edge-color-surface-muted);
+  color: var(--edge-color-ink-950);
+}
+
 /* Legacy product and Frappe layers may assign their own foreground colors to
    containers. Dark mode owns the semantic foreground on shared EdgeSuite
    surfaces so readable text does not depend on inherited light-mode values. */
@@ -73,10 +91,21 @@
 :root[data-edge-appearance="dark"] .edge-input__control,
 :root[data-edge-appearance="dark"] .edge-textarea__control,
 :root[data-edge-appearance="dark"] .edge-dropdown__trigger,
-:root[data-edge-appearance="dark"] .edge-link-field__input {
+:root[data-edge-appearance="dark"] .edge-link-field__input,
+:root[data-edge-appearance="dark"] .edge-app-shell .form-control {
   background-color: var(--edge-color-control-surface) !important;
   border-color: var(--edge-color-control-border) !important;
   color: var(--edge-color-control-text) !important;
+}
+
+:root[data-edge-appearance="dark"] .edge-app-shell .form-control::placeholder {
+  color: var(--edge-color-ink-400) !important;
+}
+
+:root[data-edge-appearance="dark"] .edge-app-shell select.form-control option,
+:root[data-edge-appearance="dark"] .edge-app-shell select.form-control optgroup {
+  background: var(--edge-color-control-surface);
+  color: var(--edge-color-control-text);
 }
 
 /* Brand-700 is intentionally retained as a strong filled-button hover token.
@@ -123,7 +152,8 @@
 :root[data-edge-appearance="dark"] .edge-product-switcher__select,
 :root[data-edge-appearance="dark"] .edge-form-control,
 :root[data-edge-appearance="dark"] .edge-input__control,
-:root[data-edge-appearance="dark"] .edge-textarea__control {
+:root[data-edge-appearance="dark"] .edge-textarea__control,
+:root[data-edge-appearance="dark"] .edge-app-shell .form-control {
   caret-color: var(--edge-color-brand-text, var(--edge-color-info));
 }
 
