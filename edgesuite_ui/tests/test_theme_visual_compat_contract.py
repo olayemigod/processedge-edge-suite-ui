@@ -66,7 +66,25 @@ def test_dark_theme_preserves_focus_and_input_visibility():
 		".edge-form-control",
 		".edge-input__control",
 		".edge-textarea__control",
+		".edge-app-shell .form-control",
+		"select.form-control option",
 		"caret-color:",
 		"::selection",
+	):
+		assert contract in content
+
+
+def test_dark_theme_maps_legacy_product_surface_variables_to_semantic_tokens():
+	content = read(COMPAT)
+	selector = ':root[data-edge-appearance="dark"] .edge-app-shell'
+	assert selector in content
+	for contract in (
+		"--card-bg: var(--edge-color-surface);",
+		"--control-bg: var(--edge-color-surface-soft);",
+		"--border-color: var(--edge-color-border);",
+		"--text-color: var(--edge-color-ink-950);",
+		"--text-muted: var(--edge-color-ink-500);",
+		"--primary: var(--edge-color-brand-text, var(--edge-color-info));",
+		"--edge-color-surface-subtle: var(--edge-color-surface-muted);",
 	):
 		assert contract in content
