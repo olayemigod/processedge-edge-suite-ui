@@ -212,6 +212,67 @@
   min-width: 0;
 }
 
+.edge-export-menu {
+  display: inline-block;
+  position: relative;
+}
+
+.edge-export-menu > summary {
+  list-style: none;
+}
+
+.edge-export-menu > summary::-webkit-details-marker {
+  display: none;
+}
+
+.edge-export-menu__trigger {
+  background: var(--edge-color-surface);
+  border-color: var(--edge-color-border);
+  color: var(--edge-color-ink-950);
+  user-select: none;
+}
+
+.edge-export-menu__trigger:hover {
+  background: var(--edge-color-surface-muted);
+}
+
+.edge-export-menu__options {
+  background: var(--edge-color-surface);
+  border: 1px solid var(--edge-color-border);
+  border-radius: var(--edge-radius-sm);
+  box-shadow: var(--edge-shadow-md);
+  display: grid;
+  gap: var(--edge-space-1);
+  min-width: 10rem;
+  padding: var(--edge-space-2);
+  position: absolute;
+  right: 0;
+  top: calc(100% + var(--edge-space-1));
+  z-index: 80;
+}
+
+.edge-export-menu__option {
+  background: transparent;
+  border: 0;
+  border-radius: var(--edge-radius-sm);
+  color: var(--edge-color-ink-950);
+  cursor: pointer;
+  font: inherit;
+  padding: 0.6rem 0.75rem;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.edge-export-menu__option:hover {
+  background: var(--edge-color-surface-muted);
+}
+
+.edge-export-menu__option:disabled,
+.edge-export-menu--busy .edge-export-menu__trigger {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
 .edge-state {
   align-items: center;
   background: var(--edge-color-surface);
@@ -272,5 +333,15 @@
   .edge-action-bar__actions,
   .edge-filter-bar__actions {
     width: 100%;
+  }
+
+  .edge-export-menu,
+  .edge-export-menu__trigger {
+    width: 100%;
+  }
+
+  .edge-export-menu__options {
+    left: 0;
+    right: 0;
   }
 }
