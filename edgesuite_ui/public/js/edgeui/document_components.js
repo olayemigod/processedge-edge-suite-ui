@@ -279,9 +279,13 @@ export const EdgeChildTable = defineComponent({
     addRow() {
       const row = Object.fromEntries(this.columns.map((column) => [column.fieldname, column.default ?? ""]));
       row.__temporary_key = `edge-new-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-      const next = this.newRowsFirst ? [row, ...this.rows] : [...this.rows, row];
+      const next = [...this.rows, row];
       this.$emit("update:rows", next);
       this.$emit("change", next);
+    },
+    displayedRows() {
+      const indexed = this.rows.map((row, index) => ({ row, index }));
+      return this.newRowsFirst ? indexed.reverse() : indexed;
     },
     removeRow(index) {
       const next = this.rows.filter((_row, rowIndex) => rowIndex !== index);
@@ -363,7 +367,7 @@ export const EdgeChildTable = defineComponent({
   render() {
     const headings = this.columns.map((column) => h("th", column.label || column.fieldname));
     if (!this.readonly) headings.push(h("th", { class: "edge-child-table__actions" }, ""));
-    const rows = this.rows.map((row, index) => {
+    const rows = this.displayedRows().map(({ row, index }) => {
       const cells = this.columns.map((column) =>
         h("td", { "data-label": column.label || column.fieldname }, [this.renderControl(row, index, column)]),
       );
