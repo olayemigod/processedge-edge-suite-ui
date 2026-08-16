@@ -31,7 +31,7 @@ def test_link_menu_can_escape_modal_and_child_table_overflow():
 	assert "watch(open" in content
 
 
-def test_child_table_supports_newest_first_rows_and_link_creation_without_forcing_it_globally():
+def test_child_table_supports_newest_first_display_and_link_creation_without_reordering_data():
 	content = read(DOCUMENT_JS)
 
 	for contract in (
@@ -39,12 +39,16 @@ def test_child_table_supports_newest_first_rows_and_link_creation_without_forcin
 		"linkCreator",
 		"linkCanCreate",
 		"linkCreateLabel",
-		"this.newRowsFirst ? [row, ...this.rows] : [...this.rows, row]",
+		"const next = [...this.rows, row]",
+		"displayedRows()",
+		"this.newRowsFirst ? indexed.reverse() : indexed",
 		"canCreateLink(column, row)",
 		"createLabelFor(column, row)",
 	):
 		assert contract in content
 
-	# Compatibility: generic forms keep the previous append behaviour unless a
-	# product explicitly opts into newest-first entry.
+	# Compatibility: generic forms keep normal ordering unless a product opts in.
+	# Even when opted in, only the rendered order reverses; the emitted row array
+	# remains append-ordered so product accounting/default logic is not destabilized.
 	assert 'newRowsFirst: { type: Boolean, default: false }' in content
+	assert "[row, ...this.rows]" not in content
