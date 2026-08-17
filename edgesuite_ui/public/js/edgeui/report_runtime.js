@@ -1,7 +1,8 @@
-const REPORT_RUNTIME_VERSION = "1.0.0";
+const REPORT_RUNTIME_VERSION = "1.1.0";
 const PROVIDER_KINDS = Object.freeze({
   QUERY: "query-report",
   PAGINATED: "paginated",
+  BOUNDED_PAGINATED: "bounded-paginated",
 });
 
 function requiredFunction(value, name) {
@@ -66,6 +67,8 @@ export function createQueryReportProvider({ reportName, run, exportReport = null
     kind: PROVIDER_KINDS.QUERY,
     reportName,
     supports_server_pagination: false,
+    supports_query_level_pagination: false,
+    pagination_strategy: "materialized",
     async load({ filters = {} } = {}) {
       const payload = await run({ reportName, filters });
       return normalizeReportPayload(payload || {});
@@ -92,6 +95,8 @@ export function createPaginatedReportProvider({
     kind: PROVIDER_KINDS.PAGINATED,
     key,
     supports_server_pagination: true,
+    supports_query_level_pagination: true,
+    pagination_strategy: "query-level",
     default_page_length: defaultLength,
     max_page_length: maximumLength,
     async load({ filters = {}, start = 0, page_length = defaultLength } = {}) {
@@ -105,6 +110,42 @@ export function createPaginatedReportProvider({
       if (summary !== null && summary !== undefined) normalized.summary = summary?.summary || summary || [];
       if (chart !== null && chart !== undefined) normalized.chart = chart?.chart || chart || null;
       return normalized;
+    },
+    export: typeof exportReport === "function" ? exportReport : null,
+  });
+}
+
+export function createBoundedPaginatedReportProvider({
+  key,
+  loadPage,
+  exportReport = null,
+  defaultPageLength = 50,
+  maxPageLength = 200,
+  maxDatasetRows,
+} = {}) {
+  if (!key) throw new TypeError("EdgeSuite bounded paginated report provider requires key.");
+  requiredFunction(loadPage, "loadPage");
+  const datasetLimit = Number(maxDatasetRows || 0);
+  if (!Number.isFinite(datasetLimit) || datasetLimit < 1) {
+    throw new TypeError("EdgeSuite bounded paginated report provider requires maxDatasetRows > 0.");
+  }
+  const defaultLength = Math.max(1, Number(defaultPageLength || 50));
+  const maximumLength = Math.max(defaultLength, Number(maxPageLength || defaultLength));
+
+  return Object.freeze({
+    kind: PROVIDER_KINDS.BOUNDED_PAGINATED,
+    key,
+    supports_server_pagination: true,
+    supports_query_level_pagination: false,
+    pagination_strategy: "bounded-materialized",
+    max_dataset_rows: datasetLimit,
+    default_page_length: defaultLength,
+    max_page_length: maximumLength,
+    async load({ filters = {}, start = 0, page_length = defaultLength } = {}) {
+      const safeStart = Math.max(0, Number(start || 0));
+      const safeLength = Math.min(maximumLength, Math.max(1, Number(page_length || defaultLength)));
+      const page = await loadPage({ filters, start: safeStart, page_length: safeLength });
+      return normalizeReportPayload(page || {}, { start: safeStart, page_length: safeLength });
     },
     export: typeof exportReport === "function" ? exportReport : null,
   });
@@ -160,6 +201,7 @@ export function installEdgeSuiteReportRuntime(runtime, target = globalThis) {
     listProviders: registry.list,
     createQueryReportProvider,
     createPaginatedReportProvider,
+    createBoundedPaginatedReportProvider,
     normalizePayload: normalizeReportPayload,
   });
   runtime.reports = reports;
