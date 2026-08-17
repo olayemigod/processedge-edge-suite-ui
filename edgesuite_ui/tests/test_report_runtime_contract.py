@@ -16,15 +16,22 @@ def test_report_runtime_is_exported_and_installed():
         assert expected in bundle
 
     for expected in (
-        'REPORT_RUNTIME_VERSION = "1.0.0"',
+        'REPORT_RUNTIME_VERSION = "1.1.0"',
         'QUERY: "query-report"',
         'PAGINATED: "paginated"',
+        'BOUNDED_PAGINATED: "bounded-paginated"',
         'createQueryReportProvider',
         'createPaginatedReportProvider',
+        'createBoundedPaginatedReportProvider',
         'createReportProviderRegistry',
         'normalizeReportPayload',
         'supports_server_pagination: true',
         'supports_server_pagination: false',
+        'supports_query_level_pagination: true',
+        'supports_query_level_pagination: false',
+        'pagination_strategy: "query-level"',
+        'pagination_strategy: "bounded-materialized"',
+        'max_dataset_rows',
         'max_page_length',
         'target.EdgeSuiteReports = reports',
         'edgesuite:report-runtime-ready',
@@ -49,3 +56,21 @@ def test_paginated_provider_keeps_interactive_and_export_paths_separate():
         'window.location',
     ):
         assert forbidden not in runtime
+
+
+def test_bounded_provider_requires_declared_dataset_cap_and_does_not_claim_query_level_pagination():
+    runtime = (APP / "public/js/edgeui/report_runtime.js").read_text()
+
+    bounded_start = runtime.index("export function createBoundedPaginatedReportProvider")
+    bounded_end = runtime.index("function providerKey", bounded_start)
+    bounded = runtime[bounded_start:bounded_end]
+
+    assert "maxDatasetRows" in bounded
+    assert "datasetLimit < 1" in bounded
+    assert 'kind: PROVIDER_KINDS.BOUNDED_PAGINATED' in bounded
+    assert "supports_server_pagination: true" in bounded
+    assert "supports_query_level_pagination: false" in bounded
+    assert 'pagination_strategy: "bounded-materialized"' in bounded
+    assert "max_dataset_rows: datasetLimit" in bounded
+    assert 'loadPage({ filters, start: safeStart, page_length: safeLength })' in bounded
+    assert 'export: typeof exportReport === "function" ? exportReport : null' in bounded
