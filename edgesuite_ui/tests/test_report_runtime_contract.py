@@ -27,6 +27,8 @@ def test_report_runtime_is_exported_and_installed():
         'supports_server_pagination: false',
         'max_page_length',
         'target.EdgeSuiteReports = reports',
+        'edgesuite:report-runtime-ready',
+        'CustomEvent("edgesuite:report-runtime-ready"',
     ):
         assert expected in runtime
 
