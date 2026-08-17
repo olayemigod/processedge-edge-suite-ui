@@ -41,6 +41,8 @@ Recommended consuming-product flow:
 4. When the user exports or prints, call a server endpoint that **re-runs the authorization check** before generating any data/file.
 5. The server must independently apply the report filters, branch/company/tenant scope and underlying data permissions.
 
+For Frappe-based product reports, a recommended action-authorization layer is to honor the Report `ref_doctype`'s normal Frappe `print` and `export` permissions when a reference DocType is declared. This allows a user to have View access while Print or bulk Export is independently denied through standard Role Permission Manager controls.
+
 ## Dashboard shell
 
 `EdgeDashboardShell` uses the same authorization model, but dashboard export must remain dashboard-aware.
@@ -48,6 +50,8 @@ Recommended consuming-product flow:
 The shell emits dashboard exports with `artifact_kind = dashboard`. The consuming app should export only the dashboard datasets/widgets the user is authorized to see: KPI cards, charts, exception panels, rankings and compact tables.
 
 Do not flatten a dashboard into an unrelated report merely to make export easier.
+
+A dashboard may not have one natural `ref_doctype`. In that case the consuming app should use its dashboard role/tenant/company/branch access rules as the action-authorization basis, or define a stricter product-owned dashboard export permission where needed.
 
 ## Settings guidance for consuming apps
 
@@ -84,7 +88,7 @@ A product capability endpoint may return:
   "can_view": true,
   "can_print": true,
   "can_export": false,
-  "authorization_model": "settings_and_scope_access"
+  "authorization_model": "settings_scope_and_action_permission"
 }
 ```
 
