@@ -68,7 +68,9 @@ def test_report_table_has_reporting_specific_format_and_drilldown_contract():
 def test_dashboard_shell_is_compositional_not_a_report_table_alias():
     source = (APP / "public/js/edgeui/report_presentation.js").read_text()
 
-    dashboard = source[source.index('export const EdgeDashboardShell'):source.index('export const reportPresentationComponents')]
+    start = source.index("export const EdgeDashboardShell")
+    end = source.index("export const reportPresentationComponents")
+    dashboard = source[start:end]
     assert "EdgePageLayout" in dashboard
     assert "EdgePageHeader" in dashboard
     assert "EdgeStatCard" in dashboard
