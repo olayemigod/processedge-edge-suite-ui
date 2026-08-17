@@ -41,6 +41,33 @@ The shared EdgeSuite runtime exposes:
 
 Providers are registered under a stable product + report key so product apps keep ownership of business logic and permissions while EdgeSuite owns the interaction contract.
 
+## Reporting presentation shells
+
+The provider/runtime contract is intentionally separate from page presentation. EdgeSuite exposes two different shared shells rather than one large optional reporting surface.
+
+### `EdgeReportShell`
+
+Use for filtered row-oriented reports. It standardizes:
+- page header and report actions;
+- filter placement while leaving business filters product-owned;
+- summary cards and optional chart placement;
+- loading, error and empty states;
+- result count and metadata placement;
+- reporting table framing;
+- page-size and previous/next pagination controls.
+
+`EdgeReportTable` provides reporting-specific table behaviour including numeric alignment, common number/currency/percent formatting, sticky headings, wide-table scrolling and opt-in clickable cells for product-owned drill-down actions.
+
+The shell never loads report data itself. Product code resolves a provider or another permission-aware report service and supplies the resulting state to the shell.
+
+### `EdgeDashboardShell`
+
+Use for decision-oriented dashboards. It standardizes the dashboard header, context/filter area, KPI cards, loading/error treatment and responsive workspace framing while keeping dashboard composition flexible.
+
+`EdgeDashboardGrid` and `EdgeDashboardSection` provide reusable responsive composition for charts, exception panels, ranked lists, compact tables and other product-owned widgets.
+
+A dashboard is not forced into the Report Provider row/column model. Individual dashboard widgets may use report providers or dedicated KPI/chart/exception providers and may load independently.
+
 ## Export Builder foundation
 
 The shared runtime also exposes `EdgeReportExportDialog` and `EdgeSuiteReportExport`.
@@ -75,19 +102,23 @@ The shared client validates generated downloads before saving them. Empty respon
 - Use bounded, permission-aware remote search for large Link fields.
 - Large/high-use reports should use server filtering and query-level pagination.
 - Summary cards and charts must not require downloading the complete interactive table.
-- No continuous polling by the shared report runtime.
+- Dashboard widgets may load independently so one slow chart or exception source does not require blocking the complete dashboard.
+- No continuous polling by the shared report or dashboard presentation runtime.
 - Full export remains separate from interactive pagination; exporting all rows must not make the browser iterate every page.
 - Product backends remain responsible for branch/company/tenant/role enforcement.
 
 ## Safety
 
-The reporting runtime is read-oriented infrastructure. It must not:
+The reporting runtime and presentation shells are read-oriented infrastructure. They must not:
 
 - bypass Frappe permissions;
+- call product databases or APIs directly;
 - mutate submitted accounting documents;
 - perform stock/payment/clinical mutations;
 - infer access merely from UI state;
 - suppress browser security warnings to disguise invalid generated files.
+
+Product apps remain authoritative for filters, permissions, branch/company/tenant scope, report calculations, drill-down routes, export extraction and dashboard business semantics.
 
 ## VetEdge reference consumers
 
@@ -101,12 +132,12 @@ Do not rebuild these reports merely to adopt the shared contract. Adapt them inc
 
 ## Remaining V1 work
 
-The shared client contract is now present. Product apps still own server-side report extraction and document generation. Remaining work includes:
+The shared client and presentation contracts are now present. Product apps still own server-side report extraction and document generation. Remaining work includes:
 
 - complete browser Print and PDF rendering parity from one paginated print model;
 - chart rendering in presentation exports;
 - export-provider coverage for optimized high-volume reports;
-- browser QA of generated files;
+- browser QA of generated files and the shared report/dashboard shells in representative product consumers;
 - reusable saved export presets in the later intelligence phase.
 
 Do not mark Print/PDF complete merely because PDF bytes can be generated; Print and PDF must render from the same report model before that acceptance gate is closed.
