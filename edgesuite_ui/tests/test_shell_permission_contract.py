@@ -1,13 +1,15 @@
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[2]
 
 
 def test_shell_permission_contract_keeps_authorization_product_owned():
 	doc = (ROOT / "docs/shell-permission-contract.md").read_text()
 	for expected in (
-		"effective_capability = platform_capability_available AND product_setting_enabled AND scope_view_access AND action_authorization",
+		(
+			"effective_capability = platform_capability_available AND product_setting_enabled "
+			"AND scope_view_access AND action_authorization"
+		),
 		"exportEnabled",
 		"printEnabled",
 		"Never trust the client-side shell state",
