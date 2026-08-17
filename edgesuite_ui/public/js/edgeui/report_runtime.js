@@ -12,6 +12,10 @@ function requiredFunction(value, name) {
   return value;
 }
 
+function optionalExportHandler(exportReport) {
+  return typeof exportReport === "function" ? exportReport : null;
+}
+
 function normalizeColumns(columns = []) {
   return (Array.isArray(columns) ? columns : []).map((column, index) => {
     if (typeof column === "string") {
@@ -63,6 +67,7 @@ export function normalizeReportPayload(payload = {}, request = {}) {
 export function createQueryReportProvider({ reportName, run, exportReport = null } = {}) {
   if (!reportName) throw new TypeError("EdgeSuite query report provider requires reportName.");
   requiredFunction(run, "run");
+  const exportHandler = optionalExportHandler(exportReport);
   return Object.freeze({
     kind: PROVIDER_KINDS.QUERY,
     reportName,
@@ -73,7 +78,8 @@ export function createQueryReportProvider({ reportName, run, exportReport = null
       const payload = await run({ reportName, filters });
       return normalizeReportPayload(payload || {});
     },
-    export: typeof exportReport === "function" ? exportReport : null,
+    export: exportHandler,
+    exportReport: exportHandler,
   });
 }
 
@@ -90,6 +96,7 @@ export function createPaginatedReportProvider({
   requiredFunction(loadPage, "loadPage");
   const defaultLength = Math.max(1, Number(defaultPageLength || 50));
   const maximumLength = Math.max(defaultLength, Number(maxPageLength || defaultLength));
+  const exportHandler = optionalExportHandler(exportReport);
 
   return Object.freeze({
     kind: PROVIDER_KINDS.PAGINATED,
@@ -111,7 +118,8 @@ export function createPaginatedReportProvider({
       if (chart !== null && chart !== undefined) normalized.chart = chart?.chart || chart || null;
       return normalized;
     },
-    export: typeof exportReport === "function" ? exportReport : null,
+    export: exportHandler,
+    exportReport: exportHandler,
   });
 }
 
@@ -131,6 +139,7 @@ export function createBoundedPaginatedReportProvider({
   }
   const defaultLength = Math.max(1, Number(defaultPageLength || 50));
   const maximumLength = Math.max(defaultLength, Number(maxPageLength || defaultLength));
+  const exportHandler = optionalExportHandler(exportReport);
 
   return Object.freeze({
     kind: PROVIDER_KINDS.BOUNDED_PAGINATED,
@@ -147,7 +156,8 @@ export function createBoundedPaginatedReportProvider({
       const page = await loadPage({ filters, start: safeStart, page_length: safeLength });
       return normalizeReportPayload(page || {}, { start: safeStart, page_length: safeLength });
     },
-    export: typeof exportReport === "function" ? exportReport : null,
+    export: exportHandler,
+    exportReport: exportHandler,
   });
 }
 
