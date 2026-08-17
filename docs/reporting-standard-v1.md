@@ -17,15 +17,30 @@ Characteristics:
 
 ### Paginated provider
 
-Use for large, high-use or low-data-sensitive reports where the backend query itself is bounded.
+Use for large, high-use or low-data-sensitive reports where the backend query itself is bounded at query level.
 
 Characteristics:
 - server-side `start` / `page_length` contract;
+- `supports_query_level_pagination = true`;
+- `pagination_strategy = "query-level"`;
 - default and hard maximum page length;
 - summary and chart loaders independent from interactive row pagination where needed;
 - full export is a separate handler and must not require the browser to fetch every page.
 
-A response that slices an already-materialized full dataset is not considered query-level server pagination. Product integrations should label that state accurately and optimize it before treating it as a high-volume reference.
+### Bounded paginated provider
+
+Use when a product backend safely materializes a complete filtered dataset under a hard server cap and then returns one browser page from that bounded result. This is a valid transitional or naturally bounded pattern, but it is not query-level pagination.
+
+Characteristics:
+- server returns one interactive page at a time;
+- `supports_server_pagination = true` because the browser receives bounded pages;
+- `supports_query_level_pagination = false`;
+- `pagination_strategy = "bounded-materialized"`;
+- the product must declare `maxDatasetRows` when constructing the provider;
+- the backend remains responsible for enforcing that declared cap before or during materialization;
+- full export remains a separate bounded handler and must not make the browser loop through pages.
+
+A response that slices an already-materialized full dataset must use this bounded mode rather than the optimized paginated provider. The distinction prevents a safe bounded implementation from being misrepresented as a high-volume query-level reference.
 
 ## Shared runtime
 
@@ -37,6 +52,7 @@ The shared EdgeSuite runtime exposes:
 - `EdgeSuiteReports.listProviders(product)`;
 - `EdgeSuiteReports.createQueryReportProvider(...)`;
 - `EdgeSuiteReports.createPaginatedReportProvider(...)`;
+- `EdgeSuiteReports.createBoundedPaginatedReportProvider(...)`;
 - `EdgeSuiteReports.normalizePayload(...)`.
 
 Providers are registered under a stable product + report key so product apps keep ownership of business logic and permissions while EdgeSuite owns the interaction contract.
@@ -100,8 +116,9 @@ The shared client validates generated downloads before saving them. Empty respon
 
 - Do not load an entire master dataset to populate Link filters.
 - Use bounded, permission-aware remote search for large Link fields.
-- Large/high-use reports should use server filtering and query-level pagination.
-- Summary cards and charts must not require downloading the complete interactive table.
+- Large/high-use reports should use server filtering and query-level pagination where practical.
+- Bounded-materialized reports must declare and enforce a hard dataset cap and must not be described as query-level paginated.
+- Summary cards and charts must not require downloading the complete interactive table into the browser.
 - Dashboard widgets may load independently so one slow chart or exception source does not require blocking the complete dashboard.
 - No continuous polling by the shared report or dashboard presentation runtime.
 - Full export remains separate from interactive pagination; exporting all rows must not make the browser iterate every page.
@@ -125,7 +142,7 @@ Product apps remain authoritative for filters, permissions, branch/company/tenan
 VetEdge PR #47 consumes this standard progressively using the implementations already present after PR #36:
 
 - Stock Expiry Monitor is the canonical query-level paginated reference;
-- Planned Treatment currently has a paged response but still materializes the full structured report before slicing, so it is explicitly marked optimization-pending rather than a query-level pagination reference;
+- Planned Treatment currently has a paged response but still materializes the full structured report before slicing, so it should use the bounded-paginated classification until its backend is optimized to query-level pagination;
 - VetEdge Report Center resolves shared providers first, falls back to the existing Query Report path, and is the first consumer of the shared Export Builder.
 
 Do not rebuild these reports merely to adopt the shared contract. Adapt them incrementally and preserve existing behaviour.
