@@ -103,8 +103,10 @@ Do not rebuild these reports merely to adopt the shared contract. Adapt them inc
 
 The shared client contract is now present. Product apps still own server-side report extraction and document generation. Remaining work includes:
 
-- complete print/paginated PDF rendering parity;
+- complete browser Print and PDF rendering parity from one paginated print model;
 - chart rendering in presentation exports;
 - export-provider coverage for optimized high-volume reports;
 - browser QA of generated files;
 - reusable saved export presets in the later intelligence phase.
+
+Do not mark Print/PDF complete merely because PDF bytes can be generated; Print and PDF must render from the same report model before that acceptance gate is closed.
