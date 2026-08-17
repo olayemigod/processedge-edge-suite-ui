@@ -17,6 +17,7 @@ import { installProductMenuMountEnhancements } from "./edgeui/product_menu_mount
 import { installProductMenuReliability } from "./edgeui/product_menu_reliability";
 import { professionalComponents } from "./edgeui/professional_components";
 import { installEdgeSuiteReportExportRuntime, reportComponents } from "./edgeui/report_export";
+import { installEdgeSuiteReportPrintRuntime } from "./edgeui/report_print";
 import { installEdgeSuiteReportRuntime } from "./edgeui/report_runtime";
 import { createEdgeSuiteRuntime, exposeEdgeSuiteRuntime } from "./edgeui/runtime";
 import { createCompatibleRuntimeComponents } from "./edgeui/runtime_component_compat";
@@ -60,6 +61,7 @@ if (typeof globalThis !== "undefined") {
   installEdgeSuiteInteractionRuntime(runtime, globalThis);
   installEdgeSuiteReportRuntime(runtime, globalThis);
   installEdgeSuiteReportExportRuntime(runtime, globalThis);
+  installEdgeSuiteReportPrintRuntime(runtime, globalThis);
   installSidebarAccordionRuntime(globalThis);
   installWorkflowSaveBridge(globalThis);
   installProductMenuExtras(runtime, globalThis);
@@ -88,6 +90,7 @@ export * from "./edgeui/product_menu_mount";
 export * from "./edgeui/product_menu_reliability";
 export * from "./edgeui/professional_components";
 export * from "./edgeui/report_export";
+export * from "./edgeui/report_print";
 export * from "./edgeui/report_runtime";
 export * from "./edgeui/runtime";
 export * from "./edgeui/runtime_component_compat";
