@@ -119,6 +119,7 @@ export function createCompatibleRuntimeComponents({
   contextComponents,
   documentComponents,
   emptyStateComponents = {},
+  reportComponents = {},
 }) {
   return {
     ...baseComponents,
@@ -128,6 +129,7 @@ export function createCompatibleRuntimeComponents({
     ...contextComponents,
     ...documentComponents,
     ...emptyStateComponents,
+    ...reportComponents,
     EdgeStatCard: createCompatibleEdgeStatCard(
       baseComponents.EdgeStatCard,
       professionalComponents.EdgeIcon,
