@@ -29,6 +29,10 @@ function forwardedSlots(slots, actionsFactory) {
   return forwarded;
 }
 
+function customActions(slots) {
+  return slots.actions ? slots.actions() || [] : [];
+}
+
 export const EdgeReportShell = defineComponent({
   name: "EdgeReportShell",
   inheritAttrs: false,
@@ -49,8 +53,7 @@ export const EdgeReportShell = defineComponent({
     const title = this.$attrs.title || "Report";
     const columns = Array.isArray(this.$attrs.columns) ? this.$attrs.columns : [];
     const actions = () => {
-      const nodes = [];
-      if (this.$slots.actions) nodes.push(...this.$slots.actions());
+      const nodes = [...customActions(this.$slots)];
       if (enabled(this.printEnabled)) {
         nodes.push(
           actionButton(
@@ -87,7 +90,10 @@ export const EdgeReportShell = defineComponent({
             onClose: () => {
               this.exportOpen = false;
             },
-            onExport: (options) => this.$emit("export", options),
+            onExport: (options) => {
+              this.exportOpen = false;
+              this.$emit("export", options);
+            },
           })
         : null,
     ]);
@@ -123,8 +129,7 @@ export const EdgeDashboardShell = defineComponent({
   render() {
     const title = this.$attrs.title || "Dashboard";
     const actions = () => {
-      const nodes = [];
-      if (this.$slots.actions) nodes.push(...this.$slots.actions());
+      const nodes = [...customActions(this.$slots)];
       if (enabled(this.printEnabled)) {
         nodes.push(
           actionButton(
@@ -161,7 +166,10 @@ export const EdgeDashboardShell = defineComponent({
             onClose: () => {
               this.exportOpen = false;
             },
-            onExport: (options) => this.$emit("export", { ...options, artifact_kind: "dashboard" }),
+            onExport: (options) => {
+              this.exportOpen = false;
+              this.$emit("export", { ...options, artifact_kind: "dashboard" });
+            },
           })
         : null,
     ]);
