@@ -163,7 +163,10 @@ export function installEdgeSuiteReportRuntime(runtime, target = globalThis) {
     normalizePayload: normalizeReportPayload,
   });
   runtime.reports = reports;
-  if (target) target.EdgeSuiteReports = reports;
+  if (target) {
+    target.EdgeSuiteReports = reports;
+    target.dispatchEvent?.(new target.CustomEvent("edgesuite:report-runtime-ready", { detail: { version: REPORT_RUNTIME_VERSION } }));
+  }
   return reports;
 }
 
