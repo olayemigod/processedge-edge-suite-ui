@@ -11,8 +11,11 @@ def test_report_and_dashboard_shells_are_shared_runtime_components():
 
     for expected in (
         'import { reportPresentationComponents } from "./edgeui/report_presentation"',
+        'import { reportShellActionComponents } from "./edgeui/report_shell_actions"',
         "...reportPresentationComponents",
+        "...reportShellActionComponents",
         'export * from "./edgeui/report_presentation"',
+        'export * from "./edgeui/report_shell_actions"',
     ):
         assert expected in bundle
 
@@ -47,6 +50,36 @@ def test_report_shell_centralizes_common_report_states_and_pagination():
         '"Next"',
     ):
         assert expected in source
+
+
+def test_shell_action_wrappers_add_opt_in_export_and_print_without_product_logic():
+    source = (APP / "public/js/edgeui/report_shell_actions.js").read_text()
+
+    for expected in (
+        'name: "EdgeReportShell"',
+        'name: "EdgeDashboardShell"',
+        "EdgeReportExportDialog",
+        'exportEnabled: { type: Boolean, default: false }',
+        'printEnabled: { type: Boolean, default: false }',
+        'emits: ["export", "print"]',
+        'exportButtonLabel: { type: String, default: "Download / Export" }',
+        'exportButtonLabel: { type: String, default: "Download Dashboard" }',
+        'artifact_kind: "dashboard"',
+        "reportShellActionComponents",
+    ):
+        assert expected in source
+
+    for forbidden in (
+        "frappe.call",
+        "frappe.db",
+        "ignore_permissions",
+        "Sales Invoice",
+        "Veterinary",
+        "RetailEdge",
+        "VetEdge",
+        "EduEdge",
+    ):
+        assert forbidden not in source
 
 
 def test_report_table_has_reporting_specific_format_and_drilldown_contract():
