@@ -57,7 +57,7 @@ def test_export_verifier_rejects_empty_html_and_invalid_binary_files():
         assert expected in export
 
 
-def test_export_formats_mime_and_scope_contract():
+def test_export_formats_mime_scope_and_no_browser_page_iteration_contract():
     export = (APP / "public/js/edgeui/report_export.js").read_text()
 
     for expected in (
@@ -72,3 +72,6 @@ def test_export_formats_mime_and_scope_contract():
         "normalizedReportFilename",
     ):
         assert expected in export
+
+    for forbidden in ("for (let page", "nextPage(", "setInterval("):
+        assert forbidden not in export
