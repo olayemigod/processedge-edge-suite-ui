@@ -6,8 +6,8 @@ import {
   EdgeReportShell as BaseReportShell,
 } from "./report_presentation";
 
-function normalizeBoolean(value, fallback = true) {
-  return value === undefined ? fallback : Boolean(value);
+function enabled(value) {
+  return Boolean(value);
 }
 
 function actionButton(label, onClick, disabled = false, primary = false) {
@@ -33,8 +33,8 @@ export const EdgeReportShell = defineComponent({
   name: "EdgeReportShell",
   inheritAttrs: false,
   props: {
-    exportEnabled: { type: Boolean, default: true },
-    printEnabled: { type: Boolean, default: true },
+    exportEnabled: { type: Boolean, default: false },
+    printEnabled: { type: Boolean, default: false },
     exportBusy: { type: Boolean, default: false },
     printBusy: { type: Boolean, default: false },
     exportInitialOptions: { type: Object, default: () => ({}) },
@@ -48,11 +48,10 @@ export const EdgeReportShell = defineComponent({
   render() {
     const title = this.$attrs.title || "Report";
     const columns = Array.isArray(this.$attrs.columns) ? this.$attrs.columns : [];
-    const hasBuiltInActions = normalizeBoolean(this.exportEnabled) || normalizeBoolean(this.printEnabled);
     const actions = () => {
       const nodes = [];
       if (this.$slots.actions) nodes.push(...this.$slots.actions());
-      if (normalizeBoolean(this.printEnabled)) {
+      if (enabled(this.printEnabled)) {
         nodes.push(
           actionButton(
             this.printBusy ? "Preparing…" : this.printButtonLabel,
@@ -61,7 +60,7 @@ export const EdgeReportShell = defineComponent({
           ),
         );
       }
-      if (normalizeBoolean(this.exportEnabled)) {
+      if (enabled(this.exportEnabled)) {
         nodes.push(
           actionButton(
             this.exportBusy ? "Preparing…" : this.exportButtonLabel,
@@ -77,8 +76,8 @@ export const EdgeReportShell = defineComponent({
     };
 
     return h("div", { class: "edge-report-shell-host" }, [
-      h(BaseReportShell, this.$attrs, forwardedSlots(this.$slots, hasBuiltInActions ? actions : () => [])),
-      normalizeBoolean(this.exportEnabled)
+      h(BaseReportShell, this.$attrs, forwardedSlots(this.$slots, actions)),
+      enabled(this.exportEnabled)
         ? h(EdgeReportExportDialog, {
             open: this.exportOpen,
             busy: this.exportBusy,
@@ -99,8 +98,8 @@ export const EdgeDashboardShell = defineComponent({
   name: "EdgeDashboardShell",
   inheritAttrs: false,
   props: {
-    exportEnabled: { type: Boolean, default: true },
-    printEnabled: { type: Boolean, default: true },
+    exportEnabled: { type: Boolean, default: false },
+    printEnabled: { type: Boolean, default: false },
     exportBusy: { type: Boolean, default: false },
     printBusy: { type: Boolean, default: false },
     exportInitialOptions: {
@@ -126,7 +125,7 @@ export const EdgeDashboardShell = defineComponent({
     const actions = () => {
       const nodes = [];
       if (this.$slots.actions) nodes.push(...this.$slots.actions());
-      if (normalizeBoolean(this.printEnabled)) {
+      if (enabled(this.printEnabled)) {
         nodes.push(
           actionButton(
             this.printBusy ? "Preparing…" : this.printButtonLabel,
@@ -135,7 +134,7 @@ export const EdgeDashboardShell = defineComponent({
           ),
         );
       }
-      if (normalizeBoolean(this.exportEnabled)) {
+      if (enabled(this.exportEnabled)) {
         nodes.push(
           actionButton(
             this.exportBusy ? "Preparing…" : this.exportButtonLabel,
@@ -152,7 +151,7 @@ export const EdgeDashboardShell = defineComponent({
 
     return h("div", { class: "edge-dashboard-shell-host" }, [
       h(BaseDashboardShell, this.$attrs, forwardedSlots(this.$slots, actions)),
-      normalizeBoolean(this.exportEnabled)
+      enabled(this.exportEnabled)
         ? h(EdgeReportExportDialog, {
             open: this.exportOpen,
             busy: this.exportBusy,
