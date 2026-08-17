@@ -33,6 +33,8 @@ def test_report_runtime_is_exported_and_installed():
         'pagination_strategy: "bounded-materialized"',
         'max_dataset_rows',
         'max_page_length',
+        'export: exportHandler',
+        'exportReport: exportHandler',
         'target.EdgeSuiteReports = reports',
         'edgesuite:report-runtime-ready',
         'CustomEvent("edgesuite:report-runtime-ready"',
@@ -46,7 +48,8 @@ def test_paginated_provider_keeps_interactive_and_export_paths_separate():
     assert 'loadPage({ filters, start: safeStart, page_length: safeLength })' in runtime
     assert 'loadSummary({ filters })' in runtime
     assert 'loadChart({ filters })' in runtime
-    assert 'export: typeof exportReport === "function" ? exportReport : null' in runtime
+    assert 'export: exportHandler' in runtime
+    assert 'exportReport: exportHandler' in runtime
     assert 'Math.min(maximumLength' in runtime
 
     for forbidden in (
@@ -73,4 +76,5 @@ def test_bounded_provider_requires_declared_dataset_cap_and_does_not_claim_query
     assert 'pagination_strategy: "bounded-materialized"' in bounded
     assert "max_dataset_rows: datasetLimit" in bounded
     assert 'loadPage({ filters, start: safeStart, page_length: safeLength })' in bounded
-    assert 'export: typeof exportReport === "function" ? exportReport : null' in bounded
+    assert 'export: exportHandler' in bounded
+    assert 'exportReport: exportHandler' in bounded
