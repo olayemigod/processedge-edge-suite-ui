@@ -97,6 +97,7 @@ def test_report_table_has_reporting_specific_format_and_drilldown_contract():
         '"edge-report-table__link"',
         'this.$emit("cell-click"',
         'this.$emit("row-click"',
+        'fieldtype === "link"',
         "stickyHeader",
     ):
         assert expected in source
