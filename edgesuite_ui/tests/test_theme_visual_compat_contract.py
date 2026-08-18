@@ -3,6 +3,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 BASE = ROOT / "edgesuite_ui" / "public" / "css" / "edgeui.bundle.css"
 COMPAT = ROOT / "edgesuite_ui" / "public" / "css" / "edgeui_theme_dark_compat.css"
+DIALOG_COMPAT = ROOT / "edgesuite_ui" / "public" / "css" / "edgeui_frappe_dialog_compat.css"
 HOOKS = ROOT / "edgesuite_ui" / "hooks.py"
 
 
@@ -86,5 +87,23 @@ def test_dark_theme_maps_legacy_product_surface_variables_to_semantic_tokens():
 		"--text-muted: var(--edge-color-ink-500);",
 		"--primary: var(--edge-color-brand-text, var(--edge-color-info));",
 		"--edge-color-surface-subtle: var(--edge-color-surface-muted);",
+	):
+		assert contract in content
+
+
+def test_frappe_dialog_compatibility_themes_v16_close_and_link_results():
+	assert DIALOG_COMPAT.exists(), DIALOG_COMPAT
+	hooks = read(HOOKS)
+	content = read(DIALOG_COMPAT)
+	assert "/assets/edgesuite_ui/css/edgeui_frappe_dialog_compat.css" in hooks
+	for contract in (
+		".btn-modal-close",
+		"--icon-stroke:",
+		".awesomplete > ul",
+		'[role="listbox"]',
+		'[aria-selected="true"]',
+		"var(--edge-color-surface",
+		"var(--edge-color-ink-950",
+		"var(--edge-color-surface-muted",
 	):
 		assert contract in content
