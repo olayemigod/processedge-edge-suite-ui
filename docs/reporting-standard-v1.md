@@ -42,6 +42,39 @@ Characteristics:
 
 A response that slices an already-materialized full dataset must use this bounded mode rather than the optimized paginated provider. The distinction prevents a safe bounded implementation from being misrepresented as a high-volume query-level reference.
 
+## Standard and Advanced reporting tiers
+
+EdgeSuite supports product-owned subscription classification without owning subscription policy.
+
+Every consuming product should classify its report and dashboard resources as one of:
+
+- `standard` — operational reporting included in the normal product reporting capability;
+- `advanced` — management, financial, performance, intelligence, risk, comparison, forecasting, exception or other premium reporting that requires an additional product/platform entitlement.
+
+Recommended product metadata:
+
+- `tier`: `standard` or `advanced`;
+- `feature_key`: product/platform subscription feature key when the tier is Advanced;
+- `reason`: optional stable classification reason for administration/audit;
+- `scope_type`: `report` or `dashboard`;
+- `scope_name`: stable product resource key.
+
+The tier is **not authorization by itself**. Effective access should be calculated by the product as:
+
+`product/platform entitlement + normal report/dashboard view permission + branch/company/tenant/practitioner scope + action permission for Print/Export where applicable`.
+
+Rules for consuming apps:
+
+1. EdgeSuite shells may display tier/access metadata supplied by the product, but must never infer entitlement themselves.
+2. Standard reports still require normal product/Frappe permission and scope checks.
+3. Advanced reports and dashboards must be revalidated server-side before view/data extraction, Print, Export, scheduling or other premium actions.
+4. A hidden or disabled Advanced UI control is not a security boundary.
+5. Unknown/unclassified resources should default to the product's documented compatibility policy. A safe migration pattern is to default new operational resources to Standard until deliberately classified, rather than accidentally breaking existing deployments.
+6. Shared-hosted/white-label products should use the platform subscription/feature service where available. Standalone products may use a local product setting as a compatibility entitlement source.
+7. The subscription tier must not weaken ordinary branch/company/tenant/role permissions.
+
+This allows VetEdge, RetailEdge, EduEdge and other apps to package reporting differently while preserving one EdgeSuite presentation standard.
+
 ## Shared runtime
 
 The shared EdgeSuite runtime exposes:
@@ -122,6 +155,8 @@ The shared client validates generated downloads before saving them. Empty respon
 - Dashboard widgets may load independently so one slow chart or exception source does not require blocking the complete dashboard.
 - No continuous polling by the shared report or dashboard presentation runtime.
 - Full export remains separate from interactive pagination; exporting all rows must not make the browser iterate every page.
+- Current-page export should use the same bounded page query rather than materializing the complete filtered result merely to slice one page.
+- Large all-filtered exports should use a product-defined safe threshold and, where necessary, chunked or queued generation rather than holding a web worker and large Python dataset indefinitely.
 - Product backends remain responsible for branch/company/tenant/role enforcement.
 
 ## Safety
@@ -133,28 +168,28 @@ The reporting runtime and presentation shells are read-oriented infrastructure. 
 - mutate submitted accounting documents;
 - perform stock/payment/clinical mutations;
 - infer access merely from UI state;
+- infer subscription entitlement merely from a Standard/Advanced label;
 - suppress browser security warnings to disguise invalid generated files.
 
-Product apps remain authoritative for filters, permissions, branch/company/tenant scope, report calculations, drill-down routes, export extraction and dashboard business semantics.
+Product apps remain authoritative for filters, permissions, branch/company/tenant scope, subscription entitlement, report calculations, drill-down routes, export extraction and dashboard business semantics.
 
 ## VetEdge reference consumers
 
 VetEdge PR #47 consumes this standard progressively using the implementations already present after PR #36:
 
 - Stock Expiry Monitor is the canonical query-level paginated reference;
-- Planned Treatment currently has a paged response but still materializes the full structured report before slicing, so it should use the bounded-paginated classification until its backend is optimized to query-level pagination;
-- VetEdge Report Center resolves shared providers first, falls back to the existing Query Report path, and is the first consumer of the shared Export Builder.
+- Planned Treatment now uses query-level detail-row pagination with separate aggregates while preserving the scoped consultation parent resolver;
+- VetEdge Report Center resolves shared providers first, falls back to the existing Query Report path, and consumes the shared Export Builder;
+- VetEdge maintains a centralized reporting catalog that classifies Standard and Advanced reports/dashboards and maps Advanced resources to the `advanced_reports` entitlement.
 
 Do not rebuild these reports merely to adopt the shared contract. Adapt them incrementally and preserve existing behaviour.
 
 ## Remaining V1 work
 
-The shared client and presentation contracts are now present. Product apps still own server-side report extraction and document generation. Remaining work includes:
+The shared client and presentation contracts are present. Product apps still own server-side report extraction, subscription enforcement and document generation. Remaining acceptance work includes:
 
-- complete browser Print and PDF rendering parity from one paginated print model;
-- chart rendering in presentation exports;
-- export-provider coverage for optimized high-volume reports;
-- browser QA of generated files and the shared report/dashboard shells in representative product consumers;
+- representative browser QA of report/dashboard shells;
+- real XLSX/CSV/PDF/Print QA including raw/presentation/letterhead combinations;
+- export-provider coverage and safe large-export thresholds for optimized high-volume reports;
+- browser/network/server measurements against product performance budgets;
 - reusable saved export presets in the later intelligence phase.
-
-Do not mark Print/PDF complete merely because PDF bytes can be generated; Print and PDF must render from the same report model before that acceptance gate is closed.
