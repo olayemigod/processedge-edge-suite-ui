@@ -100,8 +100,8 @@ def test_dropdown_runtime_keeps_open_menus_inside_the_visible_viewport():
 		"openUpward",
 		'data-edge-dropdown-direction',
 		'querySelectorAll(".edge-dropdown.is-open")',
-		'addEventListener("scroll", schedule, true)',
-		'addEventListener("resize", schedule)',
+		'globalObject.addEventListener?.("scroll", schedule, true)',
+		'globalObject.addEventListener?.("resize", schedule)',
 		"MAX_MENU_HEIGHT_PX",
 	):
 		assert contract in runtime
