@@ -94,9 +94,61 @@
 }
 
 :root[data-edge-appearance] .modal.edge-frappe-dialog-host .close,
-:root[data-edge-appearance] .modal.edge-frappe-dialog-host .btn-close {
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .btn-close,
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .btn-modal-close {
   color: var(--edge-color-ink-700, #415469) !important;
   opacity: 1 !important;
+}
+
+/* Frappe v16 uses .btn-modal-close with a shared SVG icon. Keep the
+   semantic foreground on the button and on the icon's custom properties so
+   close controls never disappear when a product switches appearance. */
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .btn-modal-close {
+  align-items: center;
+  display: inline-flex;
+  justify-content: center;
+  min-height: 2rem;
+  min-width: 2rem;
+  --icon-fill: var(--edge-color-ink-700, #415469);
+  --icon-stroke: var(--edge-color-ink-700, #415469);
+}
+
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .btn-modal-close .icon,
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .btn-modal-close svg {
+  color: var(--edge-color-ink-700, #415469) !important;
+  opacity: 1 !important;
+  stroke: var(--edge-color-ink-700, #415469) !important;
+}
+
+/* Frappe Link controls render Awesomplete result lists inside the dialog.
+   Frappe's default light result surface must not leak into a dark EdgeSuite
+   appearance; preserve normal keyboard/mouse selection while mapping all
+   result text and surfaces to EdgeSuite semantic tokens. */
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .awesomplete > ul,
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .awesomplete > [role="listbox"] {
+  background: var(--edge-color-surface, #fff) !important;
+  border: 1px solid var(--edge-color-border-strong, #cbd7e5) !important;
+  color: var(--edge-color-ink-950, #122033) !important;
+  box-shadow: 0 12px 30px rgb(15 23 42 / 18%) !important;
+}
+
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .awesomplete > ul > li,
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .awesomplete > [role="listbox"] > li {
+  background: var(--edge-color-surface, #fff) !important;
+  color: var(--edge-color-ink-950, #122033) !important;
+}
+
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .awesomplete > ul > li *,
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .awesomplete > [role="listbox"] > li * {
+  color: inherit !important;
+}
+
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .awesomplete > ul > li:hover,
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .awesomplete > ul > li[aria-selected="true"],
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .awesomplete > [role="listbox"] > li:hover,
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .awesomplete > [role="listbox"] > li[aria-selected="true"] {
+  background: var(--edge-color-surface-muted, #f5f8fc) !important;
+  color: var(--edge-color-ink-950, #122033) !important;
 }
 
 :root[data-edge-appearance] .modal.edge-frappe-dialog-host .alert,
