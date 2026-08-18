@@ -105,7 +105,9 @@ export const EdgeReportTable = defineComponent({
                 },
                 columns.map((column, columnIndex) => {
                   const key = columnKey(column, columnIndex);
-                  const clickable = column?.clickable === true || column?.link === true;
+                  const fieldtype = String(column?.fieldtype || column?.type || "").toLowerCase();
+                  const clickable =
+                    column?.clickable === true || column?.link === true || fieldtype === "link";
                   const content = this.valueFor(row, column, columnIndex);
                   return h(
                     "td",
