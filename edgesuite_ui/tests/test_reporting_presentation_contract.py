@@ -52,7 +52,7 @@ def test_report_shell_centralizes_common_report_states_and_pagination():
         assert expected in source
 
 
-def test_shell_action_wrappers_add_opt_in_export_and_print_without_product_logic():
+def test_shell_action_wrappers_add_opt_in_export_print_and_product_supplied_tier_without_product_logic():
     source = (APP / "public/js/edgeui/report_shell_actions.js").read_text()
 
     for expected in (
@@ -61,6 +61,9 @@ def test_shell_action_wrappers_add_opt_in_export_and_print_without_product_logic
         "EdgeReportExportDialog",
         'exportEnabled: { type: Boolean, default: false }',
         'printEnabled: { type: Boolean, default: false }',
+        'tier: { type: String, default: "" }',
+        'subscriptionEntitled: { type: Boolean, default: true }',
+        '"Advanced · Locked"',
         'emits: ["export", "print"]',
         'exportButtonLabel: { type: String, default: "Download / Export" }',
         'exportButtonLabel: { type: String, default: "Download Dashboard" }',
@@ -73,6 +76,7 @@ def test_shell_action_wrappers_add_opt_in_export_and_print_without_product_logic
         "frappe.call",
         "frappe.db",
         "ignore_permissions",
+        "advanced_reports",
         "Sales Invoice",
         "Veterinary",
         "RetailEdge",
