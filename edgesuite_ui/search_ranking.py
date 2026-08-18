@@ -61,7 +61,9 @@ def _candidate_score(candidate: str, query: str, *, exact_identifier: bool = Fal
 	query_tokens = search_tokens(query)
 	if query_tokens and all(token in candidate_tokens for token in query_tokens):
 		return 900.0 - min(120.0, len(candidate_tokens) - len(query_tokens))
-	if query_tokens and all(any(word.startswith(token) for word in candidate_tokens) for token in query_tokens):
+	if query_tokens and all(
+		any(word.startswith(token) for word in candidate_tokens) for token in query_tokens
+	):
 		return 820.0
 	if query in candidate:
 		return 720.0 - min(120.0, candidate.index(query))
