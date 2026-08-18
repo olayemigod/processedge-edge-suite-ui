@@ -23,6 +23,35 @@ function actionButton(label, onClick, disabled = false, primary = false) {
   );
 }
 
+function tierBadge(tier, entitled = true) {
+  const normalized = String(tier || "").trim().toLowerCase();
+  if (!normalized) return null;
+  const advanced = normalized === "advanced";
+  const label = advanced ? (entitled ? "Advanced" : "Advanced · Locked") : "Standard";
+  return h(
+    "span",
+    {
+      class: ["edge-report-tier-badge", `edge-report-tier-badge--${advanced ? "advanced" : "standard"}`],
+      title: advanced
+        ? "Product subscription metadata classifies this reporting surface as Advanced."
+        : "Product subscription metadata classifies this reporting surface as Standard.",
+      style: {
+        display: "inline-flex",
+        alignItems: "center",
+        minHeight: "32px",
+        padding: "0 10px",
+        border: "1px solid var(--edge-border, #dfe5ef)",
+        borderRadius: "999px",
+        background: "var(--edge-surface, #fff)",
+        color: "var(--edge-text-muted, #667085)",
+        fontSize: "12px",
+        fontWeight: "600",
+      },
+    },
+    label,
+  );
+}
+
 function forwardedSlots(slots, actionsFactory) {
   const forwarded = { ...slots };
   forwarded.actions = actionsFactory;
@@ -44,6 +73,8 @@ export const EdgeReportShell = defineComponent({
     exportInitialOptions: { type: Object, default: () => ({}) },
     exportButtonLabel: { type: String, default: "Download / Export" },
     printButtonLabel: { type: String, default: "Print" },
+    tier: { type: String, default: "" },
+    subscriptionEntitled: { type: Boolean, default: true },
   },
   emits: ["export", "print"],
   data() {
@@ -53,7 +84,10 @@ export const EdgeReportShell = defineComponent({
     const title = this.$attrs.title || "Report";
     const columns = Array.isArray(this.$attrs.columns) ? this.$attrs.columns : [];
     const actions = () => {
-      const nodes = [...customActions(this.$slots)];
+      const nodes = [];
+      const badge = tierBadge(this.tier, this.subscriptionEntitled);
+      if (badge) nodes.push(badge);
+      nodes.push(...customActions(this.$slots));
       if (enabled(this.printEnabled)) {
         nodes.push(
           actionButton(
@@ -121,6 +155,8 @@ export const EdgeDashboardShell = defineComponent({
     },
     exportButtonLabel: { type: String, default: "Download Dashboard" },
     printButtonLabel: { type: String, default: "Print" },
+    tier: { type: String, default: "" },
+    subscriptionEntitled: { type: Boolean, default: true },
   },
   emits: ["export", "print"],
   data() {
@@ -129,7 +165,10 @@ export const EdgeDashboardShell = defineComponent({
   render() {
     const title = this.$attrs.title || "Dashboard";
     const actions = () => {
-      const nodes = [...customActions(this.$slots)];
+      const nodes = [];
+      const badge = tierBadge(this.tier, this.subscriptionEntitled);
+      if (badge) nodes.push(badge);
+      nodes.push(...customActions(this.$slots));
       if (enabled(this.printEnabled)) {
         nodes.push(
           actionButton(
