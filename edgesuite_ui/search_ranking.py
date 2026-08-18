@@ -121,8 +121,12 @@ def rank_search_records(
 	if bounded_limit == 0:
 		return []
 
+	materialized = list(records)
+	if not normalize_search_text(query):
+		return materialized[:bounded_limit]
+
 	scored = []
-	for index, record in enumerate(records):
+	for index, record in enumerate(materialized):
 		score = score_search_record(
 			record,
 			query,
