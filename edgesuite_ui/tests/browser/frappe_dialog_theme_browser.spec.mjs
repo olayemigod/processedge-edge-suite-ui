@@ -88,7 +88,7 @@ async function optionStyles(page, selector) {
   });
 }
 
-test("Frappe v16 Link options remain readable in dark mode across normal selected and hover states", async ({ page }) => {
+test("Frappe v16 Link options and Check labels remain readable in dark dialogs", async ({ page }) => {
   await page.goto(baseURL, { waitUntil: "networkidle" });
 
   const normal = await optionStyles(page, "#option-normal");
@@ -115,4 +115,11 @@ test("Frappe v16 Link options remain readable in dark mode across normal selecte
   expect(close.opacity).toBe("1");
   expect(close.color).not.toBe("rgba(0, 0, 0, 0)");
   expect(close.iconStroke).not.toBe("none");
+
+  const modalBackground = await page.locator(".modal-body").evaluate((node) => getComputedStyle(node).backgroundColor);
+  for (const selector of ["#check-enable-applications .label-area", "#check-publish-website .label-area"]) {
+    const color = await page.locator(selector).evaluate((node) => getComputedStyle(node).color);
+    expect(color, `${selector} must use the dark control foreground`).not.toBe("rgb(0, 0, 0)");
+    expect(contrastRatio(color, modalBackground), `${selector} contrast`).toBeGreaterThanOrEqual(4.5);
+  }
 });
