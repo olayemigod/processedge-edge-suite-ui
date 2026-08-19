@@ -43,6 +43,7 @@ app_include_css = [
 	"/assets/edgesuite_ui/css/edgeui_reporting_presentation.css",
 	"/assets/edgesuite_ui/css/edgeui_report_comparison.css",
 	"/assets/edgesuite_ui/css/edgeui_report_grouping.css",
+	"/assets/edgesuite_ui/css/edgeui_report_exceptions.css",
 ]
 app_include_js = [
 	"/assets/edgesuite_ui/js/edgeui_theme_bootstrap.js",
