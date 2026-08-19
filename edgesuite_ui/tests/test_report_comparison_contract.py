@@ -34,7 +34,8 @@ def test_comparison_panel_is_product_neutral_and_runtime_exposed():
         "localStorage",
         "sessionStorage",
     ):
-        assert forbidden not in source.lower() if forbidden in {"vetedge", "retailedge", "eduedge"} else forbidden not in source
+        haystack = source.lower() if forbidden in {"vetedge", "retailedge", "eduedge"} else source
+        assert forbidden not in haystack
 
 
 def test_comparison_panel_is_responsive_and_loaded_as_shared_css():
