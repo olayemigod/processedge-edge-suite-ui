@@ -105,7 +105,9 @@ def test_column_chooser_is_opt_in_serializable_and_cannot_hide_every_column():
         'class: "edge-report-columns__panel"',
         '"Visible columns"',
         '"Show all"',
-        "columns: this.visibleColumns()",
+        "const columns = this.visibleColumns();",
+        "const baseAttrs = { ...this.$attrs, columns };",
+        "columns,\n            initialOptions: this.exportInitialOptions",
     ):
         assert expected in source
 
