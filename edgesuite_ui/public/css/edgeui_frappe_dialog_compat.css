@@ -49,6 +49,16 @@
   color: var(--edge-color-ink-950, #122033) !important;
 }
 
+/* Frappe v16 Check controls render their visible text inside .label-area /
+   .disp-area spans. Those spans can retain Frappe's light-theme text token
+   even when the surrounding dialog is dark, so style the actual runtime
+   nodes explicitly. In Dark appearance the control-text token is near-white. */
+:root[data-edge-appearance="dark"] .modal.edge-frappe-dialog-host .checkbox label,
+:root[data-edge-appearance="dark"] .modal.edge-frappe-dialog-host .checkbox .label-area,
+:root[data-edge-appearance="dark"] .modal.edge-frappe-dialog-host .checkbox .disp-area {
+  color: var(--edge-color-control-text, #f1f6fb) !important;
+}
+
 :root[data-edge-appearance] .modal.edge-frappe-dialog-host .text-muted,
 :root[data-edge-appearance] .modal.edge-frappe-dialog-host .help-box,
 :root[data-edge-appearance] .modal.edge-frappe-dialog-host .description,
