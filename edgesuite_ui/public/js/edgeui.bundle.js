@@ -24,6 +24,7 @@ import { installEdgeSuiteReportExportRuntime, reportComponents } from "./edgeui/
 import { reportGroupingComponents } from "./edgeui/report_grouping";
 import { installEdgeSuiteReportPrintRuntime } from "./edgeui/report_print";
 import { reportPresentationComponents } from "./edgeui/report_presentation";
+import { reportScheduleComponents } from "./edgeui/report_schedule";
 import { reportShellActionComponents } from "./edgeui/report_shell_actions";
 import { installEdgeSuiteReportRuntime } from "./edgeui/report_runtime";
 import { createEdgeSuiteRuntime, exposeEdgeSuiteRuntime } from "./edgeui/runtime";
@@ -49,6 +50,7 @@ const components = Object.freeze(
       ...reportExceptionComponents,
       ...reportGroupingComponents,
       ...reportPresentationComponents,
+      ...reportScheduleComponents,
       ...reportShellActionComponents,
     },
     professionalComponents,
@@ -116,6 +118,7 @@ export * from "./edgeui/report_export";
 export * from "./edgeui/report_grouping";
 export * from "./edgeui/report_print";
 export * from "./edgeui/report_presentation";
+export * from "./edgeui/report_schedule";
 export * from "./edgeui/report_shell_actions";
 export * from "./edgeui/report_runtime";
 export * from "./edgeui/runtime";
