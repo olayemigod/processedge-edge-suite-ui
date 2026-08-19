@@ -63,6 +63,7 @@ jobs:
             edgesuite_ui/tests/test_theme_runtime_contract.py \
             edgesuite_ui/tests/test_theme_visual_compat_contract.py \
             edgesuite_ui/tests/test_theme_controls_contract.py \
+            edgesuite_ui/tests/test_dark_contrast_contract.py \
             2>&1 | tee contract-tests.log
       - name: Upload contract diagnostics
         if: steps.contracts.outcome == 'failure'
