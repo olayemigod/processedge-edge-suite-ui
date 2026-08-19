@@ -134,6 +134,41 @@ def test_report_table_has_reporting_specific_format_and_drilldown_contract():
         assert expected in source
 
 
+def test_report_table_conditional_highlighting_is_opt_in_and_product_owned():
+    source = (APP / "public/js/edgeui/report_presentation.js").read_text()
+    css = (APP / "public/css/edgeui_reporting_presentation.css").read_text()
+
+    for expected in (
+        'const REPORT_ROW_TONES = new Set(["neutral", "info", "success", "warning", "danger"])',
+        "normalizedRowPresentation",
+        "rowPresentation: { type: Function, default: null }",
+        "presentationForRow(row, index)",
+        'class: presentation.tone ? `edge-report-table__row--${presentation.tone}` : ""',
+        '"data-edge-row-tone": presentation.tone || undefined',
+        "rowPresentation: this.rowPresentation",
+    ):
+        assert expected in source
+
+    for expected in (
+        ".edge-report-table__row--info",
+        ".edge-report-table__row--success",
+        ".edge-report-table__row--warning",
+        ".edge-report-table__row--danger",
+        "var(--edge-color-info",
+        "var(--edge-color-success",
+        "var(--edge-color-warning",
+        "var(--edge-color-danger",
+    ):
+        assert expected in css
+
+    # EdgeSuite accepts only semantic presentation metadata. Product-specific
+    # thresholds, permission checks and arbitrary CSS classes remain outside it.
+    assert "missing_price_count" not in source
+    assert "pending_stock_count" not in source
+    assert "className" not in source
+    assert "row_class" not in source
+
+
 def test_dashboard_shell_is_compositional_not_a_report_table_alias():
     source = (APP / "public/js/edgeui/report_presentation.js").read_text()
 
