@@ -18,6 +18,7 @@ import { installProductMenuExtras } from "./edgeui/product_menu_extras";
 import { installProductMenuMountEnhancements } from "./edgeui/product_menu_mount";
 import { installProductMenuReliability } from "./edgeui/product_menu_reliability";
 import { professionalComponents } from "./edgeui/professional_components";
+import { reportComparisonComponents } from "./edgeui/report_comparison";
 import { installEdgeSuiteReportExportRuntime, reportComponents } from "./edgeui/report_export";
 import { installEdgeSuiteReportPrintRuntime } from "./edgeui/report_print";
 import { reportPresentationComponents } from "./edgeui/report_presentation";
@@ -42,6 +43,7 @@ const components = Object.freeze(
     baseComponents: {
       ...baseComponents,
       ...exportComponents,
+      ...reportComparisonComponents,
       ...reportPresentationComponents,
       ...reportShellActionComponents,
     },
@@ -104,6 +106,7 @@ export * from "./edgeui/product_menu_extras";
 export * from "./edgeui/product_menu_mount";
 export * from "./edgeui/product_menu_reliability";
 export * from "./edgeui/professional_components";
+export * from "./edgeui/report_comparison";
 export * from "./edgeui/report_export";
 export * from "./edgeui/report_print";
 export * from "./edgeui/report_presentation";
