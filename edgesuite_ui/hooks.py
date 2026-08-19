@@ -40,6 +40,7 @@ app_include_css = [
 	"/assets/edgesuite_ui/css/edgeui_theme_transition_guard.css",
 	"/assets/edgesuite_ui/css/edgeui_navigation_shell.css",
 	"/assets/edgesuite_ui/css/edgeui_navigation_active_path.css",
+	"/assets/edgesuite_ui/css/edgeui_dark_contrast.css",
 ]
 app_include_js = [
 	"/assets/edgesuite_ui/js/edgeui_theme_bootstrap.js",
