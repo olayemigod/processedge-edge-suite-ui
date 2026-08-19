@@ -10,6 +10,8 @@ import {
   EdgeStatCard,
 } from "./components";
 
+const REPORT_ROW_TONES = new Set(["neutral", "info", "success", "warning", "danger"]);
+
 function slot(slots, name, fallback = null) {
   return slots[name] ? slots[name]() : fallback;
 }
@@ -41,6 +43,17 @@ function defaultFormat(value, column = {}) {
   return String(value);
 }
 
+function normalizedRowPresentation(value) {
+  const source = typeof value === "string" ? { tone: value } : value && typeof value === "object" ? value : {};
+  const tone = REPORT_ROW_TONES.has(String(source.tone || "").toLowerCase())
+    ? String(source.tone).toLowerCase()
+    : "";
+  return {
+    tone,
+    title: source.title ? String(source.title) : "",
+  };
+}
+
 export const EdgeReportTable = defineComponent({
   name: "EdgeReportTable",
   props: {
@@ -48,6 +61,7 @@ export const EdgeReportTable = defineComponent({
     rows: { type: Array, default: () => [] },
     rowKey: { type: [String, Function], default: "name" },
     formatter: { type: Function, default: null },
+    rowPresentation: { type: Function, default: null },
     compact: { type: Boolean, default: false },
     stickyHeader: { type: Boolean, default: true },
   },
@@ -61,6 +75,10 @@ export const EdgeReportTable = defineComponent({
       const key = columnKey(column, index);
       const value = row?.[key];
       return this.formatter ? this.formatter(value, column, row) : defaultFormat(value, column);
+    },
+    presentationForRow(row, index) {
+      if (!this.rowPresentation) return normalizedRowPresentation(null);
+      return normalizedRowPresentation(this.rowPresentation(row, index));
     },
   },
   render() {
@@ -96,11 +114,15 @@ export const EdgeReportTable = defineComponent({
           h(
             "tbody",
             {},
-            rows.map((row, rowIndex) =>
-              h(
+            rows.map((row, rowIndex) => {
+              const presentation = this.presentationForRow(row, rowIndex);
+              return h(
                 "tr",
                 {
                   key: this.keyForRow(row, rowIndex),
+                  class: presentation.tone ? `edge-report-table__row--${presentation.tone}` : "",
+                  title: presentation.title || undefined,
+                  "data-edge-row-tone": presentation.tone || undefined,
                   onClick: () => this.$emit("row-click", row),
                 },
                 columns.map((column, columnIndex) => {
@@ -128,8 +150,8 @@ export const EdgeReportTable = defineComponent({
                       : content,
                   );
                 }),
-              ),
-            ),
+              );
+            }),
           ),
         ]),
       ],
@@ -155,6 +177,7 @@ export const EdgeReportShell = defineComponent({
     pageSizes: { type: Array, default: () => [25, 50, 100] },
     rowKey: { type: [String, Function], default: "name" },
     formatter: { type: Function, default: null },
+    rowPresentation: { type: Function, default: null },
     showResultCount: { type: Boolean, default: true },
   },
   emits: ["retry", "page-change", "page-size-change", "cell-click", "row-click"],
@@ -243,6 +266,7 @@ export const EdgeReportShell = defineComponent({
                 rows: this.rows,
                 rowKey: this.rowKey,
                 formatter: this.formatter,
+                rowPresentation: this.rowPresentation,
                 onCellClick: (payload) => this.$emit("cell-click", payload),
                 onRowClick: (row) => this.$emit("row-click", row),
               }),
