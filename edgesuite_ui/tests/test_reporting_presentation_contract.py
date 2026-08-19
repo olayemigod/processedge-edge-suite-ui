@@ -52,7 +52,7 @@ def test_report_shell_centralizes_common_report_states_and_pagination():
         assert expected in source
 
 
-def test_shell_action_wrappers_add_opt_in_export_print_and_product_supplied_tier_without_product_logic():
+def test_shell_action_wrappers_add_opt_in_export_print_tier_and_view_state_without_product_logic():
     source = (APP / "public/js/edgeui/report_shell_actions.js").read_text()
 
     for expected in (
@@ -63,8 +63,11 @@ def test_shell_action_wrappers_add_opt_in_export_print_and_product_supplied_tier
         'printEnabled: { type: Boolean, default: false }',
         'tier: { type: String, default: "" }',
         'subscriptionEntitled: { type: Boolean, default: true }',
+        'columnChooserEnabled: { type: Boolean, default: false }',
+        'viewState: { type: Object, default: () => ({}) }',
+        '"view-state-change"',
+        'visible_columns: [...this.ensureVisibleColumnState()]',
         '"Advanced · Locked"',
-        'emits: ["export", "print"]',
         'exportButtonLabel: { type: String, default: "Download / Export" }',
         'exportButtonLabel: { type: String, default: "Download Dashboard" }',
         'artifact_kind: "dashboard"',
@@ -77,6 +80,8 @@ def test_shell_action_wrappers_add_opt_in_export_print_and_product_supplied_tier
         "frappe.db",
         "ignore_permissions",
         "advanced_reports",
+        "localStorage",
+        "sessionStorage",
         "Sales Invoice",
         "Veterinary",
         "RetailEdge",
@@ -84,6 +89,30 @@ def test_shell_action_wrappers_add_opt_in_export_print_and_product_supplied_tier
         "EduEdge",
     ):
         assert forbidden not in source
+
+
+def test_column_chooser_is_opt_in_serializable_and_cannot_hide_every_column():
+    source = (APP / "public/js/edgeui/report_shell_actions.js").read_text()
+
+    for expected in (
+        "normalizedVisibleKeys",
+        "visibleColumnKeys",
+        "visibleColumns()",
+        "toggleColumn(key)",
+        "resetColumns()",
+        'if (!next.length) return;',
+        'disabled: visible.size === 1 && visible.has(key)',
+        'class: "edge-report-columns__panel"',
+        '"Visible columns"',
+        '"Show all"',
+        "columns: this.visibleColumns()",
+    ):
+        assert expected in source
+
+    # The shared shell reports state upward; persistence/URL/permission policy
+    # remains product-owned and is intentionally absent from EdgeSuite UI.
+    assert "save_view" not in source
+    assert "saved_view" not in source
 
 
 def test_report_table_has_reporting_specific_format_and_drilldown_contract():
@@ -143,6 +172,8 @@ def test_presentation_css_is_responsive_and_uses_semantic_tokens():
     for expected in (
         ".edge-report-shell__summary",
         ".edge-report-table",
+        ".edge-report-columns__panel",
+        ".edge-report-columns__option",
         ".edge-dashboard-shell__summary",
         ".edge-dashboard-grid",
         ".edge-dashboard-section",
