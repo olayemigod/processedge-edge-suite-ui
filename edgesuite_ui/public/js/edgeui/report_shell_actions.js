@@ -23,6 +23,22 @@ function actionButton(label, onClick, disabled = false, primary = false) {
   );
 }
 
+function columnKey(column, index) {
+  return String(column?.fieldname || column?.key || `column_${index + 1}`);
+}
+
+function normalizedColumnKeys(columns = []) {
+  return (Array.isArray(columns) ? columns : []).map((column, index) => columnKey(column, index));
+}
+
+function normalizedVisibleKeys(columns = [], requested = null) {
+  const available = normalizedColumnKeys(columns);
+  if (!Array.isArray(requested) || !requested.length) return available;
+  const allowed = new Set(available);
+  const visible = requested.map(String).filter((key) => allowed.has(key));
+  return visible.length ? visible : available;
+}
+
 function tierBadge(tier, entitled = true) {
   const normalized = String(tier || "").trim().toLowerCase();
   if (!normalized) return null;
@@ -75,19 +91,128 @@ export const EdgeReportShell = defineComponent({
     printButtonLabel: { type: String, default: "Print" },
     tier: { type: String, default: "" },
     subscriptionEntitled: { type: Boolean, default: true },
+    columnChooserEnabled: { type: Boolean, default: false },
+    columnChooserLabel: { type: String, default: "Columns" },
+    viewState: { type: Object, default: () => ({}) },
   },
-  emits: ["export", "print"],
+  emits: ["export", "print", "view-state-change"],
   data() {
-    return { exportOpen: false };
+    return {
+      exportOpen: false,
+      columnsOpen: false,
+      visibleColumnKeys: null,
+      appliedViewStateSignature: "",
+    };
+  },
+  methods: {
+    allColumns() {
+      return Array.isArray(this.$attrs.columns) ? this.$attrs.columns : [];
+    },
+    viewStateSignature() {
+      const visible = Array.isArray(this.viewState?.visible_columns)
+        ? this.viewState.visible_columns.map(String)
+        : [];
+      return JSON.stringify(visible);
+    },
+    ensureVisibleColumnState() {
+      const columns = this.allColumns();
+      const available = normalizedColumnKeys(columns);
+      const signature = this.viewStateSignature();
+      const current = Array.isArray(this.visibleColumnKeys) ? this.visibleColumnKeys : [];
+      const availableSet = new Set(available);
+      const currentValid = current.filter((key) => availableSet.has(String(key)));
+      const externalChanged = signature !== this.appliedViewStateSignature;
+      const columnsChanged = currentValid.length !== current.length || currentValid.some((key, index) => key !== current[index]);
+
+      if (this.visibleColumnKeys === null || externalChanged || columnsChanged) {
+        const requested = externalChanged || this.visibleColumnKeys === null
+          ? this.viewState?.visible_columns
+          : currentValid;
+        this.visibleColumnKeys = normalizedVisibleKeys(columns, requested);
+        this.appliedViewStateSignature = signature;
+      }
+      return this.visibleColumnKeys;
+    },
+    visibleColumns() {
+      const columns = this.allColumns();
+      const visible = new Set(this.ensureVisibleColumnState());
+      return columns.filter((column, index) => visible.has(columnKey(column, index)));
+    },
+    emitViewState() {
+      this.$emit("view-state-change", {
+        visible_columns: [...this.ensureVisibleColumnState()],
+      });
+    },
+    toggleColumn(key) {
+      const visible = this.ensureVisibleColumnState();
+      const normalized = String(key);
+      const next = visible.includes(normalized)
+        ? visible.filter((item) => item !== normalized)
+        : [...visible, normalized];
+      if (!next.length) return;
+      this.visibleColumnKeys = normalizedColumnKeys(this.allColumns()).filter((item) => next.includes(item));
+      this.appliedViewStateSignature = this.viewStateSignature();
+      this.emitViewState();
+    },
+    resetColumns() {
+      this.visibleColumnKeys = normalizedColumnKeys(this.allColumns());
+      this.appliedViewStateSignature = this.viewStateSignature();
+      this.emitViewState();
+    },
+    columnChooser() {
+      if (!enabled(this.columnChooserEnabled) || !this.allColumns().length) return null;
+      const visible = new Set(this.ensureVisibleColumnState());
+      return h("div", { class: "edge-report-columns" }, [
+        h(
+          "button",
+          {
+            type: "button",
+            class: "edge-button edge-button--secondary edge-report-columns__toggle",
+            "aria-expanded": this.columnsOpen ? "true" : "false",
+            onClick: () => {
+              this.columnsOpen = !this.columnsOpen;
+            },
+          },
+          this.columnChooserLabel,
+        ),
+        this.columnsOpen
+          ? h("div", { class: "edge-report-columns__panel", role: "group", "aria-label": "Visible report columns" }, [
+              h("div", { class: "edge-report-columns__heading" }, [
+                h("strong", {}, "Visible columns"),
+                h(
+                  "button",
+                  { type: "button", class: "edge-report-columns__reset", onClick: this.resetColumns },
+                  "Show all",
+                ),
+              ]),
+              ...this.allColumns().map((column, index) => {
+                const key = columnKey(column, index);
+                return h("label", { class: "edge-report-columns__option", key }, [
+                  h("input", {
+                    type: "checkbox",
+                    checked: visible.has(key),
+                    disabled: visible.size === 1 && visible.has(key),
+                    onChange: () => this.toggleColumn(key),
+                  }),
+                  h("span", {}, column?.label || key),
+                ]);
+              }),
+            ])
+          : null,
+      ]);
+    },
   },
   render() {
     const title = this.$attrs.title || "Report";
-    const columns = Array.isArray(this.$attrs.columns) ? this.$attrs.columns : [];
+    const columns = this.visibleColumns();
+    const baseAttrs = { ...this.$attrs, columns };
     const actions = () => {
       const nodes = [];
       const badge = tierBadge(this.tier, this.subscriptionEntitled);
       if (badge) nodes.push(badge);
       nodes.push(...customActions(this.$slots));
+      const chooser = this.columnChooser();
+      if (chooser) nodes.push(chooser);
       if (enabled(this.printEnabled)) {
         nodes.push(
           actionButton(
@@ -103,6 +228,7 @@ export const EdgeReportShell = defineComponent({
             this.exportBusy ? "Preparing…" : this.exportButtonLabel,
             () => {
               this.exportOpen = true;
+              this.columnsOpen = false;
             },
             this.exportBusy || this.printBusy,
             true,
@@ -113,7 +239,7 @@ export const EdgeReportShell = defineComponent({
     };
 
     return h("div", { class: "edge-report-shell-host" }, [
-      h(BaseReportShell, this.$attrs, forwardedSlots(this.$slots, actions)),
+      h(BaseReportShell, baseAttrs, forwardedSlots(this.$slots, actions)),
       enabled(this.exportEnabled)
         ? h(EdgeReportExportDialog, {
             open: this.exportOpen,
