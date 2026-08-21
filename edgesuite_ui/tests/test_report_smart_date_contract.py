@@ -1,6 +1,5 @@
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[2]
 SMART_DATE = ROOT / "edgesuite_ui" / "public" / "js" / "edgeui" / "report_smart_date.js"
 BUNDLE = ROOT / "edgesuite_ui" / "public" / "js" / "edgeui.bundle.js"
@@ -26,9 +25,9 @@ def test_smart_date_interpreter_supports_business_period_phrases():
 
 def test_smart_date_emits_exact_dates_not_free_text_to_consumers():
 	text = SMART_DATE.read_text()
-	assert 'from_date: result.from_date' in text
-	assert 'to_date: result.to_date' in text
-	assert 'expression: result.expression' in text
+	assert "from_date: result.from_date" in text
+	assert "to_date: result.to_date" in text
+	assert "expression: result.expression" in text
 	assert 'this.$emit("update:modelValue", value)' in text
 	assert 'this.$emit("resolved", value)' in text
 
