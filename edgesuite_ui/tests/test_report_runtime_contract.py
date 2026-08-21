@@ -16,7 +16,7 @@ def test_report_runtime_is_exported_and_installed():
         assert expected in bundle
 
     for expected in (
-        'REPORT_RUNTIME_VERSION = "1.1.0"',
+        'REPORT_RUNTIME_VERSION = "1.2.0"',
         'QUERY: "query-report"',
         'PAGINATED: "paginated"',
         'BOUNDED_PAGINATED: "bounded-paginated"',
@@ -29,6 +29,9 @@ def test_report_runtime_is_exported_and_installed():
         'supports_server_pagination: false',
         'supports_query_level_pagination: true',
         'supports_query_level_pagination: false',
+        'supports_sorting: true',
+        'sorting_strategy: "materialized"',
+        'sorting_strategy: "server"',
         'pagination_strategy: "query-level"',
         'pagination_strategy: "bounded-materialized"',
         'max_dataset_rows',
@@ -45,7 +48,7 @@ def test_report_runtime_is_exported_and_installed():
 def test_paginated_provider_keeps_interactive_and_export_paths_separate():
     runtime = (APP / "public/js/edgeui/report_runtime.js").read_text()
 
-    assert 'loadPage({ filters, start: safeStart, page_length: safeLength })' in runtime
+    assert 'loadPage({ filters, start: safeStart, page_length: safeLength, sort: normalizedSort })' in runtime
     assert 'loadSummary({ filters })' in runtime
     assert 'loadChart({ filters })' in runtime
     assert 'export: exportHandler' in runtime
@@ -73,8 +76,10 @@ def test_bounded_provider_requires_declared_dataset_cap_and_does_not_claim_query
     assert 'kind: PROVIDER_KINDS.BOUNDED_PAGINATED' in bounded
     assert "supports_server_pagination: true" in bounded
     assert "supports_query_level_pagination: false" in bounded
+    assert "supports_sorting: true" in bounded
+    assert 'sorting_strategy: "server"' in bounded
     assert 'pagination_strategy: "bounded-materialized"' in bounded
     assert "max_dataset_rows: datasetLimit" in bounded
-    assert 'loadPage({ filters, start: safeStart, page_length: safeLength })' in bounded
+    assert 'loadPage({ filters, start: safeStart, page_length: safeLength, sort: normalizedSort })' in bounded
     assert 'export: exportHandler' in bounded
     assert 'exportReport: exportHandler' in bounded
