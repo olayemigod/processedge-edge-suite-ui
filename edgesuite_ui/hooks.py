@@ -45,6 +45,7 @@ app_include_css = [
 	"/assets/edgesuite_ui/css/edgeui_report_comparison.css",
 	"/assets/edgesuite_ui/css/edgeui_report_grouping.css",
 	"/assets/edgesuite_ui/css/edgeui_report_exceptions.css",
+	"/assets/edgesuite_ui/css/edgeui_report_smart_date.css",
 	"/assets/edgesuite_ui/css/edgeui_dark_contrast.css",
 	"/assets/edgesuite_ui/css/edgeui_dark_form_controls.css",
 ]
