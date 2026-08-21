@@ -44,7 +44,7 @@ def test_report_shell_centralizes_common_report_states_and_pagination():
         "EdgeErrorState",
         "EdgeEmptyState",
         "EdgeReportTable",
-        'emits: ["retry", "page-change", "page-size-change", "cell-click", "row-click"]',
+        'emits: ["retry", "page-change", "page-size-change", "cell-click", "row-click", "sort-change"]',
         '"Rows per page"',
         '"Previous"',
         '"Next"',
@@ -106,7 +106,8 @@ def test_column_chooser_is_opt_in_serializable_and_cannot_hide_every_column():
         '"Visible columns"',
         '"Show all"',
         "const columns = this.visibleColumns();",
-        "const baseAttrs = { ...this.$attrs, columns };",
+        "const baseAttrs = {",
+        "onSortChange: this.handleSortChange",
         "columns,\n            initialOptions: this.exportInitialOptions",
     ):
         assert expected in source
