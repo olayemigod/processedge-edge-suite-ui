@@ -221,3 +221,34 @@ def test_presentation_css_is_responsive_and_uses_semantic_tokens():
         "overflow:auto",
     ):
         assert expected in css
+
+
+def test_report_shell_restores_columns_when_async_columns_arrive():
+    root = Path(__file__).resolve().parents[1]
+    source = (
+        root
+        / "public"
+        / "js"
+        / "edgeui"
+        / "report_shell_actions.js"
+    ).read_text(encoding="utf-8")
+
+    assert "columnsArrived" in source
+    assert "available.length > 0 && current.length === 0" in source
+    assert "columnsArrived" in source[source.index("if ("):]
+
+
+def test_report_table_normalizes_formatter_html_to_plain_text():
+    root = Path(__file__).resolve().parents[1]
+    source = (
+        root
+        / "public"
+        / "js"
+        / "edgeui"
+        / "report_presentation.js"
+    ).read_text(encoding="utf-8")
+
+    assert 'document.createElement("div")' in source
+    assert "container.innerHTML = formatted" in source
+    assert "container.textContent" in source
+    assert "v-html" not in source

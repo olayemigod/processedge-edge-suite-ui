@@ -133,9 +133,17 @@ export const EdgeReportShell = defineComponent({
       const availableSet = new Set(available);
       const currentValid = current.filter((key) => availableSet.has(String(key)));
       const externalChanged = signature !== this.appliedViewStateSignature;
-      const columnsChanged = currentValid.length !== current.length || currentValid.some((key, index) => key !== current[index]);
+      const columnsChanged =
+        currentValid.length !== current.length ||
+        currentValid.some((key, index) => key !== current[index]);
+      const columnsArrived = available.length > 0 && current.length === 0;
 
-      if (this.visibleColumnKeys === null || externalChanged || columnsChanged) {
+      if (
+        this.visibleColumnKeys === null ||
+        externalChanged ||
+        columnsChanged ||
+        columnsArrived
+      ) {
         const requested = externalChanged || this.visibleColumnKeys === null
           ? this.viewState?.visible_columns
           : currentValid;

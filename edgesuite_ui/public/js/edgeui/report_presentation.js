@@ -98,7 +98,34 @@ export const EdgeReportTable = defineComponent({
     valueFor(row, column, index) {
       const key = columnKey(column, index);
       const value = row?.[key];
-      return this.formatter ? this.formatter(value, column, row) : defaultFormat(value, column);
+
+      let formatted;
+      try {
+        formatted = this.formatter
+          ? this.formatter(value, column, row)
+          : defaultFormat(value, column);
+      } catch (_error) {
+        formatted = defaultFormat(value, column);
+      }
+
+      if (formatted === null || formatted === undefined || formatted === "") {
+        return "—";
+      }
+
+      if (typeof formatted !== "string") {
+        return String(formatted);
+      }
+
+      // Frappe formatters may return presentation HTML such as
+      // <div style="text-align: right">₦ 1,000.00</div>.
+      // EdgeReportTable owns presentation and must consume plain text only.
+      if (/<[a-z][\s\S]*>/i.test(formatted)) {
+        const container = document.createElement("div");
+        container.innerHTML = formatted;
+        return container.textContent || container.innerText || "—";
+      }
+
+      return formatted;
     },
     presentationForRow(row, index) {
       if (!this.rowPresentation) return normalizedRowPresentation(null);
