@@ -39,6 +39,14 @@ function normalizedVisibleKeys(columns = [], requested = null) {
   return visible.length ? visible : available;
 }
 
+function normalizedSort(sort = null) {
+  if (!sort || typeof sort !== "object") return null;
+  const field = String(sort.field || sort.fieldname || sort.key || "").trim();
+  const direction = String(sort.direction || sort.order || "").trim().toLowerCase();
+  if (!field || !["asc", "desc"].includes(direction)) return null;
+  return { field, direction };
+}
+
 function tierBadge(tier, entitled = true) {
   const normalized = String(tier || "").trim().toLowerCase();
   if (!normalized) return null;
@@ -95,7 +103,7 @@ export const EdgeReportShell = defineComponent({
     columnChooserLabel: { type: String, default: "Columns" },
     viewState: { type: Object, default: () => ({}) },
   },
-  emits: ["export", "print", "view-state-change"],
+  emits: ["export", "print", "view-state-change", "sort-change"],
   data() {
     return {
       exportOpen: false,
@@ -107,6 +115,9 @@ export const EdgeReportShell = defineComponent({
   methods: {
     allColumns() {
       return Array.isArray(this.$attrs.columns) ? this.$attrs.columns : [];
+    },
+    currentSort() {
+      return normalizedSort(this.$attrs.sort ?? this.viewState?.sort ?? null);
     },
     viewStateSignature() {
       const visible = Array.isArray(this.viewState?.visible_columns)
@@ -138,10 +149,16 @@ export const EdgeReportShell = defineComponent({
       const visible = new Set(this.ensureVisibleColumnState());
       return columns.filter((column, index) => visible.has(columnKey(column, index)));
     },
-    emitViewState() {
+    emitViewState(sortOverride = undefined) {
       this.$emit("view-state-change", {
         visible_columns: [...this.ensureVisibleColumnState()],
+        sort: sortOverride === undefined ? this.currentSort() : normalizedSort(sortOverride),
       });
+    },
+    handleSortChange(sort) {
+      const normalized = normalizedSort(sort);
+      this.$emit("sort-change", normalized);
+      this.emitViewState(normalized);
     },
     toggleColumn(key) {
       const visible = this.ensureVisibleColumnState();
@@ -205,7 +222,12 @@ export const EdgeReportShell = defineComponent({
   render() {
     const title = this.$attrs.title || "Report";
     const columns = this.visibleColumns();
-    const baseAttrs = { ...this.$attrs, columns };
+    const baseAttrs = {
+      ...this.$attrs,
+      columns,
+      sort: this.currentSort(),
+      onSortChange: this.handleSortChange,
+    };
     const actions = () => {
       const nodes = [];
       const badge = tierBadge(this.tier, this.subscriptionEntitled);
@@ -252,7 +274,7 @@ export const EdgeReportShell = defineComponent({
             },
             onExport: (options) => {
               this.exportOpen = false;
-              this.$emit("export", options);
+              this.$emit("export", { ...options, sort: this.currentSort() });
             },
           })
         : null,
