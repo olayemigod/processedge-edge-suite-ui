@@ -1,9 +1,10 @@
-const REPORT_RUNTIME_VERSION = "1.1.0";
+const REPORT_RUNTIME_VERSION = "1.2.0";
 const PROVIDER_KINDS = Object.freeze({
   QUERY: "query-report",
   PAGINATED: "paginated",
   BOUNDED_PAGINATED: "bounded-paginated",
 });
+const SORT_DIRECTIONS = new Set(["asc", "desc"]);
 
 function requiredFunction(value, name) {
   if (typeof value !== "function") {
@@ -44,6 +45,56 @@ function normalizeRows(rows = [], columns = []) {
   });
 }
 
+function normalizeSort(sort = null) {
+  if (!sort || typeof sort !== "object") return null;
+  const field = String(sort.field || sort.fieldname || sort.key || "").trim();
+  const direction = String(sort.direction || sort.order || "").trim().toLowerCase();
+  if (!field || !SORT_DIRECTIONS.has(direction)) return null;
+  return { field, direction };
+}
+
+function sortableColumn(columns = [], field = "") {
+  return columns.find((column) => column?.fieldname === field && column?.sortable !== false) || null;
+}
+
+function comparableValue(value, column = {}) {
+  if (value === null || value === undefined || value === "") return { empty: true, value: null };
+  const fieldtype = String(column.fieldtype || column.type || "").toLowerCase();
+  if (["currency", "float", "int", "percent", "number", "check"].includes(fieldtype)) {
+    const number = Number(value);
+    return Number.isFinite(number) ? { empty: false, value: number } : { empty: false, value: String(value) };
+  }
+  if (["date", "datetime", "time"].includes(fieldtype)) {
+    const timestamp = Date.parse(String(value));
+    return Number.isFinite(timestamp) ? { empty: false, value: timestamp } : { empty: false, value: String(value) };
+  }
+  return { empty: false, value: String(value).toLocaleLowerCase() };
+}
+
+function sortMaterializedRows(rows = [], columns = [], sort = null) {
+  const normalized = normalizeSort(sort);
+  if (!normalized) return rows;
+  const column = sortableColumn(columns, normalized.field);
+  if (!column) return rows;
+  const factor = normalized.direction === "desc" ? -1 : 1;
+  return rows
+    .map((row, index) => ({ row, index }))
+    .sort((left, right) => {
+      const a = comparableValue(left.row?.[normalized.field], column);
+      const b = comparableValue(right.row?.[normalized.field], column);
+      if (a.empty && b.empty) return left.index - right.index;
+      if (a.empty) return 1;
+      if (b.empty) return -1;
+      let comparison = 0;
+      if (typeof a.value === "string" || typeof b.value === "string") {
+        comparison = String(a.value).localeCompare(String(b.value), undefined, { numeric: true, sensitivity: "base" });
+      } else if (a.value < b.value) comparison = -1;
+      else if (a.value > b.value) comparison = 1;
+      return comparison ? comparison * factor : left.index - right.index;
+    })
+    .map(({ row }) => row);
+}
+
 export function normalizeReportPayload(payload = {}, request = {}) {
   const columns = normalizeColumns(payload.columns || []);
   const rows = normalizeRows(payload.rows || payload.result || [], columns);
@@ -60,6 +111,7 @@ export function normalizeReportPayload(payload = {}, request = {}) {
     page_length: pageLength,
     has_previous: start > 0,
     has_next: start + rows.length < total,
+    sort: normalizeSort(payload.sort || request.sort),
     metadata: payload.metadata || {},
   };
 }
@@ -73,10 +125,16 @@ export function createQueryReportProvider({ reportName, run, exportReport = null
     reportName,
     supports_server_pagination: false,
     supports_query_level_pagination: false,
+    supports_sorting: true,
+    sorting_strategy: "materialized",
     pagination_strategy: "materialized",
-    async load({ filters = {} } = {}) {
-      const payload = await run({ reportName, filters });
-      return normalizeReportPayload(payload || {});
+    async load({ filters = {}, sort = null } = {}) {
+      const normalizedSort = normalizeSort(sort);
+      const payload = await run({ reportName, filters, sort: normalizedSort });
+      const normalized = normalizeReportPayload(payload || {}, { sort: normalizedSort });
+      normalized.rows = sortMaterializedRows(normalized.rows, normalized.columns, normalizedSort);
+      normalized.sort = normalizedSort;
+      return normalized;
     },
     export: exportHandler,
     exportReport: exportHandler,
@@ -103,17 +161,20 @@ export function createPaginatedReportProvider({
     key,
     supports_server_pagination: true,
     supports_query_level_pagination: true,
+    supports_sorting: true,
+    sorting_strategy: "server",
     pagination_strategy: "query-level",
     default_page_length: defaultLength,
     max_page_length: maximumLength,
-    async load({ filters = {}, start = 0, page_length = defaultLength } = {}) {
+    async load({ filters = {}, start = 0, page_length = defaultLength, sort = null } = {}) {
       const safeStart = Math.max(0, Number(start || 0));
       const safeLength = Math.min(maximumLength, Math.max(1, Number(page_length || defaultLength)));
-      const pagePromise = loadPage({ filters, start: safeStart, page_length: safeLength });
+      const normalizedSort = normalizeSort(sort);
+      const pagePromise = loadPage({ filters, start: safeStart, page_length: safeLength, sort: normalizedSort });
       const summaryPromise = typeof loadSummary === "function" ? loadSummary({ filters }) : null;
       const chartPromise = typeof loadChart === "function" ? loadChart({ filters }) : null;
       const [page, summary, chart] = await Promise.all([pagePromise, summaryPromise, chartPromise]);
-      const normalized = normalizeReportPayload(page || {}, { start: safeStart, page_length: safeLength });
+      const normalized = normalizeReportPayload(page || {}, { start: safeStart, page_length: safeLength, sort: normalizedSort });
       if (summary !== null && summary !== undefined) normalized.summary = summary?.summary || summary || [];
       if (chart !== null && chart !== undefined) normalized.chart = chart?.chart || chart || null;
       return normalized;
@@ -146,15 +207,18 @@ export function createBoundedPaginatedReportProvider({
     key,
     supports_server_pagination: true,
     supports_query_level_pagination: false,
+    supports_sorting: true,
+    sorting_strategy: "server",
     pagination_strategy: "bounded-materialized",
     max_dataset_rows: datasetLimit,
     default_page_length: defaultLength,
     max_page_length: maximumLength,
-    async load({ filters = {}, start = 0, page_length = defaultLength } = {}) {
+    async load({ filters = {}, start = 0, page_length = defaultLength, sort = null } = {}) {
       const safeStart = Math.max(0, Number(start || 0));
       const safeLength = Math.min(maximumLength, Math.max(1, Number(page_length || defaultLength)));
-      const page = await loadPage({ filters, start: safeStart, page_length: safeLength });
-      return normalizeReportPayload(page || {}, { start: safeStart, page_length: safeLength });
+      const normalizedSort = normalizeSort(sort);
+      const page = await loadPage({ filters, start: safeStart, page_length: safeLength, sort: normalizedSort });
+      return normalizeReportPayload(page || {}, { start: safeStart, page_length: safeLength, sort: normalizedSort });
     },
     export: exportHandler,
     exportReport: exportHandler,
@@ -213,6 +277,8 @@ export function installEdgeSuiteReportRuntime(runtime, target = globalThis) {
     createPaginatedReportProvider,
     createBoundedPaginatedReportProvider,
     normalizePayload: normalizeReportPayload,
+    normalizeSort,
+    sortMaterializedRows,
   });
   runtime.reports = reports;
   if (target) {
@@ -222,4 +288,4 @@ export function installEdgeSuiteReportRuntime(runtime, target = globalThis) {
   return reports;
 }
 
-export { REPORT_RUNTIME_VERSION, PROVIDER_KINDS };
+export { REPORT_RUNTIME_VERSION, PROVIDER_KINDS, normalizeSort, sortMaterializedRows };
