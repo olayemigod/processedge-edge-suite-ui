@@ -16,6 +16,23 @@
   --edge-color-disabled-text: #7d90a4;
 }
 
+/* Frappe Desk applies heading colors directly through --heading-color and
+   --gray-900. Remap those semantics at the EdgeSuite shell boundary so plain
+   H1-H6 nodes inherit the active EdgeSuite appearance instead of Frappe's
+   light-theme heading foreground. */
+:root[data-edge-appearance] .edge-app-shell {
+  --text-color: var(--edge-color-ink-950);
+  --heading-color: var(--edge-color-ink-950);
+}
+
+:root[data-edge-appearance="dark"] .edge-app-shell {
+  --gray-900: var(--edge-color-ink-950);
+}
+
+:root[data-edge-appearance="dark"] .edge-app-shell :is(h1, h2, h3, h4, h5, h6) {
+  color: var(--edge-color-ink-950);
+}
+
 /* Shared popup, menu and result surfaces. */
 :root[data-edge-appearance="dark"] .edge-dropdown__menu,
 :root[data-edge-appearance="dark"] .edge-link-field__menu,
@@ -128,6 +145,8 @@
   background: var(--edge-color-surface) !important;
   border-color: var(--edge-color-border) !important;
   color: var(--edge-color-ink-950) !important;
+  --text-color: var(--edge-color-ink-950);
+  --heading-color: var(--edge-color-ink-950);
 }
 
 :root[data-edge-appearance="dark"] .edge-modal__body h1,
@@ -232,6 +251,8 @@
   background: var(--edge-color-surface) !important;
   border-color: var(--edge-color-border) !important;
   color: var(--edge-color-ink-950) !important;
+  --text-color: var(--edge-color-ink-950);
+  --heading-color: var(--edge-color-ink-950);
 }
 
 :root[data-edge-appearance="dark"] .modal.edge-frappe-dialog-host .modal-body h1,
