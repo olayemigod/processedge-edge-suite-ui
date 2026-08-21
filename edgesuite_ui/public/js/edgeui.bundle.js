@@ -4,8 +4,6 @@ import { installContextIdentityResolver } from "./edgeui/context_identity";
 import { documentComponents } from "./edgeui/document_components";
 import { installDropdownViewportRuntime } from "./edgeui/dropdown_viewport_runtime";
 import { emptyStateComponents } from "./edgeui/empty_state_components";
-import { exportComponents } from "./edgeui/export_components";
-import { edgeExportAdapter } from "./edgeui/export_runtime";
 import { applyFrappeCompatibility } from "./edgeui/frappe_compat";
 import { formComponents } from "./edgeui/form_components";
 import { formPrimitiveComponents } from "./edgeui/form_primitives";
@@ -35,7 +33,7 @@ applyMultiSelectCompatibility(modalComponents);
 
 const components = Object.freeze(
   createCompatibleRuntimeComponents({
-    baseComponents: { ...baseComponents, ...exportComponents },
+    baseComponents,
     professionalComponents,
     modalComponents,
     formComponents: { ...formComponents, ...formPrimitiveComponents },
@@ -49,8 +47,6 @@ const runtime = createEdgeSuiteRuntime({
   version: EDGE_SUITE_UI_VERSION,
   components,
 });
-
-runtime.registerAdapter("export", edgeExportAdapter);
 
 if (typeof globalThis !== "undefined") {
   exposeEdgeSuiteRuntime(runtime, globalThis);
@@ -75,8 +71,6 @@ export * from "./edgeui/context_identity";
 export * from "./edgeui/document_components";
 export * from "./edgeui/dropdown_viewport_runtime";
 export { EdgeEmptyState, emptyStateComponents } from "./edgeui/empty_state_components";
-export * from "./edgeui/export_components";
-export * from "./edgeui/export_runtime";
 export * from "./edgeui/form_components";
 export * from "./edgeui/form_primitives";
 export * from "./edgeui/frappe_compat";
