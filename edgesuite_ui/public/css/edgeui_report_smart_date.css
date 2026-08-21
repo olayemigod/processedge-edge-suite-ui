@@ -1,0 +1,67 @@
+.edge-smart-date {
+  display: grid;
+  gap: 0.45rem;
+  min-width: min(100%, 18rem);
+}
+
+.edge-smart-date__label {
+  color: var(--edge-text, #101828);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.edge-smart-date__input-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.edge-smart-date__input {
+  min-width: 0;
+  width: 100%;
+  border: 1px solid var(--edge-border, #d0d5dd);
+  border-radius: 0.5rem;
+  background: var(--edge-surface, #fff);
+  color: var(--edge-text, #101828);
+  padding: 0.55rem 0.7rem;
+}
+
+.edge-smart-date__interpretation,
+.edge-smart-date__error {
+  border-radius: 0.45rem;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  padding: 0.45rem 0.6rem;
+}
+
+.edge-smart-date__interpretation {
+  background: var(--edge-success-soft, rgba(18, 183, 106, 0.1));
+  color: var(--edge-text, #101828);
+}
+
+.edge-smart-date__interpretation.is-warning {
+  background: var(--edge-warning-soft, rgba(247, 144, 9, 0.12));
+}
+
+.edge-smart-date__confirm {
+  margin-inline-start: 0.5rem;
+  border: 0;
+  background: transparent;
+  color: var(--edge-primary, #175cd3);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.edge-smart-date__error {
+  background: var(--edge-danger-soft, rgba(240, 68, 56, 0.1));
+  color: var(--edge-danger-text, #b42318);
+}
+
+@media (max-width: 640px) {
+  .edge-smart-date__input-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}
