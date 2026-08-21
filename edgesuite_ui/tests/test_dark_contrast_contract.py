@@ -2,6 +2,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 CONTRAST = ROOT / "edgesuite_ui" / "public" / "css" / "edgeui_dark_contrast.css"
+FORM_CONTROLS = ROOT / "edgesuite_ui" / "public" / "css" / "edgeui_dark_form_controls.css"
 HOOKS = ROOT / "edgesuite_ui" / "hooks.py"
 
 
@@ -9,15 +10,19 @@ def read(path: Path) -> str:
 	return path.read_text(encoding="utf-8")
 
 
-def test_dark_contrast_layer_exists_and_loads_last():
+def test_dark_contrast_layers_exist_and_form_controls_load_last():
 	assert CONTRAST.exists(), CONTRAST
+	assert FORM_CONTROLS.exists(), FORM_CONTROLS
 	hooks = read(HOOKS)
-	asset = "/assets/edgesuite_ui/css/edgeui_dark_contrast.css"
-	assert asset in hooks
+	contrast_asset = "/assets/edgesuite_ui/css/edgeui_dark_contrast.css"
+	form_asset = "/assets/edgesuite_ui/css/edgeui_dark_form_controls.css"
+	assert contrast_asset in hooks
+	assert form_asset in hooks
 	assert hooks.index("edgeui_navigation_active_path.css") < hooks.index("edgeui_dark_contrast.css")
+	assert hooks.index("edgeui_dark_contrast.css") < hooks.index("edgeui_dark_form_controls.css")
 	css_list = hooks.split("app_include_css = [", 1)[1].split("]", 1)[0]
 	last_asset_line = [line.strip() for line in css_list.splitlines() if line.strip().startswith('"')][-1]
-	assert "edgeui_dark_contrast.css" in last_asset_line
+	assert "edgeui_dark_form_controls.css" in last_asset_line
 
 
 def test_shared_dark_popup_and_edgelink_surfaces_pair_background_and_text_tokens():
@@ -55,6 +60,28 @@ def test_shared_dark_modal_copy_and_controls_are_explicitly_themed():
 		".edge-checkbox__surface",
 		"--edge-color-disabled-surface:",
 		"--edge-color-disabled-text:",
+	):
+		assert contract in content
+
+
+def test_dark_form_control_layer_covers_native_editable_readonly_and_date_states():
+	content = read(FORM_CONTROLS)
+	for contract in (
+		'.edge-app-shell input:not([type="checkbox"])',
+		".edge-app-shell .form-control",
+		".edge-modal .form-control",
+		"input:disabled",
+		"input[readonly]",
+		"textarea[readonly]",
+		"--disabled-control-bg:",
+		"-webkit-text-fill-color:",
+		'input[type="date"]',
+		"::-webkit-calendar-picker-indicator",
+		"color-scheme: dark",
+		".like-disabled-input",
+		".control-value",
+		".readonly-value",
+		".form-control:focus",
 	):
 		assert contract in content
 
