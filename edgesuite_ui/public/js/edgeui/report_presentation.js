@@ -11,6 +11,7 @@ import {
 } from "./components";
 
 const REPORT_ROW_TONES = new Set(["neutral", "info", "success", "warning", "danger"]);
+const NON_SORTABLE_FIELDTYPES = new Set(["button", "html", "image", "attach", "attach image"]);
 
 function slot(slots, name, fallback = null) {
   return slots[name] ? slots[name]() : fallback;
@@ -23,6 +24,27 @@ function columnKey(column, index) {
 function numericColumn(column = {}) {
   const fieldtype = String(column.fieldtype || column.type || "").toLowerCase();
   return ["currency", "float", "int", "percent", "number"].includes(fieldtype);
+}
+
+function sortableColumn(column = {}) {
+  if (column?.sortable === false || column?.actions === true) return false;
+  const fieldtype = String(column.fieldtype || column.type || "").toLowerCase();
+  return !NON_SORTABLE_FIELDTYPES.has(fieldtype);
+}
+
+function normalizedSort(sort = null) {
+  if (!sort || typeof sort !== "object") return null;
+  const field = String(sort.field || sort.fieldname || sort.key || "").trim();
+  const direction = String(sort.direction || sort.order || "").trim().toLowerCase();
+  if (!field || !["asc", "desc"].includes(direction)) return null;
+  return { field, direction };
+}
+
+function nextSort(sort, field) {
+  const current = normalizedSort(sort);
+  if (!current || current.field !== field) return { field, direction: "asc" };
+  if (current.direction === "asc") return { field, direction: "desc" };
+  return null;
 }
 
 function defaultFormat(value, column = {}) {
@@ -64,8 +86,10 @@ export const EdgeReportTable = defineComponent({
     rowPresentation: { type: Function, default: null },
     compact: { type: Boolean, default: false },
     stickyHeader: { type: Boolean, default: true },
+    sort: { type: Object, default: null },
+    sortingEnabled: { type: Boolean, default: true },
   },
-  emits: ["cell-click", "row-click"],
+  emits: ["cell-click", "row-click", "sort-change"],
   methods: {
     keyForRow(row, index) {
       if (typeof this.rowKey === "function") return this.rowKey(row, index);
@@ -79,6 +103,21 @@ export const EdgeReportTable = defineComponent({
     presentationForRow(row, index) {
       if (!this.rowPresentation) return normalizedRowPresentation(null);
       return normalizedRowPresentation(this.rowPresentation(row, index));
+    },
+    sortForColumn(column, index) {
+      const key = columnKey(column, index);
+      const sort = normalizedSort(this.sort);
+      if (!sort || sort.field !== key) return null;
+      return sort;
+    },
+    ariaSort(column, index) {
+      const sort = this.sortForColumn(column, index);
+      if (!sort) return "none";
+      return sort.direction === "desc" ? "descending" : "ascending";
+    },
+    changeSort(column, index) {
+      if (!this.sortingEnabled || !sortableColumn(column)) return;
+      this.$emit("sort-change", nextSort(this.sort, columnKey(column, index)));
     },
   },
   render() {
@@ -98,17 +137,41 @@ export const EdgeReportTable = defineComponent({
             h(
               "tr",
               {},
-              columns.map((column, index) =>
-                h(
+              columns.map((column, index) => {
+                const key = columnKey(column, index);
+                const canSort = this.sortingEnabled && sortableColumn(column);
+                const activeSort = this.sortForColumn(column, index);
+                return h(
                   "th",
                   {
-                    key: columnKey(column, index),
-                    class: { "is-number": numericColumn(column) },
+                    key,
+                    class: { "is-number": numericColumn(column), "is-sortable": canSort, "is-sorted": Boolean(activeSort) },
                     scope: "col",
+                    "aria-sort": canSort ? this.ariaSort(column, index) : undefined,
                   },
-                  column?.label || columnKey(column, index),
-                ),
-              ),
+                  canSort
+                    ? h(
+                        "button",
+                        {
+                          type: "button",
+                          class: "edge-report-table__sort",
+                          title: activeSort
+                            ? `Sorted ${activeSort.direction === "desc" ? "descending" : "ascending"}. Activate to change sort.`
+                            : `Sort by ${column?.label || key}`,
+                          onClick: () => this.changeSort(column, index),
+                        },
+                        [
+                          h("span", { class: "edge-report-table__sort-label" }, column?.label || key),
+                          h(
+                            "span",
+                            { class: "edge-report-table__sort-indicator", "aria-hidden": "true" },
+                            activeSort ? (activeSort.direction === "desc" ? "↓" : "↑") : "↕",
+                          ),
+                        ],
+                      )
+                    : column?.label || key,
+                );
+              }),
             ),
           ]),
           h(
@@ -179,8 +242,10 @@ export const EdgeReportShell = defineComponent({
     formatter: { type: Function, default: null },
     rowPresentation: { type: Function, default: null },
     showResultCount: { type: Boolean, default: true },
+    sort: { type: Object, default: null },
+    sortingEnabled: { type: Boolean, default: true },
   },
-  emits: ["retry", "page-change", "page-size-change", "cell-click", "row-click"],
+  emits: ["retry", "page-change", "page-size-change", "cell-click", "row-click", "sort-change"],
   methods: {
     summaryValue(card = {}) {
       if (card.formatted_value !== undefined) return card.formatted_value;
@@ -267,6 +332,9 @@ export const EdgeReportShell = defineComponent({
                 rowKey: this.rowKey,
                 formatter: this.formatter,
                 rowPresentation: this.rowPresentation,
+                sort: this.sort,
+                sortingEnabled: this.sortingEnabled,
+                onSortChange: (sort) => this.$emit("sort-change", sort),
                 onCellClick: (payload) => this.$emit("cell-click", payload),
                 onRowClick: (row) => this.$emit("row-click", row),
               }),
