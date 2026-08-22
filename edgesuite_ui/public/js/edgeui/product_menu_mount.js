@@ -3,6 +3,7 @@ const PANEL_ID = "edge-product-menu-dropdown";
 const TRIGGER_ID = "edge-product-menu-trigger";
 const SLOT_ID = "edge-product-menu-slot";
 const DIRECT_HANDLER_KEY = "__edgeSuiteProductMenuDirectHandler";
+const DELEGATED_HANDLER_KEY = "__edgeSuiteProductMenuDelegatedHandler";
 
 const NATIVE_NAVBAR_SELECTORS = [
   ".navbar .navbar-nav.ms-auto",
@@ -148,6 +149,24 @@ function bindDirectTrigger(document, toggleMenu) {
   return trigger;
 }
 
+function bindDelegatedTrigger(document, toggleMenu) {
+  if (!document || typeof toggleMenu !== "function") return;
+  const existing = document[DELEGATED_HANDLER_KEY];
+  if (existing) document.removeEventListener("click", existing, true);
+
+  const handler = (event) => {
+    const trigger = event.target?.closest?.(`#${TRIGGER_ID}`);
+    if (!trigger || !trigger.isConnected) return;
+    if (event.button != null && event.button !== 0) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    toggleMenu();
+  };
+
+  document.addEventListener("click", handler, true);
+  document[DELEGATED_HANDLER_KEY] = handler;
+}
+
 function moveHost(document, toggleMenu = null) {
   const host = document.getElementById(HOST_ID);
   const target = preferredTarget(document);
@@ -203,6 +222,7 @@ export function installProductMenuMountEnhancements(edgeUI, target = globalThis)
 
     const moved = moveHost(document, directToggle);
     bindDirectTrigger(document, directToggle);
+    bindDelegatedTrigger(document, directToggle);
     return moved || result;
   };
 
@@ -255,6 +275,7 @@ export function installProductMenuMountEnhancements(edgeUI, target = globalThis)
   };
   directToggle = edgeUI.toggleProductMenu;
   bindDirectTrigger(document, directToggle);
+  bindDelegatedTrigger(document, directToggle);
 
   ["desktop_screen", "sidebar_setup", "toolbar_setup", "page-change"].forEach((eventName) => {
     document.addEventListener(eventName, scheduleMount);

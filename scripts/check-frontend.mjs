@@ -8,6 +8,7 @@ const repositoryRoot = resolve(import.meta.dirname, "..");
 const javascriptRoot = resolve(repositoryRoot, "edgesuite_ui/public/js");
 const entrypoint = resolve(javascriptRoot, "edgeui.bundle.js");
 const productContextEntrypoint = resolve(javascriptRoot, "edgeui/product_context.js");
+const themeRuntimeEntrypoint = resolve(javascriptRoot, "edgeui/theme_runtime.js");
 
 async function javascriptFiles(directory) {
   const entries = await readdir(directory, { withFileTypes: true });
@@ -53,6 +54,57 @@ if (productContextModule.routeMatches("/app/retailedge*", "vetedge")) {
   throw new Error("RetailEdge route pattern incorrectly matched VetEdge.");
 }
 
+const themeRuntimeBuild = await build({
+  entryPoints: [themeRuntimeEntrypoint],
+  bundle: true,
+  format: "esm",
+  logLevel: "warning",
+  platform: "node",
+  write: false,
+});
+const themeRuntimeModule = await import(
+  `data:text/javascript;base64,${Buffer.from(themeRuntimeBuild.outputFiles[0].text).toString("base64")}`
+);
+const autoPreference = {
+  palette: "edge-blue",
+  appearance: "auto",
+  autoLightStart: "06:00",
+  autoDarkStart: "18:00",
+};
+if (
+  themeRuntimeModule.resolveThemeAppearance(
+    autoPreference,
+    {},
+    new Date(2026, 7, 11, 12, 0, 0),
+  ) !== "light"
+) {
+  throw new Error("Auto theme should resolve to light during the configured daytime window.");
+}
+if (
+  themeRuntimeModule.resolveThemeAppearance(
+    autoPreference,
+    {},
+    new Date(2026, 7, 11, 22, 0, 0),
+  ) !== "dark"
+) {
+  throw new Error("Auto theme should resolve to dark outside the configured daytime window.");
+}
+if (
+  themeRuntimeModule.resolveThemeAppearance(
+    { ...autoPreference, appearance: "system" },
+    { matchMedia: () => ({ matches: true }) },
+  ) !== "dark"
+) {
+  throw new Error("System theme should respect prefers-color-scheme dark mode.");
+}
+const normalizedTheme = themeRuntimeModule.normalizeThemePreference({
+  palette: "unapproved",
+  appearance: "unknown",
+});
+if (normalizedTheme.palette !== "edge-blue" || normalizedTheme.appearance !== "light") {
+  throw new Error("Invalid theme preferences should fall back to the approved defaults.");
+}
+
 await build({
   entryPoints: [entrypoint],
   bundle: true,
@@ -88,4 +140,4 @@ await build({
   write: false,
 });
 
-console.log("Frontend syntax, product routes, runtime bundle, and Vue bridge validation passed.");
+console.log("Frontend syntax, product routes, theme resolution, runtime bundle, and Vue bridge validation passed.");

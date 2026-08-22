@@ -16,6 +16,17 @@ def test_sidebar_sections_are_collapsible_and_persistent():
 		assert expected in component
 
 
+def test_sidebar_accordion_keeps_active_section_open_after_navigation():
+	runtime = (APP_ROOT / "public/js/edgeui/sidebar_accordion_runtime.js").read_text(encoding="utf-8")
+	for expected in (
+		"const keep = preferred || active || expanded[0] || null",
+		"if (keep && !sectionExpanded(keep))",
+		'attributeFilter: ["class", "hidden", "aria-expanded"]',
+		'document.addEventListener("page-change", resetForNavigation)',
+	):
+		assert expected in runtime
+
+
 def test_sidebar_refinement_has_desktop_gutter_and_mobile_reset():
 	styles = (APP_ROOT / "public/css/edgeui_sidebar_refinement.css").read_text(encoding="utf-8")
 	for expected in (

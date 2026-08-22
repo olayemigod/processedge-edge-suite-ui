@@ -1,0 +1,108 @@
+/* EdgeSuite dark-mode form-control completion layer.
+   Loaded after the general dark contrast layer so native browser/Frappe inputs
+   cannot retain light surfaces inside EdgeSuite-owned shells and modals. */
+
+:root[data-edge-appearance="dark"] .edge-app-shell,
+:root[data-edge-appearance="dark"] .edge-modal,
+:root[data-edge-appearance="dark"] .modal.edge-frappe-dialog-host {
+  --control-bg: var(--edge-color-control-surface, var(--edge-color-surface));
+  --input-bg: var(--edge-color-control-surface, var(--edge-color-surface));
+  --disabled-control-bg: var(--edge-color-disabled-surface);
+  --disabled-text-color: var(--edge-color-disabled-text);
+}
+
+/* Native and shared editable controls. */
+:root[data-edge-appearance="dark"] .edge-app-shell input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+:root[data-edge-appearance="dark"] .edge-app-shell textarea,
+:root[data-edge-appearance="dark"] .edge-app-shell select,
+:root[data-edge-appearance="dark"] .edge-app-shell .form-control,
+:root[data-edge-appearance="dark"] .edge-modal input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+:root[data-edge-appearance="dark"] .edge-modal textarea,
+:root[data-edge-appearance="dark"] .edge-modal select,
+:root[data-edge-appearance="dark"] .edge-modal .form-control {
+  background-color: var(--edge-color-control-surface, var(--edge-color-surface)) !important;
+  border-color: var(--edge-color-control-border, var(--edge-color-border-strong)) !important;
+  color: var(--edge-color-control-text, var(--edge-color-ink-950)) !important;
+  caret-color: var(--edge-color-brand-text, var(--edge-color-info));
+}
+
+:root[data-edge-appearance="dark"] .edge-app-shell input::placeholder,
+:root[data-edge-appearance="dark"] .edge-app-shell textarea::placeholder,
+:root[data-edge-appearance="dark"] .edge-modal input::placeholder,
+:root[data-edge-appearance="dark"] .edge-modal textarea::placeholder {
+  color: var(--edge-color-ink-400) !important;
+  opacity: 1 !important;
+}
+
+/* Read-only and disabled fields must remain dark and readable rather than
+   falling back to browser/Frappe light disabled surfaces. */
+:root[data-edge-appearance="dark"] .edge-app-shell input:disabled,
+:root[data-edge-appearance="dark"] .edge-app-shell textarea:disabled,
+:root[data-edge-appearance="dark"] .edge-app-shell select:disabled,
+:root[data-edge-appearance="dark"] .edge-app-shell input[readonly],
+:root[data-edge-appearance="dark"] .edge-app-shell textarea[readonly],
+:root[data-edge-appearance="dark"] .edge-modal input:disabled,
+:root[data-edge-appearance="dark"] .edge-modal textarea:disabled,
+:root[data-edge-appearance="dark"] .edge-modal select:disabled,
+:root[data-edge-appearance="dark"] .edge-modal input[readonly],
+:root[data-edge-appearance="dark"] .edge-modal textarea[readonly],
+:root[data-edge-appearance="dark"] .edge-app-shell .form-control:disabled,
+:root[data-edge-appearance="dark"] .edge-app-shell .form-control[readonly],
+:root[data-edge-appearance="dark"] .edge-modal .form-control:disabled,
+:root[data-edge-appearance="dark"] .edge-modal .form-control[readonly] {
+  background-color: var(--edge-color-disabled-surface) !important;
+  border-color: var(--edge-color-border) !important;
+  color: var(--edge-color-disabled-text) !important;
+  -webkit-text-fill-color: var(--edge-color-disabled-text) !important;
+  opacity: 1 !important;
+}
+
+/* Date/time controls keep the browser picker but force a dark field and a
+   visible indicator icon. */
+:root[data-edge-appearance="dark"] .edge-app-shell input[type="date"],
+:root[data-edge-appearance="dark"] .edge-app-shell input[type="datetime-local"],
+:root[data-edge-appearance="dark"] .edge-app-shell input[type="time"],
+:root[data-edge-appearance="dark"] .edge-modal input[type="date"],
+:root[data-edge-appearance="dark"] .edge-modal input[type="datetime-local"],
+:root[data-edge-appearance="dark"] .edge-modal input[type="time"] {
+  color-scheme: dark;
+}
+
+:root[data-edge-appearance="dark"] .edge-app-shell input[type="date"]::-webkit-calendar-picker-indicator,
+:root[data-edge-appearance="dark"] .edge-app-shell input[type="datetime-local"]::-webkit-calendar-picker-indicator,
+:root[data-edge-appearance="dark"] .edge-app-shell input[type="time"]::-webkit-calendar-picker-indicator,
+:root[data-edge-appearance="dark"] .edge-modal input[type="date"]::-webkit-calendar-picker-indicator,
+:root[data-edge-appearance="dark"] .edge-modal input[type="datetime-local"]::-webkit-calendar-picker-indicator,
+:root[data-edge-appearance="dark"] .edge-modal input[type="time"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  opacity: .85;
+}
+
+/* Frappe/EdgeSuite wrappers that visually represent read-only values. */
+:root[data-edge-appearance="dark"] .edge-app-shell .like-disabled-input,
+:root[data-edge-appearance="dark"] .edge-app-shell .control-value,
+:root[data-edge-appearance="dark"] .edge-app-shell .readonly-value,
+:root[data-edge-appearance="dark"] .edge-modal .like-disabled-input,
+:root[data-edge-appearance="dark"] .edge-modal .control-value,
+:root[data-edge-appearance="dark"] .edge-modal .readonly-value {
+  background-color: var(--edge-color-disabled-surface) !important;
+  border-color: var(--edge-color-border) !important;
+  color: var(--edge-color-disabled-text) !important;
+  opacity: 1 !important;
+}
+
+/* Focus stays visibly dark rather than switching back to a light native state. */
+:root[data-edge-appearance="dark"] .edge-app-shell input:focus,
+:root[data-edge-appearance="dark"] .edge-app-shell textarea:focus,
+:root[data-edge-appearance="dark"] .edge-app-shell select:focus,
+:root[data-edge-appearance="dark"] .edge-app-shell .form-control:focus,
+:root[data-edge-appearance="dark"] .edge-modal input:focus,
+:root[data-edge-appearance="dark"] .edge-modal textarea:focus,
+:root[data-edge-appearance="dark"] .edge-modal select:focus,
+:root[data-edge-appearance="dark"] .edge-modal .form-control:focus {
+  background-color: var(--edge-color-control-surface, var(--edge-color-surface)) !important;
+  border-color: var(--edge-color-brand-text, var(--edge-color-info)) !important;
+  color: var(--edge-color-control-text, var(--edge-color-ink-950)) !important;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--edge-color-brand-500) 28%, transparent) !important;
+  outline: none;
+}

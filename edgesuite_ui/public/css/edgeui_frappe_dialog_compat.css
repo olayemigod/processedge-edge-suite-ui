@@ -1,0 +1,255 @@
+/* Native Frappe dialogs retain their behavior but inherit EdgeSuite visual semantics. */
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host {
+  color: var(--edge-color-ink-950, #122033);
+  font-family: var(--edge-font-family, inherit);
+}
+
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .edge-frappe-dialog {
+  color: var(--edge-color-ink-950, #122033);
+}
+
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .edge-frappe-dialog__surface {
+  background: var(--edge-color-surface, #fff) !important;
+  border: 1px solid var(--edge-color-border-strong, #cbd7e5) !important;
+  border-radius: var(--edge-radius-lg, 1rem) !important;
+  box-shadow: 0 24px 72px rgb(15 23 42 / 24%) !important;
+  color: var(--edge-color-ink-950, #122033) !important;
+  overflow: hidden;
+}
+
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .modal-header,
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .modal-footer {
+  background: var(--edge-color-surface, #fff) !important;
+  border-color: var(--edge-color-border, #dce5ef) !important;
+  color: var(--edge-color-ink-950, #122033) !important;
+}
+
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .modal-header {
+  padding: 1rem 1.15rem !important;
+}
+
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .modal-body {
+  background: var(--edge-color-surface, #fff) !important;
+  color: var(--edge-color-ink-950, #122033) !important;
+  padding: 1rem 1.15rem 1.15rem !important;
+}
+
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .modal-footer {
+  padding: .85rem 1.15rem !important;
+}
+
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .modal-title,
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .modal-body,
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .modal-body p,
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .msgprint,
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .msgprint-message,
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .frappe-control,
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .control-label,
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host label {
+  color: var(--edge-color-ink-950, #122033) !important;
+}
+
+/* Frappe v16 Check controls render their visible text inside .label-area /
+   .disp-area spans. Those spans can retain Frappe's light-theme text token
+   even when the surrounding dialog is dark, so style the actual runtime
+   nodes explicitly. In Dark appearance the control-text token is near-white. */
+:root[data-edge-appearance="dark"] .modal.edge-frappe-dialog-host .checkbox label,
+:root[data-edge-appearance="dark"] .modal.edge-frappe-dialog-host .checkbox .label-area,
+:root[data-edge-appearance="dark"] .modal.edge-frappe-dialog-host .checkbox .disp-area {
+  color: var(--edge-color-control-text, #f1f6fb) !important;
+}
+
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .text-muted,
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .help-box,
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .description,
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .form-text {
+  color: var(--edge-color-ink-500, #6b7d90) !important;
+}
+
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .form-control,
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host input:not([type="checkbox"]):not([type="radio"]),
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host textarea,
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host select {
+  background: var(--edge-color-control-surface, var(--edge-color-surface, #fff)) !important;
+  border: 1px solid var(--edge-color-control-border, var(--edge-color-border-strong, #cbd7e5)) !important;
+  border-radius: .625rem !important;
+  color: var(--edge-color-control-text, var(--edge-color-ink-950, #122033)) !important;
+  box-shadow: none !important;
+}
+
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .form-control::placeholder,
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host input::placeholder,
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host textarea::placeholder {
+  color: var(--edge-color-ink-400, #8191a2) !important;
+}
+
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .btn {
+  border-radius: .625rem !important;
+  box-shadow: none !important;
+  font-weight: 650;
+}
+
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .btn-primary,
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .btn.btn-primary {
+  background: var(--edge-color-brand-600, #0f64ab) !important;
+  border-color: var(--edge-color-brand-600, #0f64ab) !important;
+  color: var(--edge-color-on-brand, #fff) !important;
+}
+
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .btn-default,
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .btn-secondary {
+  background: var(--edge-color-surface-muted, #f5f8fc) !important;
+  border-color: var(--edge-color-border-strong, #cbd7e5) !important;
+  color: var(--edge-color-ink-800, #26374a) !important;
+}
+
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .close,
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .btn-close,
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .btn-modal-close {
+  color: var(--edge-color-ink-700, #415469) !important;
+  opacity: 1 !important;
+}
+
+/* Frappe v16 uses .btn-modal-close with a shared SVG icon. Keep the
+   semantic foreground on the button and on the icon's custom properties so
+   close controls never disappear when a product switches appearance. */
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .btn-modal-close {
+  align-items: center;
+  display: inline-flex;
+  justify-content: center;
+  min-height: 2rem;
+  min-width: 2rem;
+  --icon-fill: var(--edge-color-ink-700, #415469);
+  --icon-stroke: var(--edge-color-ink-700, #415469);
+}
+
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .btn-modal-close .icon,
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .btn-modal-close svg {
+  color: var(--edge-color-ink-700, #415469) !important;
+  opacity: 1 !important;
+  stroke: var(--edge-color-ink-700, #415469) !important;
+}
+
+/* Frappe Link controls render Awesomplete result lists inside the dialog.
+   Frappe v16 uses direct [role="option"] children (not only <li>), and its
+   base stylesheet reads --bg-color / --text-color / --awesomplete-hover-bg.
+   Map both the variables and the exact runtime states to EdgeSuite semantic
+   tokens so normal, keyboard-focused, selected and hovered rows stay legible. */
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .awesomplete {
+  --bg-color: var(--edge-color-surface, #fff);
+  --text-color: var(--edge-color-ink-950, #122033);
+  --awesomplete-hover-bg: var(--edge-color-surface-muted, #f5f8fc);
+  --border-color: var(--edge-color-border-strong, #cbd7e5);
+}
+
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .awesomplete > ul,
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .awesomplete > [role="listbox"] {
+  background: var(--edge-color-surface, #fff) !important;
+  border: 1px solid var(--edge-color-border-strong, #cbd7e5) !important;
+  color: var(--edge-color-ink-950, #122033) !important;
+  box-shadow: 0 12px 30px rgb(15 23 42 / 18%) !important;
+}
+
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .awesomplete > ul > li,
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .awesomplete > ul > [role="option"],
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .awesomplete > [role="listbox"] > li,
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .awesomplete > [role="listbox"] > [role="option"] {
+  background: var(--edge-color-surface, #fff) !important;
+  color: var(--edge-color-ink-950, #122033) !important;
+}
+
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .awesomplete > ul > li p,
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .awesomplete > ul > li strong,
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .awesomplete > ul > li .link-option,
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .awesomplete > ul > [role="option"] p,
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .awesomplete > ul > [role="option"] strong,
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .awesomplete > ul > [role="option"] .link-option,
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .awesomplete > [role="listbox"] > li p,
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .awesomplete > [role="listbox"] > li strong,
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .awesomplete > [role="listbox"] > li .link-option,
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .awesomplete > [role="listbox"] > [role="option"] p,
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .awesomplete > [role="listbox"] > [role="option"] strong,
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .awesomplete > [role="listbox"] > [role="option"] .link-option {
+  color: var(--edge-color-ink-950, #122033) !important;
+}
+
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .awesomplete > ul > li .small,
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .awesomplete > ul > [role="option"] .small,
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .awesomplete > [role="listbox"] > li .small,
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .awesomplete > [role="listbox"] > [role="option"] .small {
+  color: var(--edge-color-ink-600, #52667a) !important;
+}
+
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .awesomplete > ul > li:hover,
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .awesomplete > ul > li:focus,
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .awesomplete > ul > li[aria-selected="true"],
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .awesomplete > ul > [role="option"]:hover,
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .awesomplete > ul > [role="option"]:focus,
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .awesomplete > ul > [role="option"][aria-selected="true"],
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .awesomplete > [role="listbox"] > li:hover,
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .awesomplete > [role="listbox"] > li:focus,
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .awesomplete > [role="listbox"] > li[aria-selected="true"],
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .awesomplete > [role="listbox"] > [role="option"]:hover,
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .awesomplete > [role="listbox"] > [role="option"]:focus,
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .awesomplete > [role="listbox"] > [role="option"][aria-selected="true"] {
+  background: var(--edge-color-surface-muted, #f5f8fc) !important;
+  color: var(--edge-color-ink-950, #122033) !important;
+}
+
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .awesomplete > ul > li:hover *,
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .awesomplete > ul > li:focus *,
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .awesomplete > ul > li[aria-selected="true"] *,
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .awesomplete > ul > [role="option"]:hover *,
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .awesomplete > ul > [role="option"]:focus *,
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .awesomplete > ul > [role="option"][aria-selected="true"] *,
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .awesomplete > [role="listbox"] > li:hover *,
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .awesomplete > [role="listbox"] > li:focus *,
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .awesomplete > [role="listbox"] > li[aria-selected="true"] *,
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .awesomplete > [role="listbox"] > [role="option"]:hover *,
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .awesomplete > [role="listbox"] > [role="option"]:focus *,
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .awesomplete > [role="listbox"] > [role="option"][aria-selected="true"] * {
+  color: inherit !important;
+}
+
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .alert,
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .frappe-card {
+  background: var(--edge-color-surface-muted, #f5f8fc) !important;
+  border-color: var(--edge-color-border, #dce5ef) !important;
+  color: var(--edge-color-ink-800, #26374a) !important;
+}
+
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .table,
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .table > :not(caption) > * > * {
+  background: var(--edge-color-surface, #fff) !important;
+  border-color: var(--edge-color-border, #dce5ef) !important;
+  color: var(--edge-color-ink-800, #26374a) !important;
+}
+
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .table thead th {
+  background: var(--edge-color-surface-muted, #f5f8fc) !important;
+  color: var(--edge-color-ink-600, #52667a) !important;
+}
+
+:root[data-edge-appearance="dark"] .modal.edge-frappe-dialog-host .edge-frappe-dialog__surface {
+  box-shadow: 0 30px 90px rgb(0 0 0 / 48%) !important;
+}
+
+:root[data-edge-appearance="dark"] .modal-backdrop.show {
+  background: #02080f !important;
+  opacity: .72 !important;
+}
+
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host--message .modal-dialog {
+  max-width: min(42rem, calc(100vw - 2rem));
+}
+
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host--message .modal-body {
+  font-size: .95rem;
+  line-height: 1.55;
+}
+
+@media (max-width: 47.99rem) {
+  :root[data-edge-appearance] .modal.edge-frappe-dialog-host .modal-dialog {
+    margin: .75rem;
+  }
+}

@@ -1,0 +1,360 @@
+/* EdgeSuite Navigation Shell V2
+   Theme-aware shared navigation modeled on a restrained icon-rail / expanded-menu pattern.
+   No product-local colors are defined here: all states inherit the active EdgeSuite theme. */
+
+:root {
+  --edge-navigation-expanded-width: 15.5rem;
+  --edge-navigation-collapsed-width: 4.5rem;
+  --edge-navigation-motion: 180ms cubic-bezier(.2, .7, .2, 1);
+}
+
+.edge-app-shell.edge-nav-shell-v2 {
+  --edge-sidebar-width: var(--edge-navigation-expanded-width);
+}
+
+.edge-nav-shell-v2 .edge-shell-body {
+  transition: grid-template-columns var(--edge-navigation-motion);
+}
+
+.edge-nav-shell-v2 .edge-sidebar {
+  background: var(--edge-color-surface);
+  border-right: 1px solid var(--edge-color-border);
+  box-shadow: none;
+  transition:
+    width var(--edge-navigation-motion),
+    background 140ms ease,
+    border-color 140ms ease;
+}
+
+.edge-nav-shell-v2 .edge-sidebar__brand {
+  align-items: center;
+  background: var(--edge-color-surface);
+  gap: .65rem;
+  min-height: 3.75rem;
+  padding: .75rem .7rem .75rem .85rem;
+  position: relative;
+}
+
+.edge-nav-shell-v2 .edge-sidebar__mark {
+  background: var(--edge-color-brand-50);
+  border: 1px solid var(--edge-color-brand-100);
+  border-radius: .7rem;
+  box-shadow: none;
+  color: var(--edge-color-brand-600);
+  height: 2.25rem;
+  width: 2.25rem;
+}
+
+.edge-nav-shell-v2 .edge-sidebar__brand-copy strong {
+  color: var(--edge-color-ink-950);
+  font-size: .875rem;
+  font-weight: 720;
+}
+
+.edge-nav-shell-v2 .edge-sidebar__brand-copy small {
+  color: var(--edge-color-ink-500);
+  font-size: .68rem;
+}
+
+.edge-nav-shell-toggle {
+  align-items: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: .55rem;
+  color: var(--edge-color-ink-500);
+  cursor: pointer;
+  display: inline-flex;
+  flex: 0 0 auto;
+  height: 2rem;
+  justify-content: center;
+  margin-left: auto;
+  padding: 0;
+  transition:
+    background 140ms ease,
+    border-color 140ms ease,
+    color 140ms ease;
+  width: 2rem;
+}
+
+.edge-nav-shell-toggle:hover {
+  background: var(--edge-color-surface-muted);
+  border-color: var(--edge-color-border);
+  color: var(--edge-color-ink-950);
+}
+
+.edge-nav-shell-toggle:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--edge-color-brand-500) 25%, transparent);
+  outline-offset: 2px;
+}
+
+.edge-nav-shell-v2 .edge-sidebar__nav {
+  gap: .3rem;
+  padding: .7rem .55rem 1rem;
+}
+
+.edge-nav-shell-v2 .edge-sidebar__section {
+  gap: .15rem;
+  padding-block: .1rem;
+}
+
+.edge-nav-shell-v2 .edge-sidebar__section + .edge-sidebar__section {
+  border-top: 0;
+  padding-top: .1rem;
+}
+
+.edge-nav-shell-v2 .edge-sidebar__section-toggle {
+  border-radius: .6rem;
+  color: var(--edge-color-ink-700);
+  font-size: .76rem;
+  font-weight: 680;
+  gap: .5rem;
+  letter-spacing: 0;
+  min-height: 2.25rem;
+  padding: .45rem .55rem;
+  text-transform: none;
+}
+
+.edge-nav-shell-v2 .edge-sidebar__section-toggle:hover:not(:disabled) {
+  background: var(--edge-color-surface-muted);
+  border-color: transparent;
+  color: var(--edge-color-ink-950);
+}
+
+.edge-nav-shell-v2 .edge-sidebar__section.is-expanded .edge-sidebar__section-toggle {
+  color: var(--edge-color-ink-950);
+}
+
+.edge-nav-shell-v2 .edge-sidebar__section-toggle > .edge-icon:first-child {
+  color: var(--edge-color-ink-500);
+}
+
+.edge-nav-shell-v2 .edge-sidebar__section.is-expanded .edge-sidebar__section-toggle > .edge-icon:first-child,
+.edge-nav-shell-v2 .edge-sidebar__section:has(.edge-sidebar-item.active) .edge-sidebar__section-toggle > .edge-icon:first-child {
+  color: var(--edge-color-brand-600);
+}
+
+.edge-nav-shell-v2 .edge-sidebar__section-toggle > .edge-icon:last-child {
+  color: var(--edge-color-ink-400);
+}
+
+.edge-nav-shell-v2 .edge-sidebar__items {
+  gap: .1rem;
+  margin: .05rem 0 .2rem;
+  padding-left: .35rem;
+}
+
+.edge-nav-shell-v2 .edge-sidebar-item {
+  border: 0;
+  border-radius: .6rem;
+  color: var(--edge-color-ink-700);
+  gap: .5rem;
+  grid-template-columns: 1.75rem minmax(0, 1fr) auto;
+  min-height: 2.35rem;
+  padding: .35rem .45rem;
+  transform: none;
+}
+
+.edge-nav-shell-v2 .edge-sidebar-item:hover {
+  background: var(--edge-color-surface-muted);
+  border-color: transparent;
+  color: var(--edge-color-ink-950);
+  transform: none;
+}
+
+.edge-nav-shell-v2 .edge-sidebar-item.active {
+  background: color-mix(in srgb, var(--edge-color-brand-50) 78%, var(--edge-color-surface));
+  border-color: transparent;
+  box-shadow: inset 2px 0 0 var(--edge-color-brand-600);
+  color: var(--edge-color-brand-700);
+}
+
+.edge-nav-shell-v2 .edge-sidebar-item > .edge-icon {
+  background: transparent;
+  border: 0;
+  border-radius: .5rem;
+  box-shadow: none;
+  color: var(--edge-color-ink-500);
+  height: 1.75rem;
+  width: 1.75rem;
+}
+
+.edge-nav-shell-v2 .edge-sidebar-item.active > .edge-icon {
+  background: color-mix(in srgb, var(--edge-color-brand-100) 65%, transparent);
+  border: 0;
+  box-shadow: none;
+  color: var(--edge-color-brand-700);
+}
+
+.edge-nav-shell-v2 .edge-sidebar-item__label {
+  font-size: .79rem;
+  font-weight: 610;
+}
+
+.edge-nav-shell-v2 .edge-sidebar-item__description {
+  display: none;
+}
+
+.edge-nav-shell-v2 .edge-sidebar-item__badge {
+  background: var(--edge-color-surface-muted);
+  color: var(--edge-color-ink-700);
+}
+
+.edge-nav-shell-v2 .edge-sidebar__user {
+  background: var(--edge-color-surface);
+  border-top-color: var(--edge-color-border);
+  padding: .7rem .8rem;
+}
+
+.edge-nav-shell-v2 .edge-sidebar__avatar {
+  background: var(--edge-color-brand-50);
+  border: 1px solid var(--edge-color-brand-100);
+  color: var(--edge-color-brand-700);
+}
+
+/* Desktop icon rail. Section icons remain available; selecting one expands the
+   full menu so users can choose from that section's submenu. */
+.edge-nav-shell-v2.edge-nav-shell--collapsed {
+  --edge-sidebar-width: var(--edge-navigation-collapsed-width);
+}
+
+.edge-nav-shell-v2.edge-nav-shell--collapsed .edge-sidebar {
+  width: var(--edge-navigation-collapsed-width);
+}
+
+.edge-nav-shell-v2.edge-nav-shell--collapsed .edge-sidebar__brand {
+  gap: .25rem;
+  justify-content: flex-start;
+  padding-inline: .4rem;
+}
+
+.edge-nav-shell-v2.edge-nav-shell--collapsed .edge-sidebar__mark {
+  border-radius: .6rem;
+  height: 2rem;
+  width: 2rem;
+}
+
+.edge-nav-shell-v2.edge-nav-shell--collapsed .edge-sidebar__brand-copy,
+.edge-nav-shell-v2.edge-nav-shell--collapsed .edge-sidebar__user-copy,
+.edge-nav-shell-v2.edge-nav-shell--collapsed .edge-sidebar-item__copy,
+.edge-nav-shell-v2.edge-nav-shell--collapsed .edge-sidebar-item__badge {
+  display: none !important;
+}
+
+.edge-nav-shell-v2.edge-nav-shell--collapsed .edge-nav-shell-toggle {
+  height: 1.8rem;
+  margin-left: 0;
+  width: 1.8rem;
+}
+
+.edge-nav-shell-v2.edge-nav-shell--collapsed .edge-sidebar__nav {
+  align-content: start;
+  gap: .35rem;
+  padding: .65rem .55rem;
+  scrollbar-width: none;
+}
+
+.edge-nav-shell-v2.edge-nav-shell--collapsed .edge-sidebar__nav::-webkit-scrollbar {
+  display: none;
+}
+
+.edge-nav-shell-v2.edge-nav-shell--collapsed .edge-sidebar__section {
+  display: block;
+  padding: 0;
+}
+
+.edge-nav-shell-v2.edge-nav-shell--collapsed .edge-sidebar__section-toggle {
+  align-items: center;
+  display: flex;
+  height: 3rem;
+  justify-content: center;
+  min-height: 3rem;
+  padding: 0;
+  width: 3.25rem;
+}
+
+.edge-nav-shell-v2.edge-nav-shell--collapsed .edge-sidebar__section-toggle > span:nth-child(2),
+.edge-nav-shell-v2.edge-nav-shell--collapsed .edge-sidebar__section-toggle > .edge-icon:last-child {
+  display: none;
+}
+
+.edge-nav-shell-v2.edge-nav-shell--collapsed .edge-sidebar__section-toggle > .edge-icon:first-child {
+  color: var(--edge-color-ink-500);
+  margin: 0;
+}
+
+.edge-nav-shell-v2.edge-nav-shell--collapsed .edge-sidebar__section:has(.edge-sidebar-item.active) .edge-sidebar__section-toggle {
+  background: color-mix(in srgb, var(--edge-color-brand-50) 82%, var(--edge-color-surface));
+  box-shadow: inset 2px 0 0 var(--edge-color-brand-600);
+}
+
+.edge-nav-shell-v2.edge-nav-shell--collapsed .edge-sidebar__section:has(.edge-sidebar-item.active) .edge-sidebar__section-toggle > .edge-icon:first-child {
+  color: var(--edge-color-brand-700);
+}
+
+.edge-nav-shell-v2.edge-nav-shell--collapsed .edge-sidebar__items {
+  display: none !important;
+}
+
+.edge-nav-shell-v2.edge-nav-shell--collapsed .edge-sidebar__user {
+  display: flex;
+  justify-content: center;
+  padding: .7rem .4rem;
+}
+
+/* The selected theme supplies all dark-mode values through semantic tokens. */
+:root[data-edge-appearance="dark"] .edge-nav-shell-v2 .edge-sidebar {
+  background: var(--edge-color-surface);
+}
+
+:root[data-edge-appearance="dark"] .edge-nav-shell-v2 .edge-sidebar-item.active,
+:root[data-edge-appearance="dark"] .edge-nav-shell-v2.edge-nav-shell--collapsed .edge-sidebar__section:has(.edge-sidebar-item.active) .edge-sidebar__section-toggle {
+  background: color-mix(in srgb, var(--edge-color-brand-700) 22%, var(--edge-color-surface));
+  color: var(--edge-color-ink-950);
+}
+
+@media (max-width: 61.99rem) {
+  .edge-nav-shell-toggle {
+    display: none !important;
+  }
+
+  .edge-app-shell.edge-nav-shell-v2,
+  .edge-app-shell.edge-nav-shell-v2.edge-nav-shell--collapsed {
+    --edge-sidebar-width: var(--edge-navigation-expanded-width);
+  }
+
+  .edge-nav-shell-v2.edge-nav-shell--collapsed .edge-sidebar {
+    width: var(--edge-navigation-expanded-width);
+  }
+
+  .edge-nav-shell-v2.edge-nav-shell--collapsed .edge-sidebar__brand-copy,
+  .edge-nav-shell-v2.edge-nav-shell--collapsed .edge-sidebar__user-copy,
+  .edge-nav-shell-v2.edge-nav-shell--collapsed .edge-sidebar-item__copy,
+  .edge-nav-shell-v2.edge-nav-shell--collapsed .edge-sidebar-item__badge {
+    display: initial !important;
+  }
+
+  .edge-nav-shell-v2.edge-nav-shell--collapsed .edge-sidebar__items {
+    display: grid !important;
+  }
+
+  .edge-nav-shell-v2.edge-nav-shell--collapsed .edge-sidebar__section-toggle {
+    display: grid;
+    height: auto;
+    justify-content: initial;
+    min-height: 2.25rem;
+    padding: .45rem .55rem;
+    width: 100%;
+  }
+
+  .edge-nav-shell-v2.edge-nav-shell--collapsed .edge-sidebar__section-toggle > span:nth-child(2),
+  .edge-nav-shell-v2.edge-nav-shell--collapsed .edge-sidebar__section-toggle > .edge-icon:last-child {
+    display: inline-flex;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .edge-nav-shell-v2 .edge-shell-body,
+  .edge-nav-shell-v2 .edge-sidebar {
+    transition: none;
+  }
+}
