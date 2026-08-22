@@ -16,8 +16,10 @@ body.edge-modal-open { overflow: hidden; }
   box-shadow: none !important;
   display: flex;
   flex-direction: column;
+  isolation: isolate;
   max-height: min(88vh, 54rem);
   overflow: hidden;
+  position: relative;
   width: min(100%, 42rem);
 }
 .edge-modal--sm { width: min(100%, 30rem); }
@@ -153,6 +155,51 @@ textarea.edge-form-control { min-height: 5.5rem; resize: vertical; }
   transform: translateY(-50%);
 }
 .edge-modal .edge-button { box-shadow: none !important; transform: none !important; }
+
+/* A shared busy state for every EdgeSuite modal. EdgeModal disables its close
+   control while busy, which gives the CSS one product-neutral signal without
+   adding a VetEdge/RetailEdge-specific runtime dependency. */
+.edge-modal:has(.edge-modal__close:disabled) { cursor: wait; }
+.edge-modal:has(.edge-modal__close:disabled)::before {
+  align-items: center;
+  backdrop-filter: blur(1.5px);
+  background: color-mix(in srgb, var(--edge-color-surface, #fff) 84%, transparent);
+  color: var(--edge-color-ink-800, #26374a);
+  content: "Processing\2026";
+  display: flex;
+  font-size: .82rem;
+  font-weight: 720;
+  inset: 0;
+  justify-content: center;
+  letter-spacing: .01em;
+  padding-top: 4.8rem;
+  position: absolute;
+  text-align: center;
+  z-index: 40;
+}
+.edge-modal:has(.edge-modal__close:disabled)::after {
+  animation: edge-modal-busy-spin .8s linear infinite;
+  border: .24rem solid color-mix(in srgb, var(--edge-color-brand-500, #1677c8) 24%, var(--edge-color-border, #dce5ef));
+  border-radius: 50%;
+  border-top-color: var(--edge-color-brand-600, #0f64ab);
+  box-shadow: 0 0 0 .35rem color-mix(in srgb, var(--edge-color-brand-500, #1677c8) 8%, transparent);
+  content: "";
+  height: 2.55rem;
+  left: 50%;
+  pointer-events: none;
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -68%);
+  width: 2.55rem;
+  z-index: 41;
+}
+@keyframes edge-modal-busy-spin {
+  from { transform: translate(-50%, -68%) rotate(0deg); }
+  to { transform: translate(-50%, -68%) rotate(360deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .edge-modal:has(.edge-modal__close:disabled)::after { animation: none; }
+}
 
 /* Dialog fields use the shared custom dropdowns so the flyout can be
    dimensioned against the actual control instead of browser-native popup UI. */
