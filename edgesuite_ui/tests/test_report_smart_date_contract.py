@@ -2,6 +2,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 SMART_DATE = ROOT / "edgesuite_ui" / "public" / "js" / "edgeui" / "report_smart_date.js"
+SMART_DATE_CSS = ROOT / "edgesuite_ui" / "public" / "css" / "edgeui_report_smart_date.css"
 BUNDLE = ROOT / "edgesuite_ui" / "public" / "js" / "edgeui.bundle.js"
 HOOKS = ROOT / "edgesuite_ui" / "hooks.py"
 
@@ -32,9 +33,10 @@ def test_smart_date_emits_exact_dates_not_free_text_to_consumers():
 	assert 'this.$emit("resolved", value)' in text
 
 
-def test_smart_date_always_surfaces_interpretation():
+def test_smart_date_surfaces_resolved_range_and_errors():
 	text = SMART_DATE.read_text()
-	assert "Interpreted as:" in text
+	assert '"Interpreted as"' in text
+	assert "selectedRangeLabel" in text
 	assert "edge-smart-date__interpretation" in text
 	assert "edge-smart-date__error" in text
 
@@ -45,6 +47,28 @@ def test_ambiguous_numeric_dates_require_explicit_confirmation():
 	assert "confirmedAmbiguousExpression" in text
 	assert "confirmAmbiguous" in text
 	assert "Confirm ${String(this.dateOrder" in text
+
+
+def test_smart_date_is_one_hybrid_selector_for_presets_and_custom_dates():
+	text = SMART_DATE.read_text()
+	css = SMART_DATE_CSS.read_text()
+	for marker in (
+		"DEFAULT_PRESETS",
+		'"Last 90 Days"',
+		"applyPreset",
+		"applyCustomRange",
+		"customFrom",
+		"customTo",
+		'type: "date"',
+		"edge-smart-date__range-button",
+		"edge-smart-date__picker",
+	):
+		assert marker in text
+	assert "this.customFrom = value.from_date" in text
+	assert "this.customTo = value.to_date" in text
+	assert 'expression: "custom"' in text
+	assert "edge-smart-date__custom-fields" in css
+	assert "edge-smart-date__presets" in css
 
 
 def test_smart_date_is_registered_as_shared_edgesuite_component():
