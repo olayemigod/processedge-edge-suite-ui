@@ -194,6 +194,7 @@ export const EdgeSmartDateRange = defineComponent({
   emits: ["update:modelValue", "resolved", "invalid"],
   data() {
     return {
+      selectedValue: {},
       expression: "",
       interpretation: null,
       confirmedAmbiguousExpression: "",
@@ -220,6 +221,7 @@ export const EdgeSmartDateRange = defineComponent({
   },
   methods: {
     syncFromModel(value) {
+      this.selectedValue = { ...value };
       if (validIsoDate(value.from_date)) this.customFrom = value.from_date;
       if (validIsoDate(value.to_date)) this.customTo = value.to_date;
       if (value.expression && value.expression !== "custom") this.expression = value.expression;
@@ -236,14 +238,24 @@ export const EdgeSmartDateRange = defineComponent({
       }
     },
     selectedRangeLabel() {
-      const from = this.modelValue?.from_date || this.customFrom;
-      const to = this.modelValue?.to_date || this.customTo;
-      if (!from || !to) return "Select dates";
+      const from = this.selectedValue?.from_date;
+      const to = this.selectedValue?.to_date;
+      if (!from || !to) return "Select date range";
       const first = displayDate(from, this.dateOrder);
       const second = displayDate(to, this.dateOrder);
       return first === second ? first : `${first} – ${second}`;
     },
+    selectedPeriodLabel() {
+      const expression = String(this.selectedValue?.expression || "").trim();
+      if (!expression) return "Date";
+      if (expression === "custom") return "Custom";
+      const preset = (this.presets || []).find(
+        (item) => String(item.expression || "").toLowerCase() === expression.toLowerCase(),
+      );
+      return preset?.label || expression;
+    },
     emitResolved(value) {
+      this.selectedValue = { ...value };
       this.customFrom = value.from_date;
       this.customTo = value.to_date;
       this.customError = "";
@@ -268,6 +280,7 @@ export const EdgeSmartDateRange = defineComponent({
         label: result.label,
       };
       this.emitResolved(value);
+      this.pickerOpen = false;
     },
     applyPreset(expression) {
       this.expression = expression;
@@ -277,7 +290,6 @@ export const EdgeSmartDateRange = defineComponent({
         dateOrder: this.dateOrder,
       });
       this.resolve();
-      if (!this.interpretation?.requires_confirmation) this.pickerOpen = false;
     },
     applyCustomRange() {
       this.customError = "";
@@ -289,24 +301,16 @@ export const EdgeSmartDateRange = defineComponent({
         this.customError = "The start date cannot be after the end date.";
         return;
       }
-      this.expression = "";
-      this.confirmedAmbiguousExpression = "";
-      const result = {
-        valid: true,
+      const value = {
         expression: "custom",
         from_date: this.customFrom,
         to_date: this.customTo,
         label: this.customFrom === this.customTo ? this.customFrom : `${this.customFrom} – ${this.customTo}`,
-        ambiguous: false,
-        requires_confirmation: false,
       };
-      this.interpretation = result;
-      this.emitResolved({
-        expression: result.expression,
-        from_date: result.from_date,
-        to_date: result.to_date,
-        label: result.label,
-      });
+      this.expression = "";
+      this.interpretation = null;
+      this.confirmedAmbiguousExpression = "";
+      this.emitResolved(value);
       this.pickerOpen = false;
     },
     confirmAmbiguous() {
@@ -324,8 +328,8 @@ export const EdgeSmartDateRange = defineComponent({
     togglePicker() {
       if (this.disabled) return;
       if (!this.pickerOpen) {
-        this.customFrom = this.modelValue?.from_date || this.customFrom || "";
-        this.customTo = this.modelValue?.to_date || this.customTo || "";
+        this.customFrom = this.selectedValue?.from_date || "";
+        this.customTo = this.selectedValue?.to_date || "";
         this.customError = "";
       }
       this.pickerOpen = !this.pickerOpen;
@@ -334,15 +338,68 @@ export const EdgeSmartDateRange = defineComponent({
       if (!this.pickerOpen || this.$refs.root?.contains(event.target)) return;
       this.pickerOpen = false;
     },
+    renderInterpretationPreview() {
+      const result = this.interpretation;
+      if (!result) return null;
+      if (!result.valid) {
+        return h("div", { class: "edge-smart-date__error", role: "alert" }, result.message);
+      }
+      return h("div", { class: ["edge-smart-date__interpretation", { "is-warning": result.requires_confirmation }] }, [
+        h("span", {}, `Interpreted as: ${displayDate(result.from_date, this.dateOrder)}${result.from_date === result.to_date ? "" : ` – ${displayDate(result.to_date, this.dateOrder)}`}`),
+        result.requires_confirmation
+          ? h("button", {
+              type: "button",
+              class: "edge-smart-date__confirm",
+              disabled: this.disabled,
+              onClick: this.confirmAmbiguous,
+            }, `Confirm ${String(this.dateOrder || "DMY").toUpperCase()} interpretation`)
+          : null,
+      ]);
+    },
     renderPicker() {
       if (!this.pickerOpen) return null;
-      return h("div", { class: "edge-smart-date__picker", role: "dialog", "aria-label": "Choose date range" }, [
+      return h("div", {
+        class: "edge-smart-date__picker",
+        role: "dialog",
+        "aria-label": "Choose date range",
+        onKeydown: (event) => {
+          if (event.key === "Escape") this.pickerOpen = false;
+        },
+      }, [
+        h("div", { class: "edge-smart-date__smart-section" }, [
+          h("span", { class: "edge-smart-date__section-label" }, "Smart date"),
+          h("div", { class: "edge-smart-date__smart-row" }, [
+            h("input", {
+              class: "edge-smart-date__input",
+              type: "text",
+              value: this.expression,
+              placeholder: this.placeholder,
+              disabled: this.disabled,
+              onInput: this.onInput,
+              onKeydown: (event) => {
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  this.resolve();
+                }
+              },
+            }),
+            h("button", {
+              type: "button",
+              class: "edge-button edge-button--primary edge-smart-date__apply",
+              disabled: this.disabled || !this.expression || !this.interpretation?.valid,
+              onClick: this.resolve,
+            }, "Apply"),
+          ]),
+          this.renderInterpretationPreview(),
+        ]),
         h("div", { class: "edge-smart-date__preset-section" }, [
           h("span", { class: "edge-smart-date__section-label" }, "Quick periods"),
           h("div", { class: "edge-smart-date__presets" }, (this.presets || []).map((preset) =>
             h("button", {
               type: "button",
-              class: ["edge-smart-date__preset", { "is-active": String(this.modelValue?.expression || "").toLowerCase() === String(preset.expression || "").toLowerCase() }],
+              class: ["edge-smart-date__preset", {
+                "is-active": String(this.selectedValue?.expression || "").toLowerCase() === String(preset.expression || "").toLowerCase(),
+              }],
               disabled: this.disabled,
               onClick: () => this.applyPreset(preset.expression),
             }, preset.label || preset.expression),
@@ -390,59 +447,23 @@ export const EdgeSmartDateRange = defineComponent({
     },
   },
   render() {
-    const result = this.interpretation;
+    const hasRange = Boolean(this.selectedValue?.from_date && this.selectedValue?.to_date);
     return h("div", { ref: "root", class: ["edge-smart-date", { "is-open": this.pickerOpen }] }, [
       h("label", { class: "edge-smart-date__label" }, this.label),
-      h("div", { class: "edge-smart-date__control" }, [
-        h("div", { class: "edge-smart-date__input-row" }, [
-          h("input", {
-            class: "edge-smart-date__input",
-            type: "text",
-            value: this.expression,
-            placeholder: this.placeholder,
-            disabled: this.disabled,
-            onInput: this.onInput,
-            onKeydown: (event) => {
-              if (event.key === "Enter") {
-                event.preventDefault();
-                this.resolve();
-              }
-            },
-          }),
-          h("button", {
-            type: "button",
-            class: "edge-button edge-button--secondary edge-smart-date__apply",
-            disabled: this.disabled || !this.expression || !result?.valid,
-            onClick: this.resolve,
-          }, "Apply"),
+      h("button", {
+        type: "button",
+        class: "edge-smart-date__trigger",
+        disabled: this.disabled,
+        "aria-expanded": this.pickerOpen ? "true" : "false",
+        onClick: this.togglePicker,
+      }, [
+        h("span", { class: "edge-smart-date__trigger-text" }, [
+          h("span", { class: "edge-smart-date__period-label" }, this.selectedPeriodLabel()),
+          h("span", { class: ["edge-smart-date__range-value", { "is-placeholder": !hasRange }] }, this.selectedRangeLabel()),
         ]),
-        h("button", {
-          type: "button",
-          class: "edge-smart-date__range-button",
-          disabled: this.disabled,
-          "aria-expanded": this.pickerOpen ? "true" : "false",
-          onClick: this.togglePicker,
-        }, [
-          h("span", { class: "edge-smart-date__range-value" }, this.selectedRangeLabel()),
-          h("span", { class: "edge-smart-date__range-chevron", "aria-hidden": "true" }, "▾"),
-        ]),
-        this.renderPicker(),
+        h("span", { class: "edge-smart-date__range-chevron", "aria-hidden": "true" }, "▾"),
       ]),
-      result?.valid
-        ? h("div", { class: ["edge-smart-date__interpretation", { "is-warning": result.requires_confirmation }] }, [
-            h("span", {}, `${result.expression === "custom" ? "Selected" : "Interpreted as"}: ${this.selectedRangeLabel()}`),
-            result.requires_confirmation
-              ? h("button", {
-                  type: "button",
-                  class: "edge-smart-date__confirm",
-                  disabled: this.disabled,
-                  onClick: this.confirmAmbiguous,
-                }, `Confirm ${String(this.dateOrder || "DMY").toUpperCase()} interpretation`)
-              : null,
-          ])
-        : result
-          ? h("div", { class: "edge-smart-date__error", role: "alert" }, result.message)
-          : null,
+      this.renderPicker(),
     ]);
   },
 });
