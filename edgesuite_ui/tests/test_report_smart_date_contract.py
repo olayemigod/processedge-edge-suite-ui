@@ -74,6 +74,15 @@ def test_smart_date_is_one_closed_selector_with_smart_presets_and_custom_dates_i
 	assert "edge-smart-date__trigger" in css
 
 
+def test_smart_date_picker_supports_right_edge_alignment_and_viewport_scrolling():
+	css = SMART_DATE_CSS.read_text()
+	assert ".edge-smart-date.edge-smart-date--align-end .edge-smart-date__picker" in css
+	assert "inset-inline-end: 0" in css
+	assert "max-height: min(42rem, calc(100vh - 2rem))" in css
+	assert "overflow-y: auto" in css
+	assert "overscroll-behavior: contain" in css
+
+
 def test_smart_resolution_prefills_custom_range_and_updates_closed_selector_immediately():
 	text = SMART_DATE.read_text()
 	assert "selectedValue: {}" in text
