@@ -1,0 +1,27 @@
+/* Shared Frappe control compatibility inside EdgeSuite-decorated dialogs.
+   Frappe v16 controls consume variables such as --text-color and --text-muted
+   directly. Remap those variables at the dialog boundary so native controls
+   inherit the active EdgeSuite appearance without product-local overrides. */
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host {
+  --text-color: var(--edge-color-ink-950, #122033);
+  --text-light: var(--edge-color-ink-700, #415469);
+  --text-muted: var(--edge-color-ink-500, #6b7d90);
+  --text-extra-muted: var(--edge-color-ink-400, #8998a8);
+  --control-bg: var(--edge-color-control-surface, var(--edge-color-surface, #fff));
+  --border-color: var(--edge-color-control-border, var(--edge-color-border-strong, #cbd7e5));
+}
+
+:root[data-edge-appearance="dark"] .modal.edge-frappe-dialog-host .frappe-control[data-fieldtype="Check"] .checkbox,
+:root[data-edge-appearance="dark"] .modal.edge-frappe-dialog-host .frappe-control[data-fieldtype="Check"] .checkbox label,
+:root[data-edge-appearance="dark"] .modal.edge-frappe-dialog-host .frappe-control[data-fieldtype="Check"] .label-area,
+:root[data-edge-appearance="dark"] .modal.edge-frappe-dialog-host .frappe-control[data-fieldtype="Check"] .disp-area,
+:root[data-edge-appearance="dark"] .modal.edge-frappe-dialog-host .checkbox .label-area,
+:root[data-edge-appearance="dark"] .modal.edge-frappe-dialog-host .checkbox .disp-area {
+  color: var(--edge-color-ink-950, #f1f6fb) !important;
+  opacity: 1 !important;
+}
+
+:root[data-edge-appearance="dark"] .modal.edge-frappe-dialog-host .frappe-control[data-fieldtype="Check"] .help,
+:root[data-edge-appearance="dark"] .modal.edge-frappe-dialog-host .frappe-control[data-fieldtype="Check"] .help-box {
+  color: var(--edge-color-ink-500, #94a6b8) !important;
+}

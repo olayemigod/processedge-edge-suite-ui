@@ -104,9 +104,21 @@ The product menu uses the same section, item, icon, description, role, and route
 
 See [`docs/integration-contract.md`](docs/integration-contract.md) and [`docs/professional-shell-and-menu.md`](docs/professional-shell-and-menu.md) for the complete contract.
 
+## Shared reporting and export
+
+The shared reporting runtime supports ordinary Frappe Query Report providers and optimized server-paginated providers. Product apps register providers under product + report keys and remain authoritative for permissions, tenant/company/branch rules and report business logic.
+
+Reporting presentation is standardized separately from data access. `EdgeReportShell` and `EdgeReportTable` provide the common filtered-report structure, states, summary cards, table framing, drill-down events and pagination controls. `EdgeDashboardShell`, `EdgeDashboardGrid` and `EdgeDashboardSection` provide a separate compositional dashboard surface for KPI, chart, exception and ranking widgets without forcing dashboards into a report-table model.
+
+The shared `EdgeReportExportDialog` provides XLSX/CSV/PDF selection, current-page or all-filtered scope, raw-table vs presentation options, column selection, and PDF orientation. If all presentation options are disabled, the export contract explicitly requests the raw table only.
+
+Generated downloads are validated before saving so empty responses, HTML error pages masquerading as files, invalid PDF/XLSX signatures and mismatched MIME types are rejected instead of being presented as successful downloads.
+
+See [`docs/reporting-standard-v1.md`](docs/reporting-standard-v1.md) for the reporting, presentation, performance and export contract.
+
 ## Continuous integration
 
-Pull requests and pushes to `main` run Python/Ruff contract checks and reproducible frontend syntax and bundle validation. The manual `workflow_dispatch` trigger additionally provisions a clean Frappe v16 bench containing only Frappe and EdgeSuite UI, then builds, migrates, and tests the app.
+Pull requests and pushes to `main` run Python/Ruff contract checks and reproducible frontend syntax and bundle validation. Reporting provider, export, print and presentation-shell contracts are part of Fast Validation. The manual `workflow_dispatch` trigger additionally provisions a clean Frappe v16 bench containing only Frappe and EdgeSuite UI, then builds, migrates, and tests the app.
 
 ## Migration sequence
 

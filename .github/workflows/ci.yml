@@ -43,7 +43,7 @@ jobs:
       - name: Enforce Ruff result
         if: steps.ruff.outcome == 'failure'
         run: exit 1
-      - name: Validate package, runtime, product context, interactions, shell, forms, documents, context, and boundaries
+      - name: Validate package, runtime, product context, interactions, shell, forms, documents, reporting, themes, and boundaries
         id: contracts
         continue-on-error: true
         run: |
@@ -60,6 +60,14 @@ jobs:
             edgesuite_ui/tests/test_document_components_contract.py \
             edgesuite_ui/tests/test_branch_context_contract.py \
             edgesuite_ui/tests/test_empty_state_icon_contract.py \
+            edgesuite_ui/tests/test_report_runtime_contract.py \
+            edgesuite_ui/tests/test_report_export_contract.py \
+            edgesuite_ui/tests/test_report_print_contract.py \
+            edgesuite_ui/tests/test_reporting_presentation_contract.py \
+            edgesuite_ui/tests/test_shell_permission_contract.py \
+            edgesuite_ui/tests/test_theme_runtime_contract.py \
+            edgesuite_ui/tests/test_theme_visual_compat_contract.py \
+            edgesuite_ui/tests/test_theme_controls_contract.py \
             2>&1 | tee contract-tests.log
       - name: Upload contract diagnostics
         if: steps.contracts.outcome == 'failure'
@@ -84,6 +92,25 @@ jobs:
         run: npm ci
       - name: Check JavaScript and compile bundle in memory
         run: npm test
+
+  browser-theme:
+    name: Theme browser smoke
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+          cache: npm
+      - name: Install project dependencies
+        run: npm ci
+      - name: Install Playwright test runner
+        run: npm install --no-save --package-lock=false @playwright/test@1.55.0
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Run EdgeSuite theme and navigation browser QA
+        run: npx playwright test edgesuite_ui/tests/browser/theme_browser.spec.mjs edgesuite_ui/tests/browser/navigation_route_browser.spec.mjs --reporter=line --workers=1
 
   frappe-v16:
     name: Frappe v16 integration

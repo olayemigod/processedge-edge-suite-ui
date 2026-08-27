@@ -1,0 +1,146 @@
+/* EdgeSuite dark-mode contrast completion layer for shared shells and overlays. */
+
+:root[data-edge-appearance="dark"] {
+  --edge-color-ink-600: #aab9c7;
+  --edge-color-overlay-surface: #14202c;
+  --edge-color-overlay-hover: #1b2a38;
+  --edge-color-disabled-surface: #172431;
+  --edge-color-disabled-text: #7d90a4;
+}
+
+:root[data-edge-appearance] .edge-app-shell {
+  --text-color: var(--edge-color-ink-950);
+  --heading-color: var(--edge-color-ink-950);
+}
+
+:root[data-edge-appearance="dark"] .edge-app-shell {
+  --gray-900: var(--edge-color-ink-950);
+}
+
+:root[data-edge-appearance="dark"] .edge-app-shell :is(h1, h2, h3, h4, h5, h6) {
+  color: var(--edge-color-ink-950);
+}
+
+:root[data-edge-appearance="dark"] .edge-dropdown__menu,
+:root[data-edge-appearance="dark"] .edge-link-field__menu,
+:root[data-edge-appearance="dark"] .edge-export-menu__options,
+:root[data-edge-appearance="dark"] .edge-topbar-menu,
+:root[data-edge-appearance="dark"] .edge-product-menu,
+:root[data-edge-appearance="dark"] .edge-user-menu {
+  background: var(--edge-color-overlay-surface, var(--edge-color-surface)) !important;
+  border-color: var(--edge-color-border-strong) !important;
+  color: var(--edge-color-ink-950) !important;
+}
+
+:root[data-edge-appearance="dark"] .edge-dropdown__option,
+:root[data-edge-appearance="dark"] .edge-link-field__option,
+:root[data-edge-appearance="dark"] .edge-link-field__create,
+:root[data-edge-appearance="dark"] .edge-export-menu__option,
+:root[data-edge-appearance="dark"] .edge-topbar-menu__item,
+:root[data-edge-appearance="dark"] .edge-product-menu__item,
+:root[data-edge-appearance="dark"] .edge-user-menu__item {
+  color: var(--edge-color-ink-800) !important;
+}
+
+:root[data-edge-appearance="dark"] .edge-dropdown__option:hover,
+:root[data-edge-appearance="dark"] .edge-dropdown__option.is-active,
+:root[data-edge-appearance="dark"] .edge-link-field__option:hover,
+:root[data-edge-appearance="dark"] .edge-link-field__option.is-active,
+:root[data-edge-appearance="dark"] .edge-export-menu__option:hover,
+:root[data-edge-appearance="dark"] .edge-topbar-menu__item:hover,
+:root[data-edge-appearance="dark"] .edge-product-menu__item:hover,
+:root[data-edge-appearance="dark"] .edge-user-menu__item:hover {
+  background: var(--edge-color-overlay-hover, var(--edge-color-surface-soft)) !important;
+  color: var(--edge-color-ink-950) !important;
+}
+
+:root[data-edge-appearance="dark"] .edge-dropdown__option-label,
+:root[data-edge-appearance="dark"] .edge-link-field__option-label,
+:root[data-edge-appearance="dark"] .edge-product-menu__item-label,
+:root[data-edge-appearance="dark"] .edge-user-menu__item-label {
+  color: var(--edge-color-ink-950) !important;
+}
+
+:root[data-edge-appearance="dark"] .edge-dropdown__option-description,
+:root[data-edge-appearance="dark"] .edge-link-field__option-description,
+:root[data-edge-appearance="dark"] .edge-link-field__loading,
+:root[data-edge-appearance="dark"] .edge-link-field__empty,
+:root[data-edge-appearance="dark"] .edge-dropdown__helper,
+:root[data-edge-appearance="dark"] .edge-link-field__helper {
+  color: var(--edge-color-ink-500) !important;
+}
+
+:root[data-edge-appearance="dark"] .edge-modal,
+:root[data-edge-appearance="dark"] .edge-modal__header,
+:root[data-edge-appearance="dark"] .edge-modal__body,
+:root[data-edge-appearance="dark"] .edge-modal__footer {
+  background: var(--edge-color-surface) !important;
+  border-color: var(--edge-color-border) !important;
+  color: var(--edge-color-ink-950) !important;
+  --text-color: var(--edge-color-ink-950);
+  --heading-color: var(--edge-color-ink-950);
+}
+
+:root[data-edge-appearance="dark"] .edge-modal__body :is(h1, h2, h3, h4, h5, h6, p, label, legend, td, th),
+:root[data-edge-appearance="dark"] .edge-form-field,
+:root[data-edge-appearance="dark"] .edge-form-field__label {
+  color: var(--edge-color-ink-950) !important;
+}
+
+:root[data-edge-appearance="dark"] .edge-app-shell .table,
+:root[data-edge-appearance="dark"] .edge-app-shell .table > :not(caption) > * > *,
+:root[data-edge-appearance="dark"] .edge-app-shell .frappe-card {
+  background-color: var(--edge-color-surface) !important;
+  border-color: var(--edge-color-border) !important;
+  color: var(--edge-color-ink-800) !important;
+}
+
+:root[data-edge-appearance="dark"] .edge-app-shell .table thead th {
+  background-color: var(--edge-color-surface-muted) !important;
+  color: var(--edge-color-ink-600) !important;
+}
+
+:root[data-edge-appearance="dark"] body.edge-suite-shell-active .dropdown-menu,
+:root[data-edge-appearance="dark"] body.edge-suite-shell-active .popover,
+:root[data-edge-appearance="dark"] body.edge-suite-shell-active .datepicker,
+:root[data-edge-appearance="dark"] body.edge-suite-shell-active .awesomplete > ul,
+:root[data-edge-appearance="dark"] body.edge-suite-shell-active .awesomplete > [role="listbox"] {
+  background: var(--edge-color-overlay-surface, var(--edge-color-surface)) !important;
+  border-color: var(--edge-color-border-strong) !important;
+  color: var(--edge-color-ink-950) !important;
+}
+
+:root[data-edge-appearance="dark"] body.edge-suite-shell-active .dropdown-menu .dropdown-item,
+:root[data-edge-appearance="dark"] body.edge-suite-shell-active .dropdown-menu > li > a,
+:root[data-edge-appearance="dark"] body.edge-suite-shell-active .popover-body,
+:root[data-edge-appearance="dark"] body.edge-suite-shell-active .datepicker td,
+:root[data-edge-appearance="dark"] body.edge-suite-shell-active .datepicker th,
+:root[data-edge-appearance="dark"] body.edge-suite-shell-active .awesomplete > ul > li,
+:root[data-edge-appearance="dark"] body.edge-suite-shell-active .awesomplete > [role="listbox"] > [role="option"] {
+  background: transparent !important;
+  color: var(--edge-color-ink-800) !important;
+}
+
+:root[data-edge-appearance="dark"] .modal.edge-frappe-dialog-host .modal-content,
+:root[data-edge-appearance="dark"] .modal.edge-frappe-dialog-host .modal-header,
+:root[data-edge-appearance="dark"] .modal.edge-frappe-dialog-host .modal-body,
+:root[data-edge-appearance="dark"] .modal.edge-frappe-dialog-host .modal-footer {
+  background: var(--edge-color-surface) !important;
+  border-color: var(--edge-color-border) !important;
+  color: var(--edge-color-ink-950) !important;
+  --text-color: var(--edge-color-ink-950);
+  --heading-color: var(--edge-color-ink-950);
+}
+
+:root[data-edge-appearance="dark"] .modal.edge-frappe-dialog-host .modal-body :is(h1, h2, h3, h4, h5, h6, p, label, legend, td, th),
+:root[data-edge-appearance="dark"] .modal.edge-frappe-dialog-host .modal-title {
+  color: var(--edge-color-ink-950) !important;
+}
+
+:root[data-edge-appearance="dark"] .modal.edge-frappe-dialog-host .text-muted,
+:root[data-edge-appearance="dark"] .modal.edge-frappe-dialog-host .help-box,
+:root[data-edge-appearance="dark"] .modal.edge-frappe-dialog-host .description,
+:root[data-edge-appearance="dark"] .modal.edge-frappe-dialog-host .form-text,
+:root[data-edge-appearance="dark"] .modal.edge-frappe-dialog-host small {
+  color: var(--edge-color-ink-500) !important;
+}

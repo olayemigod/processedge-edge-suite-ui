@@ -1,0 +1,10 @@
+/* Theme changes must update foreground and background semantic tokens atomically.
+   Normal component transitions resume immediately after the runtime style flush. */
+:root.edge-theme-applying,
+:root.edge-theme-applying *,
+:root.edge-theme-applying *::before,
+:root.edge-theme-applying *::after {
+  transition: none !important;
+  transition-delay: 0s !important;
+  transition-duration: 0s !important;
+}

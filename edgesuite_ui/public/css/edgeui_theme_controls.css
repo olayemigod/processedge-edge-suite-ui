@@ -1,0 +1,41 @@
+.edge-theme-menu__time-fields {
+  display: grid;
+  gap: .4rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.edge-theme-menu__time-field {
+  color: var(--edge-color-ink-500);
+  display: grid;
+  font-size: .64rem;
+  gap: .25rem;
+}
+
+.edge-theme-menu__time-input {
+  appearance: none;
+  background: var(--edge-color-surface-soft);
+  border: 1px solid var(--edge-color-border);
+  border-radius: .55rem;
+  color: var(--edge-color-ink-800);
+  font: inherit;
+  min-height: 2rem;
+  outline: none;
+  padding: .35rem .45rem;
+  width: 100%;
+}
+
+.edge-theme-menu__time-input:hover {
+  border-color: var(--edge-color-border-strong);
+}
+
+.edge-theme-menu__time-input:focus-visible {
+  border-color: var(--edge-color-brand-500);
+  outline: 2px solid color-mix(in srgb, var(--edge-color-brand-500) 35%, transparent);
+  outline-offset: 1px;
+}
+
+@media (max-width: 32rem) {
+  .edge-theme-menu__time-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
