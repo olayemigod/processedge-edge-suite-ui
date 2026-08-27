@@ -87,6 +87,9 @@
   inset-inline-start: 0;
   top: calc(100% + 0.45rem);
   width: min(35rem, calc(100vw - 2rem));
+  max-height: min(42rem, calc(100vh - 2rem));
+  overflow-y: auto;
+  overscroll-behavior: contain;
   display: grid;
   gap: 1rem;
   border: 1px solid var(--edge-border, #d0d5dd);
@@ -95,6 +98,13 @@
   color: var(--edge-text, #101828);
   padding: 0.95rem;
   box-shadow: 0 18px 45px rgba(16, 24, 40, 0.18);
+}
+
+/* Consumers that place Smart Date near the right edge can opt into end
+   alignment so the wider picker opens leftward into the viewport. */
+.edge-smart-date.edge-smart-date--align-end .edge-smart-date__picker {
+  inset-inline-start: auto;
+  inset-inline-end: 0;
 }
 
 .edge-smart-date__smart-section,
@@ -238,7 +248,8 @@
 }
 
 @media (max-width: 760px) {
-  .edge-smart-date__picker {
+  .edge-smart-date__picker,
+  .edge-smart-date.edge-smart-date--align-end .edge-smart-date__picker {
     inset-inline: 0 auto;
     width: min(100%, calc(100vw - 2rem));
   }
