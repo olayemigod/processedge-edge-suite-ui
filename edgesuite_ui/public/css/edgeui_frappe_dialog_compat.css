@@ -94,9 +94,15 @@
 }
 
 :root[data-edge-appearance] .modal.edge-frappe-dialog-host .close,
-:root[data-edge-appearance] .modal.edge-frappe-dialog-host .btn-close {
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .btn-close,
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .btn-modal-close {
   color: var(--edge-color-ink-700, #415469) !important;
   opacity: 1 !important;
+}
+
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .btn-modal-close svg,
+:root[data-edge-appearance] .modal.edge-frappe-dialog-host .btn-modal-close svg * {
+  stroke: currentColor !important;
 }
 
 :root[data-edge-appearance] .modal.edge-frappe-dialog-host .alert,
