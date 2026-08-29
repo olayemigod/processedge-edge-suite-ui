@@ -37,7 +37,7 @@ import { installSidebarFocusLifecycle } from "./edgeui/sidebar_focus";
 import { installThemeRuntime } from "./edgeui/theme_runtime";
 import { installWorkflowSaveBridge } from "./edgeui/workflow_save_bridge";
 
-export const EDGE_SUITE_UI_VERSION = "0.6.3";
+export const EDGE_SUITE_UI_VERSION = "1.1.0";
 
 applyFrappeCompatibility(professionalComponents);
 applyModalCrossRuntimeCompatibility(modalComponents);
