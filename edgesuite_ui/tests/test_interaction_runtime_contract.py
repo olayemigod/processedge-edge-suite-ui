@@ -1,5 +1,7 @@
 from pathlib import Path
 
+from edgesuite_ui import __version__
+
 ROOT = Path(__file__).resolve().parents[2]
 APP = ROOT / "edgesuite_ui"
 PACKAGE = ROOT / "package.json"
@@ -23,14 +25,14 @@ def test_latest_runtime_installs_switcher_commands_density_and_menu_extras():
 		'installSidebarAccordionRuntime(globalThis)',
 		'installWorkflowSaveBridge(globalThis)',
 		'installProductMenuExtras(runtime, globalThis)',
-		'EDGE_SUITE_UI_VERSION = "0.6.3"',
+		f'EDGE_SUITE_UI_VERSION = "{__version__}"',
 		'export * from "./edgeui/interaction_runtime"',
 		'export * from "./edgeui/product_menu_extras"',
 		'export * from "./edgeui/sidebar_accordion_runtime"',
 		'export * from "./edgeui/workflow_save_bridge"',
 	):
 		assert expected in bundle
-	assert '"version": "0.6.3"' in package
+	assert f'"version": "{__version__}"' in package
 
 	for expected in (
 		'const COMMAND_VERSION = "1.0.0"',
