@@ -19,10 +19,14 @@ def test_sidebar_sections_are_collapsible_and_persistent():
 def test_sidebar_accordion_keeps_active_section_open_after_navigation():
 	runtime = (APP_ROOT / "public/js/edgeui/sidebar_accordion_runtime.js").read_text(encoding="utf-8")
 	for expected in (
-		"const keep = preferred || active || expanded[0] || null",
+		"let keep = preferred || active || expanded[0] || null",
+		"if (routePending && active)",
+		"keep = active",
+		"SIDEBAR_ROUTE_PENDING_KEY",
 		"if (keep && !sectionExpanded(keep))",
-		'attributeFilter: ["class", "hidden", "aria-expanded"]',
+		'attributeFilter: ["class", "hidden", "aria-expanded", "aria-current"]',
 		'document.addEventListener("page-change", resetForNavigation)',
+		'document.addEventListener(ROUTE_EVENT, resetForNavigation)',
 	):
 		assert expected in runtime
 
