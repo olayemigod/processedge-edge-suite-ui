@@ -23,16 +23,45 @@
 }
 
 .edge-product-menu-slot .edge-product-menu__host {
+  gap: 0.15rem;
   margin: 0;
   pointer-events: auto;
   position: relative;
   z-index: 4;
 }
 
+/* Compact app-grid switcher: navigation control, not a primary page action. */
+.edge-product-menu-slot .edge-product-switcher {
+  border-radius: 0.45rem;
+  grid-template-columns: 0.85rem minmax(3.75rem, auto) 0.7rem;
+  min-height: 1.9rem;
+  padding: 0 0.3rem;
+}
+
+.edge-product-menu-slot .edge-product-switcher__icon svg,
+.edge-product-menu-slot .edge-product-switcher__chevron svg {
+  height: 0.8rem;
+  width: 0.8rem;
+}
+
+.edge-product-menu-slot .edge-product-switcher__select {
+  font-size: 0.72rem;
+  height: 1.75rem;
+  max-width: 7.5rem;
+  padding: 0 0.2rem;
+}
+
 .edge-product-menu-slot .edge-product-menu__trigger {
+  height: 1.9rem;
   pointer-events: auto !important;
   position: relative;
+  width: 1.9rem;
   z-index: 5;
+}
+
+.edge-product-menu-slot .edge-product-menu__waffle {
+  height: 1rem;
+  width: 1rem;
 }
 
 .edge-product-menu__favorite-control {
