@@ -15,8 +15,34 @@
     target: "",
   };
 
+  function visibleElement(element) {
+    if (!element?.isConnected) return false;
+    const view = element.ownerDocument?.defaultView;
+    let current = element;
+    while (current?.nodeType === 1) {
+      if (current.hidden || current.getAttribute?.("aria-hidden") === "true") return false;
+      const style = view?.getComputedStyle?.(current);
+      if (
+        style?.visibility === "hidden" ||
+        style?.display === "none" ||
+        style?.contentVisibility === "hidden"
+      ) {
+        return false;
+      }
+      current = current.parentElement;
+    }
+    const rects = element.getClientRects?.();
+    if (rects?.length) return true;
+    const box = element.getBoundingClientRect?.();
+    return Boolean(box && box.width > 0 && box.height > 0);
+  }
+
   function edgeShell(doc) {
-    return doc?.querySelector?.(".edge-app-shell[data-edge-product]") || null;
+    return (
+      Array.from(doc?.querySelectorAll?.(".edge-app-shell[data-edge-product]") || []).find(
+        visibleElement,
+      ) || null
+    );
   }
 
   function removeNativeArtifacts(doc) {
@@ -65,6 +91,10 @@
   ["DOMContentLoaded", "toolbar_setup", "sidebar_setup", "desktop_screen", "page-change"].forEach(
     (eventName) => global.document?.addEventListener(eventName, scheduleEnsure),
   );
+  global.document?.addEventListener("visibilitychange", scheduleEnsure);
+  ["hashchange", "popstate", "pageshow"].forEach((eventName) =>
+    global.addEventListener?.(eventName, scheduleEnsure),
+  );
   global.frappe?.router?.on?.("change", scheduleEnsure);
 
   if (global.MutationObserver && global.document?.body) {
@@ -73,7 +103,12 @@
       const trigger = global.document.getElementById(PRODUCT_MENU_TRIGGER_ID);
       if (!shell || !trigger) scheduleEnsure();
     });
-    observer.observe(global.document.body, { childList: true, subtree: true });
+    observer.observe(global.document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["class", "style", "hidden", "aria-hidden"],
+    });
     state.observer = observer;
   }
 
