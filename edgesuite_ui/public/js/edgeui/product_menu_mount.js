@@ -2,20 +2,9 @@ const HOST_ID = "edge-product-menu-host";
 const PANEL_ID = "edge-product-menu-dropdown";
 const TRIGGER_ID = "edge-product-menu-trigger";
 const SLOT_ID = "edge-product-menu-slot";
+const BRIDGE_ID = "edge-product-menu-navbar-bridge";
 const DIRECT_HANDLER_KEY = "__edgeSuiteProductMenuDirectHandler";
 const DELEGATED_HANDLER_KEY = "__edgeSuiteProductMenuDelegatedHandler";
-
-const NATIVE_NAVBAR_SELECTORS = [
-  ".navbar .navbar-nav.ms-auto",
-  ".navbar .navbar-nav.ml-auto",
-  ".navbar .navbar-right",
-  ".navbar .navbar-nav:last-of-type",
-  "header.navbar .navbar-nav",
-  ".desktop-navbar .navbar-nav",
-  "header.navbar",
-  ".desktop-navbar",
-  ".navbar",
-];
 
 function visibleElement(element) {
   if (!element?.isConnected) return false;
@@ -30,93 +19,68 @@ function edgeShellPresent(document) {
   return Boolean(document.querySelector(".edge-app-shell[data-edge-product]"));
 }
 
-function stabilizeSlot(slot, { fallback = false } = {}) {
+function stabilizeSlot(slot) {
   if (!slot) return null;
   slot.hidden = false;
   slot.classList.add("edge-product-menu-slot", "navbar");
-  slot.classList.toggle("edge-product-menu-slot--fallback", fallback);
+  slot.classList.remove("edge-product-menu-slot--fallback");
   slot.style.display = "inline-flex";
   slot.style.alignItems = "center";
   slot.style.flex = "0 0 auto";
-  slot.style.minWidth = "2.5rem";
-  slot.style.minHeight = "2.5rem";
+  slot.style.minWidth = "2rem";
+  slot.style.minHeight = "2rem";
   slot.style.padding = "0";
   slot.style.pointerEvents = "auto";
-
-  if (fallback) {
-    slot.style.position = "fixed";
-    slot.style.right = "0.75rem";
-    slot.style.top = "0.65rem";
-    slot.style.zIndex = "1061";
-    slot.style.order = "";
-    slot.style.margin = "0";
-  } else {
-    slot.style.position = "relative";
-    slot.style.right = "";
-    slot.style.top = "";
-    slot.style.zIndex = "4";
-    slot.style.order = "-20";
-    slot.style.margin = "0 0.25rem 0 0";
-  }
+  slot.style.position = "relative";
+  slot.style.right = "";
+  slot.style.top = "";
+  slot.style.zIndex = "4";
+  slot.style.order = "";
+  slot.style.margin = "0 0 0 0.35rem";
   return slot;
 }
 
-function shellActions(document) {
-  const nodes = Array.from(
-    document.querySelectorAll(
-      ".edge-app-shell[data-edge-product] .edge-app-shell__topbar .edge-topbar-actions, " +
-        ".edge-app-shell[data-edge-product] .edge-topbar-actions",
-    ),
-  ).reverse();
-  return nodes.find(visibleElement) || nodes.find((node) => node?.isConnected) || null;
+function shellProductNavigationTarget(document) {
+  const selectors = [
+    ".edge-app-shell[data-edge-product] .edge-app-shell__topbar .edge-topbar__brand",
+    ".edge-app-shell[data-edge-product] .edge-topbar__brand",
+    ".edge-app-shell[data-edge-product] .edge-app-shell__topbar .edge-topbar-actions",
+    ".edge-app-shell[data-edge-product] .edge-topbar-actions",
+  ];
+  for (const selector of selectors) {
+    const nodes = Array.from(document.querySelectorAll(selector)).reverse();
+    const target = nodes.find(visibleElement) || nodes.find((node) => node?.isConnected);
+    if (target) return target;
+  }
+  return null;
 }
 
 function ensureShellSlot(document) {
-  const actions = shellActions(document);
-  if (!actions) return null;
+  const target = shellProductNavigationTarget(document);
+  if (!target) return null;
   let slot = document.getElementById(SLOT_ID);
   if (!slot) {
     slot = document.createElement("span");
     slot.id = SLOT_ID;
   }
   stabilizeSlot(slot);
-  if (slot.parentElement !== actions || actions.firstElementChild !== slot) {
-    actions.insertBefore(slot, actions.firstChild || null);
-  }
+  if (slot.parentElement !== target) target.appendChild(slot);
   return slot;
 }
 
-function visibleShellTarget(document) {
-  return ensureShellSlot(document);
-}
-
-function visibleNativeTarget(document) {
-  for (const selector of NATIVE_NAVBAR_SELECTORS) {
-    const nodes = Array.from(document.querySelectorAll(selector)).reverse();
-    const target = nodes.find(
-      (node) =>
-        !node.closest?.(".edge-app-shell") &&
-        node.id !== SLOT_ID &&
-        visibleElement(node),
-    );
-    if (target) return target;
-  }
-  return null;
-}
-
-function ensureFallbackSlot(document) {
-  if (edgeShellPresent(document)) return null;
-  let slot = document.getElementById(SLOT_ID);
-  if (!slot) {
-    slot = document.createElement("span");
-    slot.id = SLOT_ID;
-    document.body?.appendChild(slot);
-  }
-  return stabilizeSlot(slot, { fallback: true });
+function removeNativeMenuArtifacts(document, closeMenu = null) {
+  if (edgeShellPresent(document)) return false;
+  if (typeof closeMenu === "function") closeMenu();
+  document.getElementById(HOST_ID)?.remove();
+  document.getElementById(PANEL_ID)?.remove();
+  document.getElementById(SLOT_ID)?.remove();
+  document.getElementById(BRIDGE_ID)?.remove();
+  return true;
 }
 
 function preferredTarget(document) {
-  return visibleShellTarget(document) || visibleNativeTarget(document) || ensureFallbackSlot(document);
+  if (!edgeShellPresent(document)) return null;
+  return ensureShellSlot(document);
 }
 
 function stabilizeTrigger(document) {
@@ -206,12 +170,13 @@ export function installProductMenuMountEnhancements(edgeUI, target = globalThis)
 
   const mountAtPreferredTarget = () => {
     const menuTarget = preferredTarget(document);
-    if (!menuTarget) return false;
-    stabilizeSlot(menuTarget.id === SLOT_ID ? menuTarget : null, {
-      fallback: menuTarget.classList.contains("edge-product-menu-slot--fallback"),
-    });
-    const needsTemporaryNavbarClass = !menuTarget.classList.contains("navbar");
+    if (!menuTarget) {
+      removeNativeMenuArtifacts(document, originalClose);
+      return false;
+    }
 
+    stabilizeSlot(menuTarget);
+    const needsTemporaryNavbarClass = !menuTarget.classList.contains("navbar");
     if (needsTemporaryNavbarClass) menuTarget.classList.add("navbar");
     let result = false;
     try {
@@ -237,6 +202,10 @@ export function installProductMenuMountEnhancements(edgeUI, target = globalThis)
   };
 
   const openMenu = () => {
+    if (!edgeShellPresent(document)) {
+      removeNativeMenuArtifacts(document, originalClose);
+      return false;
+    }
     mountAtPreferredTarget();
     moveHost(document, directToggle);
     const opened = Boolean(originalOpen());
@@ -261,6 +230,10 @@ export function installProductMenuMountEnhancements(edgeUI, target = globalThis)
   edgeUI.mountProductMenu = mountAtPreferredTarget;
 
   edgeUI.refreshProductMenu = function refreshProductMenu() {
+    if (!edgeShellPresent(document)) {
+      removeNativeMenuArtifacts(document, originalClose);
+      return false;
+    }
     const refreshed = originalRefresh ? originalRefresh() : mountAtPreferredTarget();
     moveHost(document, directToggle);
     scheduleMount();
@@ -270,6 +243,10 @@ export function installProductMenuMountEnhancements(edgeUI, target = globalThis)
   edgeUI.openProductMenu = openMenu;
   edgeUI.closeProductMenu = closeMenu;
   edgeUI.toggleProductMenu = function toggleProductMenu() {
+    if (!edgeShellPresent(document)) {
+      removeNativeMenuArtifacts(document, originalClose);
+      return false;
+    }
     const panel = document.getElementById(PANEL_ID);
     return panel && !panel.hidden ? closeMenu() : openMenu();
   };
@@ -286,17 +263,16 @@ export function installProductMenuMountEnhancements(edgeUI, target = globalThis)
 
   if (target.MutationObserver && document.body) {
     observer = new target.MutationObserver(() => {
+      if (!edgeShellPresent(document)) {
+        removeNativeMenuArtifacts(document, originalClose);
+        return;
+      }
       const host = document.getElementById(HOST_ID);
       const panel = document.getElementById(PANEL_ID);
       const trigger = document.getElementById(TRIGGER_ID);
       const slot = document.getElementById(SLOT_ID);
-      const actions = shellActions(document);
-      if (
-        !host ||
-        !panel ||
-        !trigger ||
-        (actions && (slot?.parentElement !== actions || actions.firstElementChild !== slot))
-      ) {
+      const targetNode = shellProductNavigationTarget(document);
+      if (!host || !panel || !trigger || (targetNode && slot?.parentElement !== targetNode)) {
         scheduleMount();
       }
     });
