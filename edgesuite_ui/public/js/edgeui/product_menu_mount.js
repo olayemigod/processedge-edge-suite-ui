@@ -9,14 +9,29 @@ const DELEGATED_HANDLER_KEY = "__edgeSuiteProductMenuDelegatedHandler";
 function visibleElement(element) {
   if (!element?.isConnected) return false;
   const view = element.ownerDocument?.defaultView;
-  const style = view?.getComputedStyle?.(element);
-  if (style?.visibility === "hidden" || style?.display === "none") return false;
+  let current = element;
+  while (current?.nodeType === 1) {
+    if (current.hidden || current.getAttribute?.("aria-hidden") === "true") return false;
+    const style = view?.getComputedStyle?.(current);
+    if (
+      style?.visibility === "hidden" ||
+      style?.display === "none" ||
+      style?.contentVisibility === "hidden"
+    ) {
+      return false;
+    }
+    current = current.parentElement;
+  }
+  const rects = element.getClientRects?.();
+  if (rects?.length) return true;
   const box = element.getBoundingClientRect?.();
-  return !box || (box.width > 0 && box.height > 0);
+  return Boolean(box && box.width > 0 && box.height > 0);
 }
 
 function edgeShellPresent(document) {
-  return Boolean(document.querySelector(".edge-app-shell[data-edge-product]"));
+  return Array.from(document.querySelectorAll(".edge-app-shell[data-edge-product]")).some(
+    visibleElement,
+  );
 }
 
 function stabilizeSlot(slot) {
@@ -49,7 +64,7 @@ function shellProductNavigationTarget(document) {
   ];
   for (const selector of selectors) {
     const nodes = Array.from(document.querySelectorAll(selector)).reverse();
-    const target = nodes.find(visibleElement) || nodes.find((node) => node?.isConnected);
+    const target = nodes.find(visibleElement);
     if (target) return target;
   }
   return null;
@@ -257,8 +272,10 @@ export function installProductMenuMountEnhancements(edgeUI, target = globalThis)
   ["desktop_screen", "sidebar_setup", "toolbar_setup", "page-change"].forEach((eventName) => {
     document.addEventListener(eventName, scheduleMount);
   });
-  target.addEventListener?.("resize", scheduleMount);
-  target.addEventListener?.("orientationchange", scheduleMount);
+  document.addEventListener("visibilitychange", scheduleMount);
+  ["resize", "orientationchange", "hashchange", "popstate", "pageshow"].forEach((eventName) => {
+    target.addEventListener?.(eventName, scheduleMount);
+  });
   target.frappe?.router?.on?.("change", scheduleMount);
 
   if (target.MutationObserver && document.body) {
@@ -276,7 +293,12 @@ export function installProductMenuMountEnhancements(edgeUI, target = globalThis)
         scheduleMount();
       }
     });
-    observer.observe(document.body, { childList: true, subtree: true });
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["class", "style", "hidden", "aria-hidden"],
+    });
   }
 
   edgeUI.__productMenuMountEnhancementsInstalled = true;
