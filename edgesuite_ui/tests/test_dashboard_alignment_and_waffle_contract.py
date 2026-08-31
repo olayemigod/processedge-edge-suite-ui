@@ -57,6 +57,9 @@ def test_product_navigation_is_shell_only_and_never_mounts_on_native_desk_action
 		"desktop_screen",
 		"page-change",
 		"MutationObserver",
+		'current.getAttribute?.("aria-hidden") === "true"',
+		'style?.contentVisibility === "hidden"',
+		'attributeFilter: ["class", "style", "hidden", "aria-hidden"]',
 	):
 		assert contract in content
 
@@ -64,8 +67,18 @@ def test_product_navigation_is_shell_only_and_never_mounts_on_native_desk_action
 		"NATIVE_NAVBAR_SELECTORS",
 		"visibleNativeTarget",
 		"ensureFallbackSlot",
+		'|| nodes.find((node) => node?.isConnected)',
 	):
 		assert forbidden not in content
+
+	for contract in (
+		"function visibleElement(element)",
+		'current.getAttribute?.("aria-hidden") === "true"',
+		'style?.contentVisibility === "hidden"',
+		'Array.from(doc?.querySelectorAll?.(".edge-app-shell[data-edge-product]") || []).find(',
+		'attributeFilter: ["class", "style", "hidden", "aria-hidden"]',
+	):
+		assert contract in bridge
 
 	assert 'state.mode = "native-desk-hidden"' in bridge
 	assert 'state.mode = "edge-shell"' in bridge
