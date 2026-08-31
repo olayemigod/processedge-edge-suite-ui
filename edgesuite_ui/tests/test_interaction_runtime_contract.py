@@ -64,8 +64,8 @@ def test_latest_runtime_installs_switcher_commands_density_and_menu_extras():
 		assert expected in extras
 
 	for expected in (
-		'target.addEventListener?.("resize", scheduleMount)',
-		'target.addEventListener?.("orientationchange", scheduleMount)',
+		'["resize", "orientationchange", "hashchange", "popstate", "pageshow"].forEach',
+		'document.addEventListener("visibilitychange", scheduleMount)',
 		"mountAtPreferredTarget();",
 		"preferredTarget(document)",
 	):
