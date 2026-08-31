@@ -25,13 +25,14 @@ def test_runtime_installs_deterministic_waffle_reliability():
 		"function stabilizeSlot",
 		"function stabilizeTrigger",
 		"function bindDirectTrigger",
+		"function removeNativeMenuArtifacts",
+		"function shellProductNavigationTarget",
 		'slot.style.display = "inline-flex"',
-		'slot.style.minWidth = "2.5rem"',
-		'slot.style.minHeight = "2.5rem"',
-		'slot.style.order = "-20"',
+		'slot.style.minWidth = "2rem"',
+		'slot.style.minHeight = "2rem"',
 		'slot.style.pointerEvents = "auto"',
-		"if (edgeShellPresent(document)) return null",
-		"actions.insertBefore(slot, actions.firstChild || null)",
+		'if (!edgeShellPresent(document)) return null',
+		"target.appendChild(slot)",
 		'trigger.style.pointerEvents = "auto"',
 		'trigger.removeEventListener("click", existing, true)',
 		'trigger.addEventListener("click", handler, true)',
@@ -41,6 +42,13 @@ def test_runtime_installs_deterministic_waffle_reliability():
 		'target.addEventListener?.("orientationchange", scheduleMount)',
 	):
 		assert expected in mount
+
+	for forbidden in (
+		"NATIVE_NAVBAR_SELECTORS",
+		"visibleNativeTarget",
+		"ensureFallbackSlot",
+	):
+		assert forbidden not in mount
 
 	assert 'document.addEventListener(\n    "click"' not in mount
 
@@ -70,11 +78,10 @@ def test_runtime_installs_deterministic_waffle_reliability():
 	assert "runtime.toggleCurrentPageFavorite?.()" not in reliability
 	assert 'button.textContent = pinned ? "★ Current pinned" : "☆ Add current"' not in reliability
 	assert '"/assets/edgesuite_ui/css/edgeui_product_menu_reliability.css"' in hooks
-	assert ".edge-topbar-actions > .edge-product-menu-slot" in styles
-	assert "order: -20 !important" in styles
+	assert ".edge-topbar__brand > .edge-product-menu-slot" in styles
 	assert "pointer-events: auto !important" in styles
-	assert ".edge-topbar-actions > .edge-topbar-action-wrap" in styles
-	assert ".edge-product-menu-slot--fallback" in styles
+	assert ".edge-product-menu-slot--fallback" not in styles
 	assert ".edge-product-menu__favorite-control" in styles
 	assert ".edge-product-menu__favorite-icon .edge-svg-icon" in styles
+	assert "grid-template-columns: 0.85rem minmax(3.75rem, auto) 0.7rem" in styles
 	assert '@media (max-width: 48rem)' in styles
