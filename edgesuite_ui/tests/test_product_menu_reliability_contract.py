@@ -39,14 +39,26 @@ def test_runtime_installs_deterministic_waffle_reliability():
 		"event.stopImmediatePropagation()",
 		"directToggle = edgeUI.toggleProductMenu",
 		'new target.CustomEvent("edgesuite:product-menu-opened"',
-		'target.addEventListener?.("orientationchange", scheduleMount)',
+		'document.addEventListener("visibilitychange", scheduleMount)',
+		'"hashchange", "popstate", "pageshow"',
+		'attributeFilter: ["class", "style", "hidden", "aria-hidden"]',
 	):
 		assert expected in mount
+
+	for visibility_contract in (
+		'current.hidden',
+		'current.getAttribute?.("aria-hidden") === "true"',
+		'style?.contentVisibility === "hidden"',
+		'.some(\n    visibleElement,\n  )',
+		'const target = nodes.find(visibleElement);',
+	):
+		assert visibility_contract in mount
 
 	for forbidden in (
 		"NATIVE_NAVBAR_SELECTORS",
 		"visibleNativeTarget",
 		"ensureFallbackSlot",
+		'|| nodes.find((node) => node?.isConnected)',
 	):
 		assert forbidden not in mount
 
