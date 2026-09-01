@@ -9,7 +9,9 @@ html[data-edgesuite-access-mode="edgesuite_only"] .workspace-sidebar,
 html[data-edgesuite-access-mode="edgesuite_only"] .navbar .search-bar,
 html[data-edgesuite-access-mode="edgesuite_only"] .navbar .navbar-home,
 html[data-edgesuite-access-mode="edgesuite_only"] .navbar [data-original-title="Home"],
-html[data-edgesuite-access-mode="edgesuite_only"] .navbar [aria-label="Search"] {
+html[data-edgesuite-access-mode="edgesuite_only"] .navbar [aria-label="Search"],
+html[data-edgesuite-access-mode="edgesuite_only"] .edge-user-menu__items > button:not(.edge-user-menu__logout),
+html[data-edgesuite-access-mode="edgesuite_only"] .edge-notification-menu .edge-topbar-menu__footer {
 	display: none !important;
 }
 
