@@ -46,7 +46,10 @@ def test_existing_system_users_keep_pre_feature_native_desk_visibility_once():
 	assert "preserve_existing_system_users_native_desk" in PATCH
 	assert "Has Role" not in ACCESS
 	assert 'after_migrate = "edgesuite_ui.access_control.ensure_desk_access_field"' in HOOKS
-	assert 'after_migrate = "edgesuite_ui.access_control.preserve_existing_system_users_native_desk"' not in HOOKS
+	assert (
+		'after_migrate = "edgesuite_ui.access_control.preserve_existing_system_users_native_desk"'
+		not in HOOKS
+	)
 
 
 def test_restricted_runtime_allows_only_rendered_edgesuite_pages():
