@@ -112,7 +112,7 @@ jobs:
         run: npm test
 
   browser-theme:
-    name: Theme browser smoke
+    name: Browser smoke
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
@@ -127,8 +127,8 @@ jobs:
         run: npm install --no-save --package-lock=false @playwright/test@1.55.0
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
-      - name: Run EdgeSuite theme, navigation, and Frappe dialog browser QA
-        run: npx playwright test edgesuite_ui/tests/browser/theme_browser.spec.mjs edgesuite_ui/tests/browser/navigation_route_browser.spec.mjs edgesuite_ui/tests/browser/frappe_dialog_theme_browser.spec.mjs --reporter=line --workers=1
+      - name: Run EdgeSuite theme, navigation, access, and Frappe dialog browser QA
+        run: npx playwright test edgesuite_ui/tests/browser/theme_browser.spec.mjs edgesuite_ui/tests/browser/navigation_route_browser.spec.mjs edgesuite_ui/tests/browser/desk_access_browser.spec.mjs edgesuite_ui/tests/browser/frappe_dialog_theme_browser.spec.mjs --reporter=line --workers=1
 
   frappe-v16:
     name: Frappe v16 integration
