@@ -108,6 +108,37 @@ test("EdgeSuite-only user is redirected away from native Desk route", async ({ p
   await expect(page.locator("#edgesuite-access-blocked")).toHaveCount(0);
 });
 
+test("stale EdgeSuite shell cannot approve a native route during SPA navigation", async ({ page }) => {
+  await page.goto(`${baseURL}?route=vetedge-home`, { waitUntil: "domcontentloaded" });
+
+  await page.evaluate(() => {
+    globalThis.EdgeSuiteUI.registerProductMenu({
+      sections: [
+        {
+          label: "Operations",
+          items: [
+            { label: "Veterinary Home", link_type: "Page", link_to: "vetedge-home" },
+            { label: "Veterinary Dashboard", link_type: "Page", link_to: "vetedge-dashboard" },
+          ],
+        },
+      ],
+    });
+    const shell = document.createElement("section");
+    shell.className = "edge-app-shell";
+    shell.dataset.edgeProduct = "VetEdge";
+    document.body.appendChild(shell);
+  });
+
+  await expect(page.locator("html")).toHaveAttribute("data-edgesuite-route-approved", "true");
+
+  await page.evaluate(() => {
+    globalThis.frappe.set_route("List", "Sales Invoice");
+  });
+
+  await expect.poll(() => page.evaluate(() => globalThis.__mockRoute.join("/"))).toBe("vetedge-home");
+  await expect(page.locator("#edgesuite-access-blocked")).toHaveCount(0);
+});
+
 test("delayed EdgeSuite shell is accepted without false redirect", async ({ page }) => {
   await page.goto(`${baseURL}?route=vetedge-operations`, { waitUntil: "domcontentloaded" });
 
