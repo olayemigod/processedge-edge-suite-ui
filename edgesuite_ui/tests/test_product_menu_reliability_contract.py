@@ -8,6 +8,7 @@ def test_runtime_installs_deterministic_waffle_reliability():
 	bundle = (APP / "public/js/edgeui.bundle.js").read_text()
 	mount = (APP / "public/js/edgeui/product_menu_mount.js").read_text()
 	reliability = (APP / "public/js/edgeui/product_menu_reliability.js").read_text()
+	flyout = (APP / "public/js/edgeui_product_switcher_flyout.js").read_text()
 	hooks = (APP / "hooks.py").read_text()
 	styles = (APP / "public/css/edgeui_product_menu_reliability.css").read_text()
 
@@ -86,6 +87,18 @@ def test_runtime_installs_deterministic_waffle_reliability():
 		"observer.observe(panel, { childList: true, subtree: true })",
 	):
 		assert expected in reliability
+
+	for expected in (
+		'const ASSET_URL = "/assets/edgesuite_ui/images/product-switcher.png?v=20260901-1"',
+		"async function activateProduct",
+		'global.EdgeSuiteUI.switchProduct(key, { navigate: true })',
+		"function showSwitchError",
+		'global.frappe.msgprint({',
+		'global.Event("change", { bubbles: true })',
+		"function installLauncherIconFallback",
+		'edge-product-switcher__launcher-fallback',
+	):
+		assert expected in flyout
 
 	assert "runtime.toggleCurrentPageFavorite?.()" not in reliability
 	assert 'button.textContent = pinned ? "★ Current pinned" : "☆ Add current"' not in reliability
