@@ -21,6 +21,7 @@
 		"dashboard-view",
 		"print",
 	]);
+	const NATIVE_MENU_LINK_TYPES = new Set(["doctype", "report", "workspace"]);
 
 	if (globalThis[GUARD_KEY]) return;
 
@@ -66,7 +67,7 @@
 			.trim()
 			.replace(/^https?:\/\/[^/]+/i, "")
 			.replace(/^\/+/, "")
-			.replace(/^app\//i, "")
+			.replace(/^(?:app|desk)\//i, "")
 			.split(/[?#/]/)[0]
 			.trim();
 	}
@@ -76,7 +77,7 @@
 		if (Array.isArray(frappeRoute) && frappeRoute.length) {
 			return frappeRoute.map((part) => String(part || "")).filter(Boolean);
 		}
-		const path = String(globalThis.location?.pathname || "").replace(/^\/app\/?/i, "");
+		const path = String(globalThis.location?.pathname || "").replace(/^\/(?:app|desk)\/?/i, "");
 		return path.split("/").filter(Boolean);
 	}
 
@@ -90,6 +91,22 @@
 		const parts = routeParts();
 		if (!parts.length) return true;
 		return NATIVE_ROUTE_PREFIXES.has(String(parts[0] || "").toLowerCase());
+	}
+
+	function routePath(value) {
+		const raw = String(value || "").trim();
+		if (!raw) return "";
+		try {
+			return new URL(raw, globalThis.location?.origin || "http://localhost").pathname.toLowerCase();
+		} catch (_error) {
+			return raw.split(/[?#]/)[0].toLowerCase();
+		}
+	}
+
+	function routeExplicitlyNative(value) {
+		const path = routePath(value);
+		if (!path) return false;
+		return /^\/(?:app|desk)\/(?:form|list|query-report|report-builder|tree|workspace|dashboard-view|print)(?:\/|$)/i.test(path);
 	}
 
 	function edgeShellPresent() {
@@ -135,10 +152,48 @@
 		return roles.some((role) => userRoles.has(String(role)));
 	}
 
+	function menuItemAllowed(item) {
+		if (!itemVisibleForUser(item)) return false;
+		if (!restricted()) return true;
+		const linkType = String(item.link_type || item.linkType || "").trim().toLowerCase();
+		if (NATIVE_MENU_LINK_TYPES.has(linkType)) return false;
+		if (linkType && linkType !== "page") return false;
+		if (routeExplicitlyNative(item.route)) return false;
+		return true;
+	}
+
+	function filterMenuItems(items) {
+		if (!Array.isArray(items)) return [];
+		if (!restricted()) return items;
+		return items.flatMap((item) => {
+			if (!item) return [];
+			if (Array.isArray(item.items)) {
+				const children = item.items.filter(menuItemAllowed);
+				return children.length ? [{ ...item, items: children }] : [];
+			}
+			return menuItemAllowed(item) ? [item] : [];
+		});
+	}
+
+	function filterMenuConfig(config) {
+		if (!restricted() || !config || typeof config !== "object") return config;
+		const filtered = { ...config };
+		if (Array.isArray(config.sections)) {
+			filtered.sections = config.sections
+				.map((section) => ({
+					...section,
+					items: (section?.items || []).filter(menuItemAllowed),
+				}))
+				.filter((section) => section.items.length);
+		}
+		if (Array.isArray(config.items)) filtered.items = filterMenuItems(config.items);
+		return filtered;
+	}
+
 	function collectMenuItem(item) {
-		if (!itemVisibleForUser(item)) return;
+		if (!menuItemAllowed(item)) return;
 		const linkType = String(item.link_type || item.linkType || "").toLowerCase();
-		if (linkType !== "page") return;
+		if (linkType && linkType !== "page") return;
 		const pageName = normalizePageName(item.link_to || item.linkTo || item.route || "");
 		if (pageName) state.menuPages.add(pageName);
 	}
@@ -157,12 +212,61 @@
 		if (typeof originalRegister !== "function") return;
 
 		edgeUI.registerProductMenu = function registerProductMenuWithDeskAccess(config) {
-			collectMenuConfig(config);
-			const result = originalRegister(config);
+			const filteredConfig = filterMenuConfig(config);
+			collectMenuConfig(filteredConfig);
+			const result = originalRegister(filteredConfig);
 			if (restricted() && !edgeShellPresent()) scheduleVerification(0);
 			return result;
 		};
 		edgeUI.__deskAccessMenuCollectorInstalled = true;
+	}
+
+	function wrapShellComponent(edgeUI, component) {
+		if (!restricted() || !component || component.__edgeSuiteDeskAccessWrappedShell) return component;
+		const Vue = edgeUI?.Vue;
+		if (!Vue?.defineComponent || !Vue?.h) return component;
+
+		const WrappedShell = Vue.defineComponent({
+			name: `EdgeSuiteAccessFiltered${component.name || "Shell"}`,
+			inheritAttrs: false,
+			setup(_props, context) {
+				return () => {
+					const attrs = context.attrs || {};
+					return Vue.h(
+						component,
+						{
+							...attrs,
+							menuItems: filterMenuItems(attrs.menuItems),
+						},
+						context.slots,
+					);
+				};
+			},
+		});
+		Object.defineProperty(WrappedShell, "__edgeSuiteDeskAccessWrappedShell", {
+			value: true,
+			configurable: false,
+			enumerable: false,
+		});
+		return WrappedShell;
+	}
+
+	function patchRuntimeShellRegistration() {
+		const edgeUI = globalThis.EdgeSuiteUI || globalThis.EdgeUI;
+		if (!restricted() || !edgeUI || edgeUI.__deskAccessComponentGuardInstalled) return;
+		const originalRegister = edgeUI.registerComponent?.bind(edgeUI);
+		if (typeof originalRegister !== "function") return;
+
+		edgeUI.registerComponent = function registerComponentWithDeskAccess(name, component, options = {}) {
+			const nextComponent = name === "EdgeAppShell" ? wrapShellComponent(edgeUI, component) : component;
+			return originalRegister(name, nextComponent, options);
+		};
+		edgeUI.__deskAccessComponentGuardInstalled = true;
+
+		const existingShell = edgeUI.components?.EdgeAppShell;
+		if (existingShell && !existingShell.__edgeSuiteDeskAccessWrappedShell) {
+			edgeUI.registerComponent("EdgeAppShell", existingShell, { replace: true });
+		}
 	}
 
 	function approveCurrentRoute() {
@@ -250,6 +354,7 @@
 	function verifyCurrentRoute() {
 		applyAccessMode();
 		patchRuntimeMenuRegistration();
+		patchRuntimeShellRegistration();
 		if (!restricted()) return;
 		if (edgeShellPresent()) {
 			approveCurrentRoute();
@@ -281,6 +386,7 @@
 	function beginRouteCheck() {
 		applyAccessMode();
 		patchRuntimeMenuRegistration();
+		patchRuntimeShellRegistration();
 		if (!restricted()) return;
 		state.verifyAttempts = 0;
 		cloakCurrentRoute();
@@ -291,6 +397,7 @@
 	function start() {
 		applyAccessMode();
 		patchRuntimeMenuRegistration();
+		patchRuntimeShellRegistration();
 		if (restricted()) cloakCurrentRoute();
 
 		globalThis.frappe?.router?.on?.("change", beginRouteCheck);
@@ -302,6 +409,7 @@
 		if (globalThis.MutationObserver && body()) {
 			state.observer = new globalThis.MutationObserver(() => {
 				patchRuntimeMenuRegistration();
+				patchRuntimeShellRegistration();
 				if (restricted() && edgeShellPresent()) approveCurrentRoute();
 			});
 			state.observer.observe(body(), { childList: true, subtree: true });
