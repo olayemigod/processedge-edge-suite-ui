@@ -10,6 +10,7 @@ from edgesuite_ui.access_control import (
 	MODE_WEBSITE,
 	ensure_desk_access_field,
 	get_access_mode,
+	preserve_existing_system_users_native_desk,
 )
 
 
@@ -50,6 +51,12 @@ class TestEdgeSuiteDeskAccess(IntegrationTestCase):
 			}
 		).insert(ignore_permissions=True)
 
+	def make_system_user(self):
+		user = self.make_user(self.SYSTEM_USER)
+		user.add_roles(self.BUSINESS_ROLE)
+		user.reload()
+		return user
+
 	def test_access_selector_is_non_permission_user_field(self):
 		field = frappe.get_meta("User").get_field(ACCESS_FIELD)
 		self.assertIsNotNone(field)
@@ -67,18 +74,14 @@ class TestEdgeSuiteDeskAccess(IntegrationTestCase):
 		self.assertEqual(get_access_mode(user.name), MODE_WEBSITE)
 
 	def test_new_system_user_defaults_to_edgesuite_only(self):
-		user = self.make_user(self.SYSTEM_USER)
-		user.add_roles(self.BUSINESS_ROLE)
-		user.reload()
+		user = self.make_system_user()
 
 		self.assertEqual(user.user_type, "System User")
 		self.assertEqual(user.get(ACCESS_FIELD), ACCESS_EDGESUITE_ONLY)
 		self.assertEqual(get_access_mode(user.name), MODE_EDGESUITE_ONLY)
 
 	def test_selector_changes_interface_mode_without_changing_business_role(self):
-		user = self.make_user(self.SYSTEM_USER)
-		user.add_roles(self.BUSINESS_ROLE)
-		user.reload()
+		user = self.make_system_user()
 		original_roles = set(frappe.get_roles(user.name))
 
 		frappe.db.set_value("User", user.name, ACCESS_FIELD, ACCESS_NATIVE_DESK)
@@ -91,6 +94,26 @@ class TestEdgeSuiteDeskAccess(IntegrationTestCase):
 		user.reload()
 		self.assertEqual(user.user_type, "System User")
 		self.assertEqual(set(frappe.get_roles(user.name)), original_roles)
+		self.assertEqual(get_access_mode(user.name), MODE_EDGESUITE_ONLY)
+
+	def test_one_time_preservation_marks_existing_system_user_native(self):
+		user = self.make_system_user()
+		frappe.db.set_value("User", user.name, ACCESS_FIELD, ACCESS_EDGESUITE_ONLY)
+
+		preserve_existing_system_users_native_desk()
+		user.reload()
+
+		self.assertEqual(user.get(ACCESS_FIELD), ACCESS_NATIVE_DESK)
+		self.assertEqual(get_access_mode(user.name), MODE_NATIVE_DESK)
+
+	def test_field_ensure_does_not_reset_tenant_choice(self):
+		user = self.make_system_user()
+		frappe.db.set_value("User", user.name, ACCESS_FIELD, ACCESS_EDGESUITE_ONLY)
+
+		ensure_desk_access_field()
+		user.reload()
+
+		self.assertEqual(user.get(ACCESS_FIELD), ACCESS_EDGESUITE_ONLY)
 		self.assertEqual(get_access_mode(user.name), MODE_EDGESUITE_ONLY)
 
 	def test_administrator_keeps_native_recovery_access(self):
