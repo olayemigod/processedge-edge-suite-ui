@@ -5,7 +5,7 @@
   const SOURCE_SELECT_ID = "edge-product-app-switcher";
   const LAUNCHER_ID = "edge-product-switcher-launcher";
   const FLYOUT_ID = "edge-product-switcher-flyout";
-  const ASSET_URL = "/assets/edgesuite_ui/images/product-switcher.png";
+  const ASSET_URL = "/assets/edgesuite_ui/images/product-switcher.png?v=20260901-1";
   const WRAPPER_CLASS = "edge-product-switcher--launcher";
   let scheduled = false;
   let observer = null;
@@ -153,6 +153,59 @@
       </div>`;
   }
 
+  function switchErrorMessage(error) {
+    return (
+      error?.message ||
+      error?.exc ||
+      error?._server_messages ||
+      "Unable to switch Product App."
+    );
+  }
+
+  function showSwitchError(error) {
+    const message = switchErrorMessage(error);
+    if (global.frappe?.msgprint) {
+      global.frappe.msgprint({
+        title: "Product App Switch",
+        indicator: "red",
+        message,
+      });
+    } else {
+      global.console?.error?.("[EdgeSuiteUI] Product App switch failed", error);
+    }
+  }
+
+  async function activateProduct(key, app) {
+    const select = sourceSelect();
+    if (!select || select.disabled || !key) return false;
+    if (key === select.value) {
+      closeFlyout({ restoreFocus: true });
+      return true;
+    }
+
+    app?.setAttribute?.("aria-busy", "true");
+    select.disabled = true;
+    try {
+      if (typeof global.EdgeSuiteUI?.switchProduct === "function") {
+        await global.EdgeSuiteUI.switchProduct(key, { navigate: true });
+      } else {
+        select.value = key;
+        select.dispatchEvent(new global.Event("change", { bubbles: true }));
+      }
+      closeFlyout();
+      return true;
+    } catch (error) {
+      const activeKey = global.EdgeSuiteUI?.getActiveProduct?.()?.key || select.value;
+      select.value = activeKey || select.value;
+      renderFlyout();
+      showSwitchError(error);
+      return false;
+    } finally {
+      select.disabled = false;
+      app?.removeAttribute?.("aria-busy");
+    }
+  }
+
   function ensureFlyout() {
     let panel = flyout();
     if (panel) return panel;
@@ -164,26 +217,37 @@
     panel.setAttribute("aria-modal", "false");
     global.document.body.appendChild(panel);
 
-    panel.addEventListener("click", (event) => {
+    panel.addEventListener("click", async (event) => {
       if (event.target.closest(".edge-product-switcher-flyout__close")) {
         closeFlyout({ restoreFocus: true });
         return;
       }
       const app = event.target.closest(".edge-product-switcher-flyout__app[data-product-key]");
       if (!app) return;
-      const select = sourceSelect();
-      if (!select || select.disabled) return;
-      const key = app.dataset.productKey || "";
-      if (!key) return;
-      if (key === select.value) {
-        closeFlyout({ restoreFocus: true });
-        return;
-      }
-      select.value = key;
-      select.dispatchEvent(new global.Event("change", { bubbles: true }));
-      closeFlyout();
+      event.preventDefault();
+      event.stopPropagation();
+      await activateProduct(app.dataset.productKey || "", app);
     });
     return panel;
+  }
+
+  function installLauncherIconFallback(button) {
+    const image = button?.querySelector?.("img");
+    const fallback = button?.querySelector?.(".edge-product-switcher__launcher-fallback");
+    if (!image || !fallback || image.dataset.edgeFallbackBound === "1") return;
+    image.dataset.edgeFallbackBound = "1";
+    image.addEventListener("load", () => {
+      image.hidden = false;
+      fallback.hidden = true;
+    });
+    image.addEventListener("error", () => {
+      image.hidden = true;
+      fallback.hidden = false;
+    });
+    if (image.complete && !image.naturalWidth) {
+      image.hidden = true;
+      fallback.hidden = false;
+    }
   }
 
   function transformSwitcher() {
@@ -231,8 +295,11 @@
       button.setAttribute("aria-controls", FLYOUT_ID);
       button.setAttribute("aria-label", "Switch Product App");
       button.title = "Switch Product App";
-      button.innerHTML = `<img src="${ASSET_URL}" alt="" aria-hidden="true" />`;
+      button.innerHTML = `
+        <img src="${ASSET_URL}" alt="" aria-hidden="true" />
+        <span class="edge-product-switcher__launcher-fallback" aria-hidden="true" hidden style="font-size:1.2rem;font-weight:700;line-height:1">⇄</span>`;
       wrapper.insertBefore(button, select);
+      installLauncherIconFallback(button);
       button.addEventListener("click", (event) => {
         event.preventDefault();
         event.stopPropagation();
@@ -250,6 +317,10 @@
           );
         }
       });
+    } else {
+      const image = button.querySelector("img");
+      if (image && image.getAttribute("src") !== ASSET_URL) image.setAttribute("src", ASSET_URL);
+      installLauncherIconFallback(button);
     }
 
     ensureFlyout();
