@@ -8,6 +8,8 @@
 	const MODE_ATTRIBUTE = "data-edgesuite-access-mode";
 	const OVERLAY_ID = "edgesuite-access-blocked";
 	const VERIFY_DELAY_MS = 450;
+	const VERIFY_RETRY_MS = 500;
+	const MAX_EDGE_ROUTE_VERIFY_ATTEMPTS = 4;
 	const REDIRECT_RESET_MS = 900;
 	const NATIVE_ROUTE_PREFIXES = new Set([
 		"form",
@@ -26,6 +28,7 @@
 		menuPages: new Set(),
 		failedPages: new Set(),
 		verifyTimer: null,
+		verifyAttempts: 0,
 		redirecting: false,
 		observer: null,
 	};
@@ -167,6 +170,7 @@
 		const root = htmlRoot();
 		if (!root) return;
 		root.setAttribute(APPROVED_ATTRIBUTE, "true");
+		state.verifyAttempts = 0;
 		state.redirecting = false;
 		hideBlockedOverlay();
 		const pageName = currentPageName();
@@ -258,6 +262,11 @@
 			return;
 		}
 
+		state.verifyAttempts += 1;
+		if (state.verifyAttempts < MAX_EDGE_ROUTE_VERIFY_ATTEMPTS) {
+			scheduleVerification(VERIFY_RETRY_MS);
+			return;
+		}
 		redirectToFallback("edge-shell-not-found");
 	}
 
@@ -273,6 +282,7 @@
 		applyAccessMode();
 		patchRuntimeMenuRegistration();
 		if (!restricted()) return;
+		state.verifyAttempts = 0;
 		cloakCurrentRoute();
 		hideBlockedOverlay();
 		scheduleVerification();
