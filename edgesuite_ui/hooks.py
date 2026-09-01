@@ -69,5 +69,5 @@ app_include_js = [
 # permissions, User Permissions, Page/Report permissions and product-owned
 # company/branch/workflow authorization remain authoritative.
 extend_bootinfo = "edgesuite_ui.access_control.extend_bootinfo"
-after_install = "edgesuite_ui.access_control.ensure_advanced_desk_role"
-after_migrate = "edgesuite_ui.access_control.ensure_advanced_desk_role"
+after_install = "edgesuite_ui.access_control.ensure_desk_access_field"
+after_migrate = "edgesuite_ui.access_control.ensure_desk_access_field"
