@@ -2,11 +2,13 @@ import frappe
 from frappe.tests import IntegrationTestCase
 
 from edgesuite_ui.access_control import (
-	ADVANCED_DESK_ROLE,
+	ACCESS_EDGESUITE_ONLY,
+	ACCESS_FIELD,
+	ACCESS_NATIVE_DESK,
 	MODE_EDGESUITE_ONLY,
 	MODE_NATIVE_DESK,
 	MODE_WEBSITE,
-	ensure_advanced_desk_role,
+	ensure_desk_access_field,
 	get_access_mode,
 )
 
@@ -18,7 +20,7 @@ class TestEdgeSuiteDeskAccess(IntegrationTestCase):
 
 	def setUp(self):
 		super().setUp()
-		ensure_advanced_desk_role()
+		ensure_desk_access_field()
 		if not frappe.db.exists("Role", self.BUSINESS_ROLE):
 			frappe.get_doc(
 				{
@@ -48,42 +50,47 @@ class TestEdgeSuiteDeskAccess(IntegrationTestCase):
 			}
 		).insert(ignore_permissions=True)
 
-	def test_marker_role_does_not_create_system_user_access(self):
-		role = frappe.get_doc("Role", ADVANCED_DESK_ROLE)
-		self.assertFalse(role.desk_access)
+	def test_access_selector_is_non_permission_user_field(self):
+		field = frappe.get_meta("User").get_field(ACCESS_FIELD)
+		self.assertIsNotNone(field)
+		self.assertEqual(field.fieldtype, "Select")
+		self.assertEqual(field.permlevel, 1)
+		self.assertEqual(field.default, ACCESS_EDGESUITE_ONLY)
+		self.assertIn(ACCESS_NATIVE_DESK, field.options)
 
+	def test_website_user_remains_website_user(self):
 		user = self.make_user(self.WEBSITE_USER)
-		user.add_roles(ADVANCED_DESK_ROLE)
+		frappe.db.set_value("User", user.name, ACCESS_FIELD, ACCESS_NATIVE_DESK)
 		user.reload()
 
 		self.assertEqual(user.user_type, "Website User")
 		self.assertEqual(get_access_mode(user.name), MODE_WEBSITE)
 
-	def test_system_user_without_marker_is_edgesuite_only(self):
+	def test_new_system_user_defaults_to_edgesuite_only(self):
 		user = self.make_user(self.SYSTEM_USER)
 		user.add_roles(self.BUSINESS_ROLE)
 		user.reload()
 
 		self.assertEqual(user.user_type, "System User")
-		self.assertNotIn(ADVANCED_DESK_ROLE, frappe.get_roles(user.name))
+		self.assertEqual(user.get(ACCESS_FIELD), ACCESS_EDGESUITE_ONLY)
 		self.assertEqual(get_access_mode(user.name), MODE_EDGESUITE_ONLY)
 
-	def test_marker_changes_interface_mode_without_removing_business_role(self):
+	def test_selector_changes_interface_mode_without_changing_business_role(self):
 		user = self.make_user(self.SYSTEM_USER)
 		user.add_roles(self.BUSINESS_ROLE)
 		user.reload()
-		self.assertEqual(get_access_mode(user.name), MODE_EDGESUITE_ONLY)
+		original_roles = set(frappe.get_roles(user.name))
 
-		user.add_roles(ADVANCED_DESK_ROLE)
+		frappe.db.set_value("User", user.name, ACCESS_FIELD, ACCESS_NATIVE_DESK)
 		user.reload()
 		self.assertEqual(user.user_type, "System User")
-		self.assertIn(self.BUSINESS_ROLE, frappe.get_roles(user.name))
+		self.assertEqual(set(frappe.get_roles(user.name)), original_roles)
 		self.assertEqual(get_access_mode(user.name), MODE_NATIVE_DESK)
 
-		user.remove_roles(ADVANCED_DESK_ROLE)
+		frappe.db.set_value("User", user.name, ACCESS_FIELD, ACCESS_EDGESUITE_ONLY)
 		user.reload()
 		self.assertEqual(user.user_type, "System User")
-		self.assertIn(self.BUSINESS_ROLE, frappe.get_roles(user.name))
+		self.assertEqual(set(frappe.get_roles(user.name)), original_roles)
 		self.assertEqual(get_access_mode(user.name), MODE_EDGESUITE_ONLY)
 
 	def test_administrator_keeps_native_recovery_access(self):
