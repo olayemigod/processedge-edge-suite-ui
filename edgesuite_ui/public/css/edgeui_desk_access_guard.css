@@ -1,0 +1,75 @@
+html[data-edgesuite-access-mode="edgesuite_only"]:not([data-edgesuite-route-approved="true"]) .layout-main-section,
+html[data-edgesuite-access-mode="edgesuite_only"]:not([data-edgesuite-route-approved="true"]) .page-head {
+	visibility: hidden !important;
+	pointer-events: none !important;
+}
+
+html[data-edgesuite-access-mode="edgesuite_only"] .desk-sidebar,
+html[data-edgesuite-access-mode="edgesuite_only"] .workspace-sidebar,
+html[data-edgesuite-access-mode="edgesuite_only"] .navbar .search-bar,
+html[data-edgesuite-access-mode="edgesuite_only"] .navbar .navbar-home,
+html[data-edgesuite-access-mode="edgesuite_only"] .navbar [data-original-title="Home"],
+html[data-edgesuite-access-mode="edgesuite_only"] .navbar [aria-label="Search"] {
+	display: none !important;
+}
+
+.edgesuite-access-blocked {
+	position: fixed;
+	inset: 0;
+	z-index: 100000;
+	display: grid;
+	place-items: center;
+	padding: 1.5rem;
+	background: var(--edge-color-surface, #f8fafc);
+	color: var(--edge-color-ink-950, #172033);
+}
+
+.edgesuite-access-blocked__card {
+	width: min(32rem, 100%);
+	padding: 1.5rem;
+	border: 1px solid var(--edge-color-border, #d8dee8);
+	border-radius: 0.9rem;
+	background: var(--edge-color-panel, #ffffff);
+	box-shadow: 0 1rem 2.5rem rgb(15 23 42 / 12%);
+}
+
+.edgesuite-access-blocked__card h1 {
+	margin: 0 0 0.6rem;
+	font-size: 1.25rem;
+	line-height: 1.35;
+}
+
+.edgesuite-access-blocked__card p {
+	margin: 0;
+	color: var(--edge-color-ink-700, #475569);
+	line-height: 1.55;
+}
+
+.edgesuite-access-blocked__actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.75rem;
+	margin-top: 1.25rem;
+}
+
+.edgesuite-access-blocked__actions button,
+.edgesuite-access-blocked__actions a {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 2.25rem;
+	padding: 0.45rem 0.85rem;
+	border: 1px solid var(--edge-color-border-strong, #c4ccd8);
+	border-radius: 0.55rem;
+	background: var(--edge-color-panel, #ffffff);
+	color: inherit;
+	font: inherit;
+	text-decoration: none;
+	cursor: pointer;
+}
+
+.edgesuite-access-blocked__actions button:focus-visible,
+.edgesuite-access-blocked__actions a:focus-visible {
+	outline: 2px solid currentColor;
+	outline-offset: 2px;
+}
