@@ -74,11 +74,25 @@ test("EdgeSuite-only user is redirected away from native Desk route", async ({ p
               link_type: "Page",
               link_to: "vetedge-home",
             },
+            {
+              label: "Patients",
+              link_type: "DocType",
+              link_to: "Veterinary Patient",
+            },
+            {
+              label: "Native Report",
+              link_type: "Report",
+              link_to: "General Ledger",
+            },
           ],
         },
       ],
     });
   });
+
+  const registeredItems = await page.evaluate(() => globalThis.__lastProductMenu.sections[0].items);
+  expect(registeredItems.map((item) => item.label)).toEqual(["Veterinary Home"]);
+  expect(registeredItems.every((item) => item.link_type === "Page")).toBe(true);
 
   await expect.poll(() => page.evaluate(() => globalThis.__mockRoute.join("/"))).toBe("vetedge-home");
   await expect(page.locator("#native-content")).toBeHidden();
