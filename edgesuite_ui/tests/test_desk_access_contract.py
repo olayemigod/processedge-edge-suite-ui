@@ -87,9 +87,11 @@ def test_restricted_runtime_filters_native_product_menu_entries():
 	assert "menuItems: filterMenuItems(attrs.menuItems)" in GUARD
 
 
-def test_native_desk_content_is_cloaked_until_edgesuite_shell_is_verified():
+def test_native_desk_content_and_native_shell_actions_are_hidden():
 	assert 'data-edgesuite-access-mode="edgesuite_only"' in CSS
 	assert ':not([data-edgesuite-route-approved="true"]) .layout-main-section' in CSS
 	assert ".desk-sidebar" in CSS
 	assert ".workspace-sidebar" in CSS
+	assert ".edge-user-menu__items > button:not(.edge-user-menu__logout)" in CSS
+	assert ".edge-notification-menu .edge-topbar-menu__footer" in CSS
 	assert ".edgesuite-access-blocked" in CSS
