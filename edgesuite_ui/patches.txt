@@ -1,1 +1,2 @@
-# Frappe app marker and future patch registry.
+# Frappe app patch registry.
+edgesuite_ui.patches.v1_1.backfill_advanced_desk_role
