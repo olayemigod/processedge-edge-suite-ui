@@ -1,29 +1,46 @@
 from __future__ import annotations
 
 import frappe
+from frappe.custom.doctype.custom_field.custom_field import create_custom_fields
 
-ADVANCED_DESK_ROLE = "EdgeSuite Advanced Desk User"
 ACCESS_BOOT_KEY = "edgesuite_ui_access"
+ACCESS_FIELD = "edgesuite_desk_access_level"
+ACCESS_EDGESUITE_ONLY = "EdgeSuite Only"
+ACCESS_NATIVE_DESK = "Native Desk + EdgeSuite"
 MODE_NATIVE_DESK = "native_desk"
 MODE_EDGESUITE_ONLY = "edgesuite_only"
 MODE_WEBSITE = "website"
 
 
-def ensure_advanced_desk_role() -> None:
-	"""Ensure the non-granting marker role exists on the local Frappe site."""
-	if frappe.db.exists("Role", ADVANCED_DESK_ROLE):
-		return
-
-	frappe.get_doc(
+def ensure_desk_access_field() -> None:
+	"""Install the per-user UI exposure control without changing any roles."""
+	create_custom_fields(
 		{
-			"doctype": "Role",
-			"role_name": ADVANCED_DESK_ROLE,
-			# Deliberately false. This role is an EdgeSuite visibility marker only;
-			# it must never promote a Website User to System User by itself.
-			"desk_access": 0,
-			"disabled": 0,
-		}
-	).insert(ignore_permissions=True)
+			"User": [
+				{
+					"fieldname": ACCESS_FIELD,
+					"label": "EdgeSuite Desk Access",
+					"fieldtype": "Select",
+					"options": f"{ACCESS_EDGESUITE_ONLY}\n{ACCESS_NATIVE_DESK}",
+					"default": ACCESS_EDGESUITE_ONLY,
+					"insert_after": "role_profiles",
+					"permlevel": 1,
+					"depends_on": "eval:doc.user_type == 'System User'",
+					"description": (
+						"Controls native ERPNext/Frappe Desk visibility only. "
+						"It does not grant roles, DocType permissions, User Permissions, "
+						"Company/Branch access, report access, or workflow authority."
+					),
+				},
+			]
+		},
+		update=True,
+	)
+
+
+def _desk_access_field_available() -> bool:
+	"""Avoid a deploy-before-migrate lockout while the custom column is absent."""
+	return ACCESS_FIELD in frappe.db.get_table_columns("User")
 
 
 def get_access_mode(user: str | None = None) -> str:
@@ -38,8 +55,18 @@ def get_access_mode(user: str | None = None) -> str:
 	if user_type != "System User":
 		return MODE_WEBSITE
 
-	roles = set(frappe.get_roles(user))
-	if "System Manager" in roles or ADVANCED_DESK_ROLE in roles:
+	# System Managers retain a recovery path independent of the tenant-facing
+	# access selector. This does not alter their existing Frappe permissions.
+	if "System Manager" in set(frappe.get_roles(user)):
+		return MODE_NATIVE_DESK
+
+	# During a rolling deploy, preserve the pre-feature interface until migrate
+	# creates the field. Backend permissions remain authoritative either way.
+	if not _desk_access_field_available():
+		return MODE_NATIVE_DESK
+
+	access_level = frappe.db.get_value("User", user, ACCESS_FIELD)
+	if access_level == ACCESS_NATIVE_DESK:
 		return MODE_NATIVE_DESK
 	return MODE_EDGESUITE_ONLY
 
@@ -50,7 +77,9 @@ def get_access_context(user: str | None = None) -> dict[str, object]:
 		"mode": mode,
 		"restricted_to_edgesuite": mode == MODE_EDGESUITE_ONLY,
 		"can_use_native_desk": mode == MODE_NATIVE_DESK,
-		"advanced_desk_role": ADVANCED_DESK_ROLE,
+		"access_field": ACCESS_FIELD,
+		"access_level_edgesuite_only": ACCESS_EDGESUITE_ONLY,
+		"access_level_native_desk": ACCESS_NATIVE_DESK,
 		# This layer is intentionally additive. It never represents or replaces
 		# DocType, Page, Report, User Permission, Company, Branch or workflow auth.
 		"authorization_source": "frappe_permissions",
