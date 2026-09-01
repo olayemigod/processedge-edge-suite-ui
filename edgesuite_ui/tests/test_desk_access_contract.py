@@ -26,20 +26,27 @@ def test_user_level_selector_is_not_a_business_permission_role():
 
 def test_boot_and_assets_enable_additive_access_layer():
 	assert 'extend_bootinfo = "edgesuite_ui.access_control.extend_bootinfo"' in HOOKS
-	assert 'after_install = "edgesuite_ui.access_control.ensure_desk_access_field"' in HOOKS
+	assert (
+		'after_install = "edgesuite_ui.access_control.initialize_desk_access_on_install"'
+		in HOOKS
+	)
 	assert 'after_migrate = "edgesuite_ui.access_control.ensure_desk_access_field"' in HOOKS
 	assert 'edgeui_desk_access_guard.css' in HOOKS
 	assert 'edgeui_desk_access_guard.js' in HOOKS
 
 
-def test_existing_system_users_keep_pre_feature_native_desk_visibility():
+def test_existing_system_users_keep_pre_feature_native_desk_visibility_once():
 	assert "edgesuite_ui.patches.v1_1.backfill_desk_access_level" in PATCHES
-	assert '"user_type": "System User"' in PATCH
-	assert '"enabled": 1' in PATCH
-	assert "ACCESS_NATIVE_DESK" in PATCH
-	assert 'frappe.db.set_value(' in PATCH
-	assert 'user_name in {"Administrator", "Guest"}' in PATCH
-	assert "Has Role" not in PATCH
+	assert "preserve_existing_system_users_native_desk" in ACCESS
+	assert '"user_type": "System User"' in ACCESS
+	assert '"enabled": 1' in ACCESS
+	assert "ACCESS_NATIVE_DESK" in ACCESS
+	assert 'frappe.db.set_value(' in ACCESS
+	assert 'user_name in {"Administrator", "Guest"}' in ACCESS
+	assert "preserve_existing_system_users_native_desk" in PATCH
+	assert "Has Role" not in ACCESS
+	assert 'after_migrate = "edgesuite_ui.access_control.ensure_desk_access_field"' in HOOKS
+	assert 'after_migrate = "edgesuite_ui.access_control.preserve_existing_system_users_native_desk"' not in HOOKS
 
 
 def test_restricted_runtime_allows_only_rendered_edgesuite_pages():
@@ -55,6 +62,16 @@ def test_restricted_runtime_allows_only_rendered_edgesuite_pages():
 	assert 'data-edgesuite-route-approved' in GUARD
 	assert 'redirectToFallback("native-desk-route")' in GUARD
 	assert 'scheduleVerification(VERIFY_RETRY_MS)' in GUARD
+
+
+def test_native_route_classification_wins_over_stale_edgesuite_shell():
+	assert "Route classification wins over DOM state" in GUARD
+	verify_start = GUARD.index("function verifyCurrentRoute()")
+	native_check = GUARD.index("if (routeLooksNative())", verify_start)
+	shell_check = GUARD.index("if (edgeShellPresent())", verify_start)
+	assert native_check < shell_check
+	assert "if (routeLooksNative()) {\n\t\t\tcloakCurrentRoute();" in GUARD
+	assert "scheduleVerification(0);" in GUARD
 
 
 def test_restricted_runtime_filters_native_product_menu_entries():
