@@ -37,15 +37,30 @@ def test_existing_system_users_keep_pre_feature_native_desk_visibility():
 
 def test_restricted_runtime_allows_only_rendered_edgesuite_pages():
 	assert 'RESTRICTED_MODE = "edgesuite_only"' in GUARD
+	assert 'MAX_EDGE_ROUTE_VERIFY_ATTEMPTS = 4' in GUARD
 	assert '"form"' in GUARD
 	assert '"list"' in GUARD
 	assert '"query-report"' in GUARD
 	assert '"workspace"' in GUARD
+	assert '/^(?:app|desk)' in GUARD or '(?:app|desk)' in GUARD
 	assert '.edge-app-shell[data-edge-product]' in GUARD
-	assert 'linkType !== "page"' in GUARD
 	assert 'Storage is a convenience only; it is never an authorization source.' in GUARD
 	assert 'data-edgesuite-route-approved' in GUARD
 	assert 'redirectToFallback("native-desk-route")' in GUARD
+	assert 'scheduleVerification(VERIFY_RETRY_MS)' in GUARD
+
+
+def test_restricted_runtime_filters_native_product_menu_entries():
+	assert 'NATIVE_MENU_LINK_TYPES = new Set(["doctype", "report", "workspace"])' in GUARD
+	assert "function menuItemAllowed(item)" in GUARD
+	assert "function filterMenuConfig(config)" in GUARD
+	assert "function filterMenuItems(items)" in GUARD
+	assert "routeExplicitlyNative(item.route)" in GUARD
+	assert "const filteredConfig = filterMenuConfig(config)" in GUARD
+	assert "originalRegister(filteredConfig)" in GUARD
+	assert "function wrapShellComponent(edgeUI, component)" in GUARD
+	assert 'name === "EdgeAppShell"' in GUARD
+	assert "menuItems: filterMenuItems(attrs.menuItems)" in GUARD
 
 
 def test_native_desk_content_is_cloaked_until_edgesuite_shell_is_verified():
