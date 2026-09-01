@@ -271,6 +271,10 @@
 
 	function approveCurrentRoute() {
 		if (!restricted()) return;
+		if (routeLooksNative()) {
+			cloakCurrentRoute();
+			return;
+		}
 		const root = htmlRoot();
 		if (!root) return;
 		root.setAttribute(APPROVED_ATTRIBUTE, "true");
@@ -356,17 +360,22 @@
 		patchRuntimeMenuRegistration();
 		patchRuntimeShellRegistration();
 		if (!restricted()) return;
+
+		// Route classification wins over DOM state. Frappe SPA transitions can
+		// leave the prior EdgeSuite shell mounted briefly after the route has
+		// already changed; that stale shell must never approve a native route.
+		if (routeLooksNative()) {
+			cloakCurrentRoute();
+			redirectToFallback("native-desk-route");
+			return;
+		}
+
 		if (edgeShellPresent()) {
 			approveCurrentRoute();
 			return;
 		}
 
 		cloakCurrentRoute();
-		if (routeLooksNative()) {
-			redirectToFallback("native-desk-route");
-			return;
-		}
-
 		state.verifyAttempts += 1;
 		if (state.verifyAttempts < MAX_EDGE_ROUTE_VERIFY_ATTEMPTS) {
 			scheduleVerification(VERIFY_RETRY_MS);
@@ -410,7 +419,20 @@
 			state.observer = new globalThis.MutationObserver(() => {
 				patchRuntimeMenuRegistration();
 				patchRuntimeShellRegistration();
-				if (restricted() && edgeShellPresent()) approveCurrentRoute();
+				if (!restricted()) return;
+				if (routeLooksNative()) {
+					cloakCurrentRoute();
+					scheduleVerification(0);
+					return;
+				}
+				if (edgeShellPresent()) {
+					approveCurrentRoute();
+					return;
+				}
+				if (htmlRoot()?.getAttribute(APPROVED_ATTRIBUTE) === "true") {
+					cloakCurrentRoute();
+					scheduleVerification(VERIFY_RETRY_MS);
+				}
 			});
 			state.observer.observe(body(), { childList: true, subtree: true });
 		}
