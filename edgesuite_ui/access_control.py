@@ -38,6 +38,36 @@ def ensure_desk_access_field() -> None:
 	)
 
 
+def preserve_existing_system_users_native_desk() -> None:
+	"""Preserve the pre-feature interface for users who already had Desk access.
+
+	This helper is intentionally called only from one-time installation/migration
+	paths. Normal migrations must not continually overwrite a tenant's later
+	advanced/everyday user choices.
+	"""
+	ensure_desk_access_field()
+	users = frappe.get_all(
+		"User",
+		filters={"enabled": 1, "user_type": "System User"},
+		pluck="name",
+	)
+	for user_name in users:
+		if user_name in {"Administrator", "Guest"}:
+			continue
+		frappe.db.set_value(
+			"User",
+			user_name,
+			ACCESS_FIELD,
+			ACCESS_NATIVE_DESK,
+			update_modified=False,
+		)
+
+
+def initialize_desk_access_on_install() -> None:
+	"""Safely initialize an already-populated site on first app installation."""
+	preserve_existing_system_users_native_desk()
+
+
 def _desk_access_field_available() -> bool:
 	"""Avoid a deploy-before-migrate lockout while the custom column is absent."""
 	return ACCESS_FIELD in frappe.db.get_table_columns("User")
