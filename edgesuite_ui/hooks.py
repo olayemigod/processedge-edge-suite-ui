@@ -41,6 +41,7 @@ app_include_css = [
 	"/assets/edgesuite_ui/css/edgeui_theme_transition_guard.css",
 	"/assets/edgesuite_ui/css/edgeui_navigation_shell.css",
 	"/assets/edgesuite_ui/css/edgeui_navigation_active_path.css",
+	"/assets/edgesuite_ui/css/edgeui_desk_access_guard.css",
 	"/assets/edgesuite_ui/css/edgeui_report_export.css",
 	"/assets/edgesuite_ui/css/edgeui_reporting_presentation.css",
 	"/assets/edgesuite_ui/css/edgeui_report_comparison.css",
@@ -53,6 +54,7 @@ app_include_css = [
 app_include_js = [
 	"/assets/edgesuite_ui/js/edgeui_theme_bootstrap.js",
 	"edgesuite_ui.bundle.js",
+	"/assets/edgesuite_ui/js/edgeui_desk_access_guard.js",
 	"/assets/edgesuite_ui/js/edgeui_theme_controls.js",
 	"/assets/edgesuite_ui/js/edgeui_frappe_dialog_bridge.js",
 	"/assets/edgesuite_ui/js/edgeui_navigation_shell.js",
@@ -62,3 +64,10 @@ app_include_js = [
 	"/assets/edgesuite_ui/js/edgeui_ctrl_k_guard.js",
 	"/assets/edgesuite_ui/js/edgeui_ctrl_s_guard.js",
 ]
+
+# Desk access management is an additive interface-exposure layer only. Frappe
+# permissions, User Permissions, Page/Report permissions and product-owned
+# company/branch/workflow authorization remain authoritative.
+extend_bootinfo = "edgesuite_ui.access_control.extend_bootinfo"
+after_install = "edgesuite_ui.access_control.ensure_advanced_desk_role"
+after_migrate = "edgesuite_ui.access_control.ensure_advanced_desk_role"
