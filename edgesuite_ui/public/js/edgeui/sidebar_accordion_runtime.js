@@ -72,8 +72,9 @@ function enforceSidebar(shell) {
   const expanded = sections.filter(sectionExpanded);
 
   // Navigation has priority exactly once. After the route has settled, users
-  // may manually inspect another section until the next navigation occurs.
-  let keep = preferred || active || expanded[0] || null;
+  // may manually inspect another section or collapse every section, including
+  // the section containing the current route.
+  let keep = preferred || expanded[0] || null;
   if (routePending && active) {
     keep = active;
     delete shell.dataset[SIDEBAR_OPEN_SECTION_KEY];
