@@ -76,13 +76,16 @@ def test_latest_runtime_installs_switcher_commands_density_and_menu_extras():
 		"function enforceSidebar",
 		"shell.dataset.edgeMultiSection = \"true\"",
 		"sectionIdentity(section)",
-		"preferred || active || expanded[0]",
+		"preferred || expanded[0]",
+		"if (routePending && active)",
+		"keep = active",
 		"if (keep && !sectionExpanded(keep))",
 		"setSectionExpanded(shell, keep, true)",
 		"delete shell.dataset[SIDEBAR_OPEN_SECTION_KEY]",
 		"scheduleEnforce()",
 	):
 		assert expected in sidebar
+	assert "preferred || active || expanded[0]" not in sidebar
 
 	for expected in (
 		"function workflowSaveButton",
