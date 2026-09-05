@@ -1,6 +1,7 @@
 const SIDEBAR_OPEN_SECTION_KEY = "edgeOpenSidebarSection";
 const SIDEBAR_RECONCILING_KEY = "edgeSidebarReconciling";
 const SIDEBAR_ROUTE_PENDING_KEY = "edgeRoutePending";
+const SIDEBAR_MANUAL_COLLAPSED_KEY = "edgeSidebarManualCollapsed";
 const ROUTE_EVENT = "edgesuite-navigation-route-change";
 
 function sectionIdentity(section) {
@@ -69,15 +70,17 @@ function enforceSidebar(shell) {
 
   const active = activeSection(sections);
   const routePending = shell.dataset[SIDEBAR_ROUTE_PENDING_KEY] === "1";
+  const manualCollapsed = shell.dataset[SIDEBAR_MANUAL_COLLAPSED_KEY] === "1";
   const expanded = sections.filter(sectionExpanded);
 
   // Navigation has priority exactly once. After the route has settled, users
   // may manually inspect another section or collapse every section, including
   // the section containing the current route.
-  let keep = preferred || expanded[0] || null;
+  let keep = manualCollapsed ? null : preferred || expanded[0] || null;
   if (routePending && active) {
     keep = active;
     delete shell.dataset[SIDEBAR_OPEN_SECTION_KEY];
+    delete shell.dataset[SIDEBAR_MANUAL_COLLAPSED_KEY];
     delete shell.dataset[SIDEBAR_ROUTE_PENDING_KEY];
   }
 
@@ -112,8 +115,27 @@ export function installSidebarAccordionRuntime(target = globalThis) {
       const section = toggle.closest(".edge-sidebar__section");
       const shell = toggle.closest(".edge-app-shell");
       if (!section || !shell || shell.dataset[SIDEBAR_RECONCILING_KEY] === "1") return;
-      if (sectionExpanded(section)) delete shell.dataset[SIDEBAR_OPEN_SECTION_KEY];
-      else shell.dataset[SIDEBAR_OPEN_SECTION_KEY] = sectionIdentity(section);
+
+      // Product compatibility layers must not be able to undo an explicit user
+      // accordion choice by calling toggle.click() from MutationObservers. The
+      // shared runtime is the sole owner of section state; its own programmatic
+      // clicks are allowed through SIDEBAR_RECONCILING_KEY above.
+      if (
+        event.isTrusted === false &&
+        (shell.dataset[SIDEBAR_MANUAL_COLLAPSED_KEY] === "1" || shell.dataset[SIDEBAR_OPEN_SECTION_KEY])
+      ) {
+        event.preventDefault?.();
+        event.stopImmediatePropagation?.();
+        return;
+      }
+
+      if (sectionExpanded(section)) {
+        delete shell.dataset[SIDEBAR_OPEN_SECTION_KEY];
+        shell.dataset[SIDEBAR_MANUAL_COLLAPSED_KEY] = "1";
+      } else {
+        shell.dataset[SIDEBAR_OPEN_SECTION_KEY] = sectionIdentity(section);
+        delete shell.dataset[SIDEBAR_MANUAL_COLLAPSED_KEY];
+      }
       scheduleEnforce();
     },
     true,
@@ -122,6 +144,7 @@ export function installSidebarAccordionRuntime(target = globalThis) {
   const resetForNavigation = () => {
     document.querySelectorAll(".edge-app-shell").forEach((shell) => {
       delete shell.dataset[SIDEBAR_OPEN_SECTION_KEY];
+      delete shell.dataset[SIDEBAR_MANUAL_COLLAPSED_KEY];
       shell.dataset[SIDEBAR_ROUTE_PENDING_KEY] = "1";
     });
     scheduleEnforce();
