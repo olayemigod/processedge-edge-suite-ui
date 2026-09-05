@@ -19,10 +19,15 @@ def test_sidebar_sections_are_collapsible_and_persistent():
 def test_sidebar_accordion_opens_active_after_navigation_but_allows_manual_collapse():
 	runtime = (APP_ROOT / "public/js/edgeui/sidebar_accordion_runtime.js").read_text(encoding="utf-8")
 	for expected in (
-		"let keep = preferred || expanded[0] || null",
+		'SIDEBAR_MANUAL_COLLAPSED_KEY = "edgeSidebarManualCollapsed"',
+		"let keep = manualCollapsed ? null : preferred || expanded[0] || null",
 		"if (routePending && active)",
 		"keep = active",
 		"SIDEBAR_ROUTE_PENDING_KEY",
+		"event.isTrusted === false",
+		"event.stopImmediatePropagation?.()",
+		"shell.dataset[SIDEBAR_MANUAL_COLLAPSED_KEY] = \"1\"",
+		"delete shell.dataset[SIDEBAR_MANUAL_COLLAPSED_KEY]",
 		"if (keep && !sectionExpanded(keep))",
 		'attributeFilter: ["class", "hidden", "aria-expanded", "aria-current"]',
 		'document.addEventListener("page-change", resetForNavigation)',
