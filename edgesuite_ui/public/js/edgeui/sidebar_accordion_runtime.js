@@ -116,6 +116,17 @@ export function installSidebarAccordionRuntime(target = globalThis) {
       const shell = toggle.closest(".edge-app-shell");
       if (!section || !shell || shell.dataset[SIDEBAR_RECONCILING_KEY] === "1") return;
 
+      // In icon-rail mode a real section-header click is an expand-navigation
+      // action first. Remember the chosen section so reconciliation reopens it
+      // after the shell expands, even if the component's normal toggle handler
+      // briefly marks that section collapsed during the same click.
+      if (event.isTrusted !== false && shell.classList.contains("edge-nav-shell--collapsed")) {
+        shell.dataset[SIDEBAR_OPEN_SECTION_KEY] = sectionIdentity(section);
+        delete shell.dataset[SIDEBAR_MANUAL_COLLAPSED_KEY];
+        scheduleEnforce();
+        return;
+      }
+
       // Product compatibility layers must not be able to undo an explicit user
       // accordion choice by calling toggle.click() from MutationObservers. The
       // shared runtime is the sole owner of section state; its own programmatic
