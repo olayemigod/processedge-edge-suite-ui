@@ -16,10 +16,10 @@ def test_sidebar_sections_are_collapsible_and_persistent():
 		assert expected in component
 
 
-def test_sidebar_accordion_keeps_active_section_open_after_navigation():
+def test_sidebar_accordion_opens_active_after_navigation_but_allows_manual_collapse():
 	runtime = (APP_ROOT / "public/js/edgeui/sidebar_accordion_runtime.js").read_text(encoding="utf-8")
 	for expected in (
-		"let keep = preferred || active || expanded[0] || null",
+		"let keep = preferred || expanded[0] || null",
 		"if (routePending && active)",
 		"keep = active",
 		"SIDEBAR_ROUTE_PENDING_KEY",
@@ -29,6 +29,10 @@ def test_sidebar_accordion_keeps_active_section_open_after_navigation():
 		'document.addEventListener(ROUTE_EVENT, resetForNavigation)',
 	):
 		assert expected in runtime
+
+	# Once navigation has settled, the active route must not be an unconditional
+	# fallback or a manual collapse would be immediately reversed by reconciliation.
+	assert "let keep = preferred || active || expanded[0] || null" not in runtime
 
 
 def test_sidebar_refinement_has_desktop_gutter_and_mobile_reset():
