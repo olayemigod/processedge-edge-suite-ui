@@ -7,7 +7,7 @@ APP = ROOT / "edgesuite_ui"
 def test_ctrl_s_saves_normal_editing_surfaces_but_leaves_code_editors_in_control():
     guard = (APP / "public/js/edgeui_ctrl_s_guard.js").read_text()
 
-    assert "textarea, input, [contenteditable='true']" in guard
+    assert "textarea, [contenteditable='true'], input" in guard
     assert "function editorOwnsSaveShortcut" in guard
     assert 'target.closest(".CodeMirror, .ace_editor, .monaco-editor")' in guard
     assert "if (isEditing && editorOwnsSaveShortcut(event.target)) return;" in guard
