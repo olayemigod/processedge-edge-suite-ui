@@ -1,0 +1,235 @@
+/* EdgeSuite Theme System V1
+   User-selectable palettes stay inside ProcessEdge brand guardrails.
+   This layer is loaded after the existing visual layers so selected preferences
+   override legacy product-local color tokens without changing component markup. */
+
+:root,
+:root[data-edge-palette="edge-blue"] {
+  --edge-color-brand-25: #f7fbff;
+  --edge-color-brand-50: #eef7ff;
+  --edge-color-brand-100: #d9edff;
+  --edge-color-brand-200: #b8dcff;
+  --edge-color-brand-500: #1677c8;
+  --edge-color-brand-600: #0f64ab;
+  --edge-color-brand-700: #0c4f87;
+  --edge-color-accent: #22a06b;
+  --edge-color-accent-soft: #e8f8f0;
+}
+
+:root[data-edge-palette="edge-indigo"] {
+  --edge-color-brand-25: #f8f8ff;
+  --edge-color-brand-50: #f0f1ff;
+  --edge-color-brand-100: #e1e4ff;
+  --edge-color-brand-200: #c8ceff;
+  --edge-color-brand-500: #5368d9;
+  --edge-color-brand-600: #4054be;
+  --edge-color-brand-700: #334399;
+  --edge-color-accent: #347fba;
+  --edge-color-accent-soft: #eaf5fb;
+}
+
+:root[data-edge-palette="edge-teal"] {
+  --edge-color-brand-25: #f5fcfc;
+  --edge-color-brand-50: #e9f8f8;
+  --edge-color-brand-100: #d3f0f0;
+  --edge-color-brand-200: #afe2e3;
+  --edge-color-brand-500: #16838c;
+  --edge-color-brand-600: #116d76;
+  --edge-color-brand-700: #0d565e;
+  --edge-color-accent: #277bb3;
+  --edge-color-accent-soft: #eaf4fb;
+}
+
+:root[data-edge-palette="edge-emerald"] {
+  --edge-color-brand-25: #f6fcf9;
+  --edge-color-brand-50: #eaf8f1;
+  --edge-color-brand-100: #d4f0e2;
+  --edge-color-brand-200: #afe1c7;
+  --edge-color-brand-500: #248b61;
+  --edge-color-brand-600: #1d744f;
+  --edge-color-brand-700: #175b3f;
+  --edge-color-accent: #2f78b7;
+  --edge-color-accent-soft: #eaf3fb;
+}
+
+:root[data-edge-palette="edge-slate"] {
+  --edge-color-brand-25: #f8fafc;
+  --edge-color-brand-50: #f1f5f9;
+  --edge-color-brand-100: #e2e8f0;
+  --edge-color-brand-200: #cbd5e1;
+  --edge-color-brand-500: #526b82;
+  --edge-color-brand-600: #40566b;
+  --edge-color-brand-700: #314354;
+  --edge-color-accent: #1677c8;
+  --edge-color-accent-soft: #eaf4fc;
+}
+
+:root[data-edge-palette] {
+  --edge-color-ink-950: #122033;
+  --edge-color-ink-800: #26374a;
+  --edge-color-ink-700: #415469;
+  --edge-color-ink-500: #6b7d90;
+  --edge-color-ink-400: #8998a8;
+  --edge-color-surface: #ffffff;
+  --edge-color-surface-muted: #f5f8fc;
+  --edge-color-surface-soft: #f9fbfd;
+  --edge-color-border: #dce5ef;
+  --edge-color-border-strong: #cbd7e5;
+  --edge-color-success: #138a58;
+  --edge-color-warning: #a85f00;
+  --edge-color-danger: #c53a3a;
+  --edge-color-info: #1677c8;
+  --edge-shadow-xs: 0 1px 2px rgb(18 32 51 / 5%);
+  --edge-shadow-sm: 0 4px 14px rgb(18 32 51 / 7%);
+  --edge-shadow-md: 0 16px 38px rgb(18 32 51 / 11%);
+  --edge-shadow-lg: 0 24px 64px rgb(18 32 51 / 16%);
+  color-scheme: light;
+}
+
+:root[data-edge-appearance="dark"] {
+  --edge-color-ink-950: #f1f6fb;
+  --edge-color-ink-800: #d8e2ec;
+  --edge-color-ink-700: #bdcbd8;
+  --edge-color-ink-500: #94a6b8;
+  --edge-color-ink-400: #7d90a4;
+  --edge-color-surface: #111b26;
+  --edge-color-surface-muted: #172431;
+  --edge-color-surface-soft: #1b2a38;
+  --edge-color-border: #2b3c4d;
+  --edge-color-border-strong: #3a4e61;
+  --edge-color-success: #54c98c;
+  --edge-color-warning: #e5a642;
+  --edge-color-danger: #ef7b7b;
+  --edge-color-info: #69b8f5;
+  --edge-shadow-xs: 0 1px 2px rgb(0 0 0 / 24%);
+  --edge-shadow-sm: 0 5px 18px rgb(0 0 0 / 28%);
+  --edge-shadow-md: 0 18px 42px rgb(0 0 0 / 34%);
+  --edge-shadow-lg: 0 26px 72px rgb(0 0 0 / 42%);
+  color-scheme: dark;
+}
+
+/* Existing releases contain product-local brand variables. Once a user has an
+   explicit palette, inherit the selected ProcessEdge palette instead. */
+:root[data-edge-palette] .edge-app-shell[data-edge-product] {
+  --edge-color-brand-25: inherit;
+  --edge-color-brand-50: inherit;
+  --edge-color-brand-100: inherit;
+  --edge-color-brand-200: inherit;
+  --edge-color-brand-500: inherit;
+  --edge-color-brand-600: inherit;
+  --edge-color-brand-700: inherit;
+  --edge-color-accent: inherit;
+  --edge-color-accent-soft: inherit;
+}
+
+body.edge-suite-shell-active {
+  background: var(--edge-color-surface-muted);
+  color: var(--edge-color-ink-950);
+}
+
+:root[data-edge-appearance="dark"] .edge-app-shell {
+  background:
+    radial-gradient(circle at 100% 0, color-mix(in srgb, var(--edge-color-brand-700) 22%, transparent) 0, transparent 28rem),
+    linear-gradient(180deg, #0d1620 0, var(--edge-color-surface-muted) 18rem);
+}
+
+:root[data-edge-appearance="dark"] .edge-app-shell__topbar,
+:root[data-edge-appearance="dark"] .edge-topbar-menu,
+:root[data-edge-appearance="dark"] .edge-product-menu {
+  box-shadow: var(--edge-shadow-md);
+}
+
+.edge-theme-menu {
+  border-top: 1px solid var(--edge-color-border);
+  display: grid;
+  gap: .75rem;
+  margin-top: .25rem;
+  padding: .8rem .75rem;
+}
+
+.edge-theme-menu__section {
+  display: grid;
+  gap: .45rem;
+}
+
+.edge-theme-menu__label {
+  color: var(--edge-color-ink-500);
+  font-size: .67rem;
+  font-weight: 780;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.edge-theme-menu__choices {
+  display: grid;
+  gap: .3rem;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.edge-theme-menu__choice {
+  align-items: center;
+  background: var(--edge-color-surface-soft);
+  border: 1px solid var(--edge-color-border);
+  border-radius: .55rem;
+  color: var(--edge-color-ink-700);
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  font-size: .68rem;
+  font-weight: 650;
+  gap: .4rem;
+  justify-content: center;
+  min-height: 2rem;
+  padding: .35rem .45rem;
+}
+
+.edge-theme-menu__choice:hover {
+  background: var(--edge-color-surface-muted);
+  border-color: var(--edge-color-border-strong);
+  color: var(--edge-color-ink-950);
+}
+
+.edge-theme-menu__choice[aria-pressed="true"] {
+  background: var(--edge-color-brand-50);
+  border-color: var(--edge-color-brand-200);
+  box-shadow: inset 0 0 0 1px var(--edge-color-brand-100);
+  color: var(--edge-color-brand-700);
+}
+
+.edge-theme-menu__palette-list {
+  display: grid;
+  gap: .3rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.edge-theme-menu__palette-choice {
+  justify-content: flex-start;
+}
+
+.edge-theme-menu__swatch {
+  background: var(--edge-swatch, var(--edge-color-brand-600));
+  border: 1px solid color-mix(in srgb, var(--edge-swatch, var(--edge-color-brand-600)) 72%, #000);
+  border-radius: 999px;
+  display: inline-block;
+  height: .75rem;
+  width: .75rem;
+}
+
+.edge-theme-menu__swatch[data-palette="edge-blue"] { --edge-swatch: #0f64ab; }
+.edge-theme-menu__swatch[data-palette="edge-indigo"] { --edge-swatch: #4054be; }
+.edge-theme-menu__swatch[data-palette="edge-teal"] { --edge-swatch: #116d76; }
+.edge-theme-menu__swatch[data-palette="edge-emerald"] { --edge-swatch: #1d744f; }
+.edge-theme-menu__swatch[data-palette="edge-slate"] { --edge-swatch: #40566b; }
+
+.edge-theme-menu__status {
+  color: var(--edge-color-ink-500);
+  font-size: .65rem;
+  line-height: 1.35;
+}
+
+@media (max-width: 32rem) {
+  .edge-theme-menu__choices,
+  .edge-theme-menu__palette-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

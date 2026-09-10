@@ -1,5 +1,7 @@
 from pathlib import Path
 
+from edgesuite_ui import __version__
+
 ROOT = Path(__file__).resolve().parents[2]
 JS = ROOT / "edgesuite_ui" / "public" / "js" / "edgeui" / "document_components.js"
 CSS = ROOT / "edgesuite_ui" / "public" / "css" / "edgeui_documents.css"
@@ -77,8 +79,8 @@ def test_document_components_are_registered_and_versioned():
 	assert "createCompatibleRuntimeComponents" in bundle
 	assert "documentComponents," in bundle
 	assert 'export * from "./edgeui/document_components"' in bundle
-	assert 'EDGE_SUITE_UI_VERSION = "0.6.3"' in bundle
-	assert '__version__ = "0.6.3"' in version
+	assert f'EDGE_SUITE_UI_VERSION = "{__version__}"' in bundle
+	assert f'__version__ = "{__version__}"' in version
 	assert 'export * from "./edgeui.bundle"' in standalone_bundle
 	assert 'export { default } from "./edgeui.bundle"' in standalone_bundle
 	assert "/assets/edgesuite_ui/css/edgeui_documents.css" in hooks

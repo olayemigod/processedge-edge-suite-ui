@@ -8,6 +8,7 @@ def test_runtime_installs_deterministic_waffle_reliability():
 	bundle = (APP / "public/js/edgeui.bundle.js").read_text()
 	mount = (APP / "public/js/edgeui/product_menu_mount.js").read_text()
 	reliability = (APP / "public/js/edgeui/product_menu_reliability.js").read_text()
+	flyout = (APP / "public/js/edgeui_product_switcher_flyout.js").read_text()
 	hooks = (APP / "hooks.py").read_text()
 	styles = (APP / "public/css/edgeui_product_menu_reliability.css").read_text()
 
@@ -25,22 +26,42 @@ def test_runtime_installs_deterministic_waffle_reliability():
 		"function stabilizeSlot",
 		"function stabilizeTrigger",
 		"function bindDirectTrigger",
+		"function removeNativeMenuArtifacts",
+		"function shellProductNavigationTarget",
 		'slot.style.display = "inline-flex"',
-		'slot.style.minWidth = "2.5rem"',
-		'slot.style.minHeight = "2.5rem"',
-		'slot.style.order = "-20"',
+		'slot.style.minWidth = "2rem"',
+		'slot.style.minHeight = "2rem"',
 		'slot.style.pointerEvents = "auto"',
-		"if (edgeShellPresent(document)) return null",
-		"actions.insertBefore(slot, actions.firstChild || null)",
+		'if (!edgeShellPresent(document)) return null',
+		"target.appendChild(slot)",
 		'trigger.style.pointerEvents = "auto"',
 		'trigger.removeEventListener("click", existing, true)',
 		'trigger.addEventListener("click", handler, true)',
 		"event.stopImmediatePropagation()",
 		"directToggle = edgeUI.toggleProductMenu",
 		'new target.CustomEvent("edgesuite:product-menu-opened"',
-		'target.addEventListener?.("orientationchange", scheduleMount)',
+		'document.addEventListener("visibilitychange", scheduleMount)',
+		'"hashchange", "popstate", "pageshow"',
+		'attributeFilter: ["class", "style", "hidden", "aria-hidden"]',
 	):
 		assert expected in mount
+
+	for visibility_contract in (
+		'current.hidden',
+		'current.getAttribute?.("aria-hidden") === "true"',
+		'style?.contentVisibility === "hidden"',
+		'.some(\n    visibleElement,\n  )',
+		'const target = nodes.find(visibleElement);',
+	):
+		assert visibility_contract in mount
+
+	for forbidden in (
+		"NATIVE_NAVBAR_SELECTORS",
+		"visibleNativeTarget",
+		"ensureFallbackSlot",
+		'|| nodes.find((node) => node?.isConnected)',
+	):
+		assert forbidden not in mount
 
 	assert 'document.addEventListener(\n    "click"' not in mount
 
@@ -67,14 +88,25 @@ def test_runtime_installs_deterministic_waffle_reliability():
 	):
 		assert expected in reliability
 
+	for expected in (
+		'const ASSET_URL = "/assets/edgesuite_ui/images/product-switcher.png?v=20260901-1"',
+		"async function activateProduct",
+		'global.EdgeSuiteUI.switchProduct(key, { navigate: true })',
+		"function showSwitchError",
+		'global.frappe.msgprint({',
+		'global.Event("change", { bubbles: true })',
+		"function installLauncherIconFallback",
+		'edge-product-switcher__launcher-fallback',
+	):
+		assert expected in flyout
+
 	assert "runtime.toggleCurrentPageFavorite?.()" not in reliability
 	assert 'button.textContent = pinned ? "★ Current pinned" : "☆ Add current"' not in reliability
 	assert '"/assets/edgesuite_ui/css/edgeui_product_menu_reliability.css"' in hooks
-	assert ".edge-topbar-actions > .edge-product-menu-slot" in styles
-	assert "order: -20 !important" in styles
+	assert ".edge-topbar__brand > .edge-product-menu-slot" in styles
 	assert "pointer-events: auto !important" in styles
-	assert ".edge-topbar-actions > .edge-topbar-action-wrap" in styles
-	assert ".edge-product-menu-slot--fallback" in styles
+	assert ".edge-product-menu-slot--fallback" not in styles
 	assert ".edge-product-menu__favorite-control" in styles
 	assert ".edge-product-menu__favorite-icon .edge-svg-icon" in styles
+	assert "grid-template-columns: 0.85rem minmax(3.75rem, auto) 0.7rem" in styles
 	assert '@media (max-width: 48rem)' in styles

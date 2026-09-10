@@ -20,10 +20,14 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
       - uses: actions/setup-python@v6
         with:
           python-version: "3.14"
           cache: pip
+      - name: Enforce release/version and development-lineage governance
+        run: python scripts/check_release_governance.py
       - name: Install validation dependencies
         run: python -m pip install --upgrade pytest ruff
       - name: Compile Python
@@ -43,23 +47,45 @@ jobs:
       - name: Enforce Ruff result
         if: steps.ruff.outcome == 'failure'
         run: exit 1
-      - name: Validate package, runtime, product context, interactions, shell, forms, documents, context, and boundaries
+      - name: Validate package, runtime, governance, product context, interactions, shell, forms, documents, reporting, themes, fuzzy search, access, and boundaries
         id: contracts
         continue-on-error: true
         run: |
           set -o pipefail
           python -m pytest -q \
             edgesuite_ui/tests/test_edgeui_asset_contract.py \
+            edgesuite_ui/tests/test_release_governance_contract.py \
             edgesuite_ui/tests/test_product_menu_contract.py \
             edgesuite_ui/tests/test_product_context_contract.py \
             edgesuite_ui/tests/test_interaction_runtime_contract.py \
             edgesuite_ui/tests/test_shell_enhancement_contract.py \
+            edgesuite_ui/tests/test_sidebar_interaction_contract.py \
             edgesuite_ui/tests/test_dashboard_alignment_and_waffle_contract.py \
             edgesuite_ui/tests/test_form_link_contract.py \
+            edgesuite_ui/tests/test_frappe_control_compat_contract.py \
+            edgesuite_ui/tests/test_guided_form_usability_contract.py \
+            edgesuite_ui/tests/test_modal_busy_indicator_contract.py \
             edgesuite_ui/tests/test_063_form_primitives_contract.py \
             edgesuite_ui/tests/test_document_components_contract.py \
             edgesuite_ui/tests/test_branch_context_contract.py \
             edgesuite_ui/tests/test_empty_state_icon_contract.py \
+            edgesuite_ui/tests/test_search_ranking.py \
+            edgesuite_ui/tests/test_report_runtime_contract.py \
+            edgesuite_ui/tests/test_report_export_contract.py \
+            edgesuite_ui/tests/test_report_print_contract.py \
+            edgesuite_ui/tests/test_reporting_presentation_contract.py \
+            edgesuite_ui/tests/test_report_comparison_contract.py \
+            edgesuite_ui/tests/test_report_exceptions_contract.py \
+            edgesuite_ui/tests/test_report_grouping_contract.py \
+            edgesuite_ui/tests/test_report_schedule_contract.py \
+            edgesuite_ui/tests/test_report_smart_date_contract.py \
+            edgesuite_ui/tests/test_report_sorting_contract.py \
+            edgesuite_ui/tests/test_shell_permission_contract.py \
+            edgesuite_ui/tests/test_desk_access_contract.py \
+            edgesuite_ui/tests/test_dark_contrast_contract.py \
+            edgesuite_ui/tests/test_theme_runtime_contract.py \
+            edgesuite_ui/tests/test_theme_visual_compat_contract.py \
+            edgesuite_ui/tests/test_theme_controls_contract.py \
             2>&1 | tee contract-tests.log
       - name: Upload contract diagnostics
         if: steps.contracts.outcome == 'failure'
@@ -85,9 +111,28 @@ jobs:
       - name: Check JavaScript and compile bundle in memory
         run: npm test
 
+  browser-theme:
+    name: Browser smoke
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+          cache: npm
+      - name: Install project dependencies
+        run: npm ci
+      - name: Install Playwright test runner
+        run: npm install --no-save --package-lock=false @playwright/test@1.55.0
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Run EdgeSuite theme, navigation, access, and Frappe dialog browser QA
+        run: npx playwright test edgesuite_ui/tests/browser/theme_browser.spec.mjs edgesuite_ui/tests/browser/navigation_route_browser.spec.mjs edgesuite_ui/tests/browser/desk_access_browser.spec.mjs edgesuite_ui/tests/browser/frappe_dialog_theme_browser.spec.mjs --reporter=line --workers=1
+
   frappe-v16:
     name: Frappe v16 integration
-    if: github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'workflow_dispatch' || github.head_ref == 'qa/edgesuite-ui-full-implementation-2026-08-29'
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     services:

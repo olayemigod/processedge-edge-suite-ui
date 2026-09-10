@@ -53,6 +53,14 @@ function focusedEditContainer(target) {
   );
 }
 
+function explicitPageSaveButton(document, target) {
+  if (!document?.querySelectorAll) return null;
+  const candidates = [...document.querySelectorAll("[data-edgesuite-save]:not([disabled])")].filter(
+    (control) => visible(control, target),
+  );
+  return candidates.length === 1 ? candidates[0] : null;
+}
+
 function workflowSaveButton(target = globalThis) {
   const document = target?.document;
   if (!document) return null;
@@ -68,6 +76,11 @@ function workflowSaveButton(target = globalThis) {
     .find((modal) => visible(modal, target));
   const modalSave = uniqueSaveButton(activeModal, target);
   if (modalSave) return modalSave;
+
+  // A product page may deliberately expose exactly one safe save action even
+  // when focus is inside a different section (for example a rich-text editor).
+  const explicitPageSave = explicitPageSaveButton(document, target);
+  if (explicitPageSave) return explicitPageSave;
 
   const workflowButtons = [
     ...document.querySelectorAll(

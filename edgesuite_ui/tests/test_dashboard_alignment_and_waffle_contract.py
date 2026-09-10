@@ -6,7 +6,9 @@ CSS_ROOT = ROOT / "edgesuite_ui" / "public" / "css"
 HOOKS = ROOT / "edgesuite_ui" / "hooks.py"
 BUNDLE = JS_ROOT / "edgeui.bundle.js"
 MOUNT = JS_ROOT / "edgeui" / "product_menu_mount.js"
+HOST_BRIDGE = JS_ROOT / "edgeui_product_menu_host_bridge.js"
 ALIGNMENT = CSS_ROOT / "edgeui_dashboard_alignment.css"
+RELIABILITY = CSS_ROOT / "edgeui_product_menu_reliability.css"
 
 
 def read(path: Path) -> str:
@@ -40,21 +42,64 @@ def test_kpi_typography_scales_for_long_financial_values():
 		assert contract in content
 
 
-def test_product_menu_mounts_in_product_topbar_or_native_desk_navbar():
+def test_product_navigation_is_shell_only_and_never_mounts_on_native_desk_actions():
 	content = read(MOUNT)
+	bridge = read(HOST_BRIDGE)
 
 	for contract in (
-		"visibleShellTarget",
-		"visibleNativeTarget",
-		".edge-app-shell[data-edge-product] .edge-topbar-actions",
-		"NATIVE_NAVBAR_SELECTORS",
-		"moveHost(document, directToggle)",
-		"bindDirectTrigger(document, directToggle)",
+		"shellProductNavigationTarget",
+		"ensureShellSlot(document)",
+		".edge-app-shell[data-edge-product] .edge-topbar__brand",
+		"removeNativeMenuArtifacts",
+		"if (!edgeShellPresent(document)) return null",
+		"document.getElementById(HOST_ID)?.remove()",
+		"document.getElementById(PANEL_ID)?.remove()",
 		"desktop_screen",
 		"page-change",
 		"MutationObserver",
+		'current.getAttribute?.("aria-hidden") === "true"',
+		'style?.contentVisibility === "hidden"',
+		'attributeFilter: ["class", "style", "hidden", "aria-hidden"]',
 	):
 		assert contract in content
+
+	for forbidden in (
+		"NATIVE_NAVBAR_SELECTORS",
+		"visibleNativeTarget",
+		"ensureFallbackSlot",
+		'|| nodes.find((node) => node?.isConnected)',
+	):
+		assert forbidden not in content
+
+	for contract in (
+		"function visibleElement(element)",
+		'current.getAttribute?.("aria-hidden") === "true"',
+		'style?.contentVisibility === "hidden"',
+		'Array.from(doc?.querySelectorAll?.(".edge-app-shell[data-edge-product]") || []).find(',
+		'attributeFilter: ["class", "style", "hidden", "aria-hidden"]',
+	):
+		assert contract in bridge
+
+	assert 'state.mode = "native-desk-hidden"' in bridge
+	assert 'state.mode = "edge-shell"' in bridge
+	assert 'resolveEmbeddedTarget' not in bridge
+	assert 'edge-product-menu-navbar-bridge--floating' not in bridge
+
+
+def test_product_navigation_uses_compact_brand_side_controls():
+	content = read(RELIABILITY)
+
+	for contract in (
+		".edge-topbar__brand > .edge-product-menu-slot",
+		"grid-template-columns: 0.85rem minmax(3.75rem, auto) 0.7rem",
+		"min-height: 1.9rem",
+		"max-width: 7.5rem",
+		"height: 1.9rem",
+		"width: 1.9rem",
+	):
+		assert contract in content
+
+	assert ".edge-product-menu-slot--fallback" not in content
 
 
 def test_alignment_and_waffle_enhancements_are_loaded_globally():
