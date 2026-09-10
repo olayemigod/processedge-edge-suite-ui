@@ -19,7 +19,7 @@
     if (!target?.closest) return false;
     return Boolean(
       target.closest(
-        "textarea, input, [contenteditable='true'], .ql-editor, .CodeMirror, .ace_editor, .monaco-editor",
+        "textarea, [contenteditable='true'], input, .ql-editor, .CodeMirror, .ace_editor, .monaco-editor",
       ),
     );
   }
