@@ -19,9 +19,14 @@
     if (!target?.closest) return false;
     return Boolean(
       target.closest(
-        "textarea, [contenteditable='true'], .ql-editor, .CodeMirror, .ace_editor, .monaco-editor",
+        "textarea, input, [contenteditable='true'], .ql-editor, .CodeMirror, .ace_editor, .monaco-editor",
       ),
     );
+  }
+
+  function editorOwnsSaveShortcut(target) {
+    if (!target?.closest) return false;
+    return Boolean(target.closest(".CodeMirror, .ace_editor, .monaco-editor"));
   }
 
   function visible(element) {
@@ -68,27 +73,46 @@
     return true;
   }
 
+  async function saveViaRequestEvent() {
+    if (typeof globalThis.dispatchEvent !== "function" || typeof globalThis.CustomEvent !== "function") {
+      return false;
+    }
+    const detail = { handled: false, promise: null, source: "keyboard", command: "save" };
+    globalThis.dispatchEvent(new globalThis.CustomEvent("edgesuite:save-request", { detail }));
+    if (!detail.handled) return false;
+    if (detail.promise && typeof detail.promise.then === "function") await detail.promise;
+    return true;
+  }
+
   async function saveCurrentContext() {
     const form = activeFrappeForm();
     if (form) return saveActiveFrappeForm(form);
 
+    if (await saveViaRequestEvent()) return true;
+
     const runtime = globalThis.EdgeSuiteUI || globalThis.EdgeUI;
-    if (typeof runtime?.saveCurrentContext !== "function") {
-      notify("No save action is available on this page.");
-      return false;
+    if (typeof runtime?.saveCurrentContext === "function") {
+      return runtime.saveCurrentContext();
     }
-    return runtime.saveCurrentContext();
+
+    notify("No save action is available on this page.");
+    return false;
   }
 
   function onKeydown(event) {
     if (!usesPrimaryModifier(event) || event.altKey) return;
     if (String(event.key || "").toLowerCase() !== "s") return;
 
+    // Embedded code editors may implement their own save command. Normal form
+    // inputs, textareas and rich-text/contenteditable surfaces still use the
+    // page/document save contract.
+    const isEditing = editingSurface(event.target);
+    if (isEditing && editorOwnsSaveShortcut(event.target)) return;
+
     event.preventDefault();
     event.stopImmediatePropagation?.();
     event.stopPropagation?.();
 
-    if (editingSurface(event.target)) return;
     if (saveInFlight) return;
 
     saveInFlight = Promise.resolve()
