@@ -114,3 +114,22 @@ def test_shared_financial_dashboard_contains_no_product_data_or_accounting_queri
 def test_restricted_metrics_do_not_render_payload_values():
     source = SOURCE.read_text()
     assert 'if (state !== "available" && state !== "partial") return "—";' in source
+
+
+def test_financial_dashboard_preserves_restricted_and_unavailable_section_states():
+    source = SOURCE.read_text()
+    for expected in (
+        '"Composition restricted"',
+        '"Composition unavailable"',
+        "composition.reason",
+        'if (!["restricted", "unavailable", "error", "partial"].includes(state)) return null;',
+        "data.reason || data.empty_description",
+        'state === "restricted" ?',
+    ):
+        assert expected in source
+
+
+def test_empty_optional_sections_can_still_remain_hidden():
+    source = SOURCE.read_text()
+    assert 'data.availability || (rows.length ? "available" : "empty")' in source
+    assert 'if (!["restricted", "unavailable", "error", "partial"].includes(state)) return null;' in source
