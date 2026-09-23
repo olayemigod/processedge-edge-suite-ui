@@ -10,3 +10,8 @@ This component is the shared presentation contract for product financial dashboa
 - Action descriptors are presentation-only and must use an allowlisted kind (`page`, `report`, `route`). Product adapters remain responsible for permission-aware navigation.
 
 The component deliberately contains no ERPNext DocType knowledge and no product-specific finance calculations.
+
+
+## Delivery lineage
+
+Authoritative lineage: stacked on EdgeSuite UI PR #24 exact head `133bdd60f87eea9d834e9697c15847ebed393048`. The shared financial component is additive and product-neutral; consumer apps remain authoritative for permissions and financial definitions.
