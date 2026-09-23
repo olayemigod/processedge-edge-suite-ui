@@ -9,6 +9,7 @@ import { edgeExportAdapter } from "./edgeui/export_runtime";
 import { applyFrappeCompatibility } from "./edgeui/frappe_compat";
 import { formComponents } from "./edgeui/form_components";
 import { formPrimitiveComponents } from "./edgeui/form_primitives";
+import { financialDashboardComponents } from "./edgeui/financial_dashboard";
 import { installEdgeSuiteInteractionRuntime } from "./edgeui/interaction_runtime";
 import { modalComponents } from "./edgeui/modal_components";
 import { applyModalCrossRuntimeCompatibility } from "./edgeui/modal_cross_runtime";
@@ -48,6 +49,7 @@ const components = Object.freeze(
     baseComponents: {
       ...baseComponents,
       ...exportComponents,
+      ...financialDashboardComponents,
       ...reportComparisonComponents,
       ...reportExceptionComponents,
       ...reportGroupingComponents,
@@ -103,6 +105,7 @@ export * from "./edgeui/export_components";
 export * from "./edgeui/export_runtime";
 export * from "./edgeui/form_components";
 export * from "./edgeui/form_primitives";
+export * from "./edgeui/financial_dashboard";
 export * from "./edgeui/frappe_compat";
 export * from "./edgeui/icons";
 export * from "./edgeui/interaction_runtime";
