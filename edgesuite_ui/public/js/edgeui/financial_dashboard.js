@@ -197,10 +197,20 @@ export const EdgeFinancialCompositionPanel = defineComponent({
       const composition = object(props.composition);
       const rows = compositionRows(composition);
       if (!rows.length) {
-        return h(EdgeEmptyState, {
-          title: composition.empty_title || "No composition data",
-          description: composition.empty_description || "There is no composition data for this scope.",
-        });
+        const state = availability(composition.availability || "empty");
+        const title = composition.empty_title ||
+          (state === "restricted"
+            ? "Composition restricted"
+            : ["unavailable", "error"].includes(state)
+              ? "Composition unavailable"
+              : "No composition data");
+        const description = composition.reason || composition.empty_description ||
+          (state === "restricted"
+            ? "You do not have access to this financial composition."
+            : ["unavailable", "error"].includes(state)
+              ? "This financial composition is unavailable for the current scope."
+              : "There is no composition data for this scope.");
+        return h(EdgeEmptyState, { title, description });
       }
       const signed = rows.some((row) => Number(row.value) < 0);
       const chartKind = signed || composition.chart_kind === "bar" ? "bar" : "donut";
@@ -341,17 +351,33 @@ export const EdgeFinancialDashboard = defineComponent({
       if (validAction(action)) this.$emit("action", action);
     },
     renderTableSection(section, fallbackTitle) {
-      const rows = sectionRows(section);
-      if (!rows.length) return null;
+      const data = object(section);
+      const rows = sectionRows(data);
+      const state = availability(data.availability || (rows.length ? "available" : "empty"));
+      if (!rows.length) {
+        if (!["restricted", "unavailable", "error", "partial"].includes(state)) return null;
+        const title = panelTitle(data, fallbackTitle);
+        const stateTitle = state === "restricted" ? `${title} restricted` : `${title} unavailable`;
+        return h(EdgeDashboardSection, {
+          title,
+          description: panelDescription(data),
+          span: data.span || "auto",
+        }, {
+          default: () => h(EdgeEmptyState, {
+            title: data.empty_title || stateTitle,
+            description: data.reason || data.empty_description || "This section is unavailable for the current authorised scope.",
+          }),
+        });
+      }
       return h(EdgeDashboardSection, {
-        title: panelTitle(section, fallbackTitle),
-        description: panelDescription(section),
-        span: object(section).span || "auto",
+        title: panelTitle(data, fallbackTitle),
+        description: panelDescription(data),
+        span: data.span || "auto",
       }, {
         default: () => h(EdgeReportTable, {
-          columns: sectionColumns(section),
+          columns: sectionColumns(data),
           rows,
-          rowKey: object(section).row_key || "name",
+          rowKey: data.row_key || "name",
           compact: true,
           sortingEnabled: false,
           onCellClick: ({ row }) => this.emitAction(row?.action),
