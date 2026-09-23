@@ -15,3 +15,6 @@ The component deliberately contains no ERPNext DocType knowledge and no product-
 ## Delivery lineage
 
 Authoritative lineage: stacked on EdgeSuite UI PR #24 exact head `133bdd60f87eea9d834e9697c15847ebed393048`. The shared financial component is additive and product-neutral; consumer apps remain authoritative for permissions and financial definitions.
+
+
+Validation note: repository CI is configured for pull requests targeting `main`; the exact stacked head is temporarily validated against `main` before the PR base is returned to PR #24's authoritative branch.
