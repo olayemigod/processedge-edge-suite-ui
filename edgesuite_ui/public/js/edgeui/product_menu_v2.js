@@ -48,6 +48,7 @@ function normalizeItem(item = {}) {
     link_type: String(item.link_type || item.linkType || "Page").trim() || "Page",
     link_to: String(item.link_to || item.linkTo || "").trim(),
     route: String(item.route || "").trim(),
+    intent: String(item.intent || item.action || "").trim().toLowerCase(),
     visible: item.visible !== false && item.hidden !== 1,
     roles: Array.isArray(item.roles) ? item.roles.filter(Boolean) : [],
   };
@@ -145,6 +146,16 @@ function visibleNavbar(document) {
 }
 
 function routeTo(target, config, item) {
+  if (item?.link_type === "DocType" && item?.intent === "create") {
+    const openCreate = target.EdgeSuiteUI?.openCreateSurface;
+    if (typeof openCreate === "function") {
+      openCreate(item.link_to);
+    } else {
+      target.frappe?.new_doc?.(item.link_to);
+    }
+    return;
+  }
+
   if (config?.navigate) {
     config.navigate(item);
     return;
@@ -313,6 +324,7 @@ export function createProductMenuController({ target = globalThis, productContex
                     data-link-type="${escapeHtml(item.link_type)}"
                     data-link-to="${escapeHtml(item.link_to)}"
                     data-route="${escapeHtml(item.route)}"
+                    data-intent="${escapeHtml(item.intent)}"
                   >
                     <span class="edge-product-menu__item-icon" aria-hidden="true">${edgeIconMarkup(item.icon, { target })}</span>
                     <span class="edge-product-menu__item-copy">
@@ -489,6 +501,7 @@ export function createProductMenuController({ target = globalThis, productContex
         link_type: itemNode.dataset.linkType || "Page",
         link_to: itemNode.dataset.linkTo || "",
         route: itemNode.dataset.route || "",
+        intent: itemNode.dataset.intent || "",
       });
       close();
     });
