@@ -33,7 +33,9 @@ def test_product_menu_supports_create_intent_without_bypassing_product_navigatio
 
     assert 'intent: String(item.intent || item.action || "").trim().toLowerCase()' in source
     assert 'item?.link_type === "DocType" && item?.intent === "create"' in source
-    assert "target.EdgeSuiteUI?.openCreateSurface" in source
+    assert 'import { openCreateSurface } from "./create_navigation"' in source
+    assert "openCreateSurface(item.link_to, { target })" in source
+    assert "target.frappe?.new_doc?.(item.link_to)" not in source
     assert 'data-intent="${escapeHtml(item.intent)}"' in source
 
     navigator = source.index("if (config?.navigate)")
