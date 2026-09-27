@@ -67,7 +67,7 @@ export function openCreateSurface(
     throw new Error("Frappe native document creation is unavailable.");
   }
 
-  if (restrictedToEdgeSuite(target) && !allowRestricted) {
+  if (restrictedToEdgeSuite(target) && allowRestricted !== true) {
     showRestrictedMessage(target);
     return Promise.resolve(false);
   }
@@ -98,7 +98,7 @@ export function openCreateSurface(
 export function openExistingDocument(
   doctype,
   name,
-  { target = globalThis } = {},
+  { allowRestricted = false, target = globalThis } = {},
 ) {
   const normalizedDoctype = normalizeDoctype(doctype);
   const normalizedName = normalizeName(name);
@@ -108,6 +108,11 @@ export function openExistingDocument(
     throw new Error("Frappe document routing is unavailable.");
   }
 
-  // Existing documents always use the persistent Form surface.
+  if (restrictedToEdgeSuite(target) && allowRestricted !== true) {
+    showRestrictedMessage(target);
+    return false;
+  }
+
+  // Existing documents always use the persistent native Form surface.
   return setRoute("Form", normalizedDoctype, normalizedName);
 }
