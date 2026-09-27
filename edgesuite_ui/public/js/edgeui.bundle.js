@@ -23,7 +23,7 @@ import { installSidebarAccordionRuntime } from "./edgeui/sidebar_accordion_runti
 import { installSidebarFocusLifecycle } from "./edgeui/sidebar_focus";
 import { installWorkflowSaveBridge } from "./edgeui/workflow_save_bridge";
 
-export const EDGE_SUITE_UI_VERSION = "0.6.3";
+export const EDGE_SUITE_UI_VERSION = "0.6.4";
 
 applyFrappeCompatibility(professionalComponents);
 applyModalCrossRuntimeCompatibility(modalComponents);
@@ -64,6 +64,7 @@ if (typeof globalThis !== "undefined") {
 export * from "./edgeui/components";
 export * from "./edgeui/context_components";
 export * from "./edgeui/context_identity";
+export * from "./edgeui/create_navigation";
 export * from "./edgeui/document_components";
 export { EdgeEmptyState, emptyStateComponents } from "./edgeui/empty_state_components";
 export * from "./edgeui/form_components";
