@@ -1,4 +1,5 @@
 import { edgeIconMarkup, productInitials } from "./icons";
+import { openCreateSurface } from "./create_navigation";
 import { normalizeProductKey } from "./product_context";
 
 const TRIGGER_ID = "edge-product-menu-trigger";
@@ -155,12 +156,7 @@ function routeTo(target, config, item) {
   }
 
   if (item?.link_type === "DocType" && item?.intent === "create") {
-    const openCreate = target.EdgeSuiteUI?.openCreateSurface;
-    if (typeof openCreate === "function") {
-      openCreate(item.link_to);
-    } else {
-      target.frappe?.new_doc?.(item.link_to);
-    }
+    openCreateSurface(item.link_to, { target });
     return;
   }
 
