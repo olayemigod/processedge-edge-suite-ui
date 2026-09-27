@@ -72,6 +72,6 @@ def test_063_version_is_consistent():
 	package = read(PACKAGE)
 	init = read(INIT)
 
-	assert 'EDGE_SUITE_UI_VERSION = "0.6.3"' in bundle
-	assert '"version": "0.6.3"' in package
-	assert '__version__ = "0.6.3"' in init
+	assert 'EDGE_SUITE_UI_VERSION = "0.6.4"' in bundle
+	assert '"version": "0.6.4"' in package
+	assert '__version__ = "0.6.4"' in init
