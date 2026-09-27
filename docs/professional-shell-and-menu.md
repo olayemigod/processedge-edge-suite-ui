@@ -127,6 +127,37 @@ Supported item properties:
 
 The menu automatically supports search, active route highlighting, role visibility, outside-click dismissal, Escape dismissal, navbar remounting, and Desk route changes.
 
+## Native create navigation
+
+Generic ERPNext/Frappe document creation must use the shared EdgeSuite creation contract:
+
+```javascript
+window.EdgeSuiteUI.openCreateSurface("Customer");
+```
+
+The runtime delegates directly to `frappe.new_doc()`. Frappe therefore remains responsible for choosing the correct creation surface:
+
+- Quick Entry capable DocTypes open native Frappe Quick Entry first.
+- Quick Entry retains Frappe's built-in **Edit Full Form** action.
+- DocTypes without Quick Entry automatically open the full persistent Form.
+- Create permission is checked before navigation when the Frappe permission helper is available.
+- Existing documents use `openExistingDocument(doctype, name)` and always open the persistent Form.
+
+Do not maintain a separate EdgeSuite list of Quick Entry DocTypes and do not recreate Frappe Quick Entry internals.
+
+Product-menu items can explicitly request generic document creation with a create intent:
+
+```javascript
+{
+  label: "New Customer",
+  link_type: "DocType",
+  link_to: "Customer",
+  intent: "create",
+}
+```
+
+Product-owned guided workflows remain separate. A guided Sale, Purchase, Stock Transfer, Expense, Payment, or other purpose-built workflow should keep its product-specific quick/persistent behavior rather than being converted into generic ERPNext document creation.
+
 ## SVG icon contract
 
 Use semantic icon names rather than emoji or initials.
