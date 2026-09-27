@@ -1,4 +1,5 @@
 import {
+  Teleport,
   defineComponent,
   h,
   nextTick,
@@ -273,6 +274,7 @@ export const EdgeLinkField = defineComponent({
     createLabel: { type: String, default: "Create new" },
     noResultsLabel: { type: String, default: "No matching record" },
     loadingLabel: { type: String, default: "Searching…" },
+    portalMenu: { type: Boolean, default: true },
     id: { type: String, default: "" },
     name: { type: String, default: "" },
   },
@@ -280,6 +282,7 @@ export const EdgeLinkField = defineComponent({
   setup(props, { attrs, emit, slots }) {
     const root = ref(null);
     const input = ref(null);
+    const menu = ref(null);
     const query = ref(props.selectedLabel || cleanText(props.modelValue));
     const results = ref([]);
     const open = ref(false);
@@ -287,8 +290,10 @@ export const EdgeLinkField = defineComponent({
     const creating = ref(false);
     const activeIndex = ref(-1);
     const focused = ref(false);
+    const menuStyle = ref({});
     let timer = null;
     let requestToken = 0;
+    let positionListenersActive = false;
     const fieldId = props.id || `edge-link-${Math.random().toString(36).slice(2, 10)}`;
 
     function currentStaticOptions(term = query.value) {
@@ -297,9 +302,47 @@ export const EdgeLinkField = defineComponent({
     function syncDisplayValue() {
       if (!focused.value) query.value = props.selectedLabel || cleanText(props.modelValue);
     }
+    function updateMenuPosition() {
+      if (!props.portalMenu || !open.value || !input.value) return;
+      const rect = input.value.getBoundingClientRect();
+      const viewportWidth = document.documentElement?.clientWidth || window.innerWidth || rect.width;
+      const gap = 4;
+      const horizontalMargin = 8;
+      const width = Math.min(rect.width, Math.max(0, viewportWidth - horizontalMargin * 2));
+      const left = Math.min(
+        Math.max(horizontalMargin, rect.left),
+        Math.max(horizontalMargin, viewportWidth - width - horizontalMargin),
+      );
+      menuStyle.value = {
+        position: "fixed",
+        left: `${left}px`,
+        top: `${rect.bottom + gap}px`,
+        width: `${width}px`,
+        minWidth: `${width}px`,
+        maxWidth: `${width}px`,
+        zIndex: 10060,
+      };
+    }
+    function startPositionListeners() {
+      if (positionListenersActive || !props.portalMenu) return;
+      positionListenersActive = true;
+      window.addEventListener("resize", updateMenuPosition);
+      window.addEventListener("scroll", updateMenuPosition, true);
+    }
+    function stopPositionListeners() {
+      if (!positionListenersActive) return;
+      positionListenersActive = false;
+      window.removeEventListener("resize", updateMenuPosition);
+      window.removeEventListener("scroll", updateMenuPosition, true);
+    }
+    function openMenu() {
+      open.value = true;
+      nextTick(updateMenuPosition);
+    }
     function closeMenu() {
       open.value = false;
       activeIndex.value = -1;
+      stopPositionListeners();
     }
     async function runSearch(term = query.value) {
       const normalized = cleanText(term);
@@ -307,12 +350,12 @@ export const EdgeLinkField = defineComponent({
       if (normalized.length < Math.max(0, Number(props.minChars) || 0)) {
         results.value = currentStaticOptions(normalized);
         loading.value = false;
-        open.value = props.openOnFocus && focused.value;
+        if (props.openOnFocus && focused.value) openMenu();
         return;
       }
       const token = ++requestToken;
       loading.value = true;
-      open.value = true;
+      openMenu();
       try {
         const found = props.searcher
           ? await props.searcher(normalized, { ...(props.context || {}) })
@@ -320,6 +363,7 @@ export const EdgeLinkField = defineComponent({
         if (token !== requestToken) return;
         results.value = fuzzyFilterOptions(found, normalized);
         activeIndex.value = results.value.length ? 0 : -1;
+        nextTick(updateMenuPosition);
       } catch (error) {
         if (token !== requestToken) return;
         results.value = [];
@@ -381,7 +425,8 @@ export const EdgeLinkField = defineComponent({
     function onBlur() {
       focused.value = false;
       setTimeout(() => {
-        if (!root.value?.contains(document.activeElement)) {
+        const active = document.activeElement;
+        if (!root.value?.contains(active) && !menu.value?.contains(active)) {
           closeMenu();
           syncDisplayValue();
         }
@@ -391,7 +436,7 @@ export const EdgeLinkField = defineComponent({
       const count = results.value.length;
       if (["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) {
         event.preventDefault();
-        open.value = true;
+        openMenu();
         if (!count) return;
         if (event.key === "Home") activeIndex.value = 0;
         else if (event.key === "End") activeIndex.value = count - 1;
@@ -411,7 +456,7 @@ export const EdgeLinkField = defineComponent({
       else if (props.canCreate && !exactOption(results.value, query.value)) createOption();
     }
     function onDocumentPointerDown(event) {
-      if (!root.value?.contains(event.target)) closeMenu();
+      if (!root.value?.contains(event.target) && !menu.value?.contains(event.target)) closeMenu();
     }
 
     watch(() => props.modelValue, syncDisplayValue);
@@ -422,9 +467,18 @@ export const EdgeLinkField = defineComponent({
       activeIndex.value = -1;
       if (focused.value) scheduleSearch();
     }, { deep: true });
+    watch(open, (next) => {
+      if (next) {
+        startPositionListeners();
+        nextTick(updateMenuPosition);
+      } else {
+        stopPositionListeners();
+      }
+    });
     onMounted(() => document.addEventListener("pointerdown", onDocumentPointerDown));
     onBeforeUnmount(() => {
       document.removeEventListener("pointerdown", onDocumentPointerDown);
+      stopPositionListeners();
       if (timer) clearTimeout(timer);
       requestToken += 1;
     });
@@ -458,6 +512,18 @@ export const EdgeLinkField = defineComponent({
       if (!loading.value && !results.value.length && !showCreate) {
         optionNodes.push(h("div", { class: "edge-link-field__empty", role: "status" }, props.noResultsLabel));
       }
+      const menuNode = open.value
+        ? h("div", {
+            ref: menu,
+            id: `${fieldId}-listbox`,
+            class: ["edge-link-field__menu", { "edge-link-field__menu--portal": props.portalMenu }],
+            role: "listbox",
+            style: props.portalMenu ? menuStyle.value : undefined,
+          }, loading.value ? [h("div", { class: "edge-link-field__loading" }, props.loadingLabel)] : optionNodes)
+        : null;
+      const renderedMenu = props.portalMenu && menuNode
+        ? h(Teleport, { to: "body" }, menuNode)
+        : menuNode;
       return h("div", { ref: root, class: ["edge-link-field", { "has-error": Boolean(props.error), "is-open": open.value }] }, [
         props.label ? h("label", { class: "edge-link-field__label", for: fieldId }, [
           props.label,
@@ -497,12 +563,9 @@ export const EdgeLinkField = defineComponent({
                 onClick: clearSelection,
               }, "×")
             : null,
-          open.value ? h("div", {
-            id: `${fieldId}-listbox`,
-            class: "edge-link-field__menu",
-            role: "listbox",
-          }, loading.value ? [h("div", { class: "edge-link-field__loading" }, props.loadingLabel)] : optionNodes) : null,
+          !props.portalMenu ? renderedMenu : null,
         ]),
+        props.portalMenu ? renderedMenu : null,
         helper ? h("p", { class: ["edge-link-field__helper", { "is-error": Boolean(props.error) }] }, helper) : null,
       ]);
     };

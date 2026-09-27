@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en" data-edge-palette="edge-blue" data-edge-appearance-mode="dark" data-edge-appearance="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>EdgeSuite Frappe Dialog Theme QA</title>
+  <link rel="stylesheet" href="/edgesuite_ui/public/css/edgeui_theme.css">
+  <link rel="stylesheet" href="/edgesuite_ui/public/css/edgeui_theme_dark_compat.css">
+  <link rel="stylesheet" href="/edgesuite_ui/public/css/edgeui_frappe_dialog_compat.css">
+  <style>
+    body { margin: 0; background: var(--edge-color-surface-muted); font-family: Arial, sans-serif; }
+    .modal { display: block; position: relative; padding: 2rem; }
+    .modal-dialog { max-width: 42rem; margin: 0 auto; }
+    .modal-header, .modal-body { padding: 1rem; }
+    .modal-header { display: flex; align-items: center; justify-content: space-between; }
+    .awesomplete > [role="listbox"] { display: grid; gap: .25rem; margin: .5rem 0 0; padding: .35rem; }
+    .awesomplete > [role="listbox"] > [role="option"] { padding: .55rem .65rem; border-radius: .5rem; }
+    .checkbox { margin-top: .75rem; }
+    .checkbox label { display: inline-flex; align-items: center; gap: .4rem; }
+  </style>
+</head>
+<body>
+  <div class="modal edge-frappe-dialog-host" aria-modal="true">
+    <div class="modal-dialog edge-frappe-dialog">
+      <div class="modal-content edge-frappe-dialog__surface">
+        <div class="modal-header">
+          <h2 class="modal-title">New Destination Enrollment Draft</h2>
+          <button class="btn-modal-close" type="button" aria-label="Close">
+            <svg class="icon" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13" /></svg>
+          </button>
+        </div>
+        <div class="modal-body">
+          <label>Student</label>
+          <div class="awesomplete">
+            <input class="form-control" aria-expanded="true" />
+            <div role="listbox" aria-label="Student results">
+              <div id="option-normal" role="option" aria-selected="false"><p><strong>Olúwatamilore Alao</strong><br><span class="small">EDU-STU-2026-00004, KETU</span></p></div>
+              <div id="option-selected" role="option" aria-selected="true"><p><strong>Temilade Akiwowo</strong><br><span class="small">EDU-STU-2026-00005, KETU</span></p></div>
+              <div id="option-hover" role="option" aria-selected="false"><p><strong>Inioluwa Alao</strong><br><span class="small">EDU-STU-2026-00003, KETU</span></p></div>
+            </div>
+          </div>
+          <div class="form-group frappe-control" id="check-enable-applications">
+            <div class="checkbox">
+              <label>
+                <span class="input-area"><input type="checkbox" /></span>
+                <span class="disp-area"></span>
+                <span class="label-area">Enable Admission Applications</span>
+                <span class="ml-1 help"></span>
+              </label>
+            </div>
+          </div>
+          <div class="form-group frappe-control" id="check-publish-website">
+            <div class="checkbox">
+              <label>
+                <span class="input-area"><input type="checkbox" /></span>
+                <span class="disp-area"></span>
+                <span class="label-area">Publish on Website</span>
+                <span class="ml-1 help"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

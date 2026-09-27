@@ -9,7 +9,9 @@ BUNDLE = ROOT / "edgesuite_ui" / "public" / "js" / "edgeui.bundle.js"
 SHELL = ROOT / "edgesuite_ui" / "public" / "js" / "edgeui" / "shell_enhancements.js"
 CONTEXT_IDENTITY = ROOT / "edgesuite_ui" / "public" / "js" / "edgeui" / "context_identity.js"
 NOTIFICATION_RUNTIME = ROOT / "edgesuite_ui" / "public" / "js" / "edgeui" / "notification_runtime.js"
+NAVIGATION_RUNTIME = ROOT / "edgesuite_ui" / "public" / "js" / "edgeui_navigation_shell.js"
 STYLES = ROOT / "edgesuite_ui" / "public" / "css" / "edgeui_shell_enhancements.css"
+NAVIGATION_STYLES = ROOT / "edgesuite_ui" / "public" / "css" / "edgeui_navigation_shell.css"
 HOOKS = ROOT / "edgesuite_ui" / "hooks.py"
 
 
@@ -126,3 +128,37 @@ def test_compact_density_and_five_card_grid_are_shared():
 		".edge-identity-logo",
 	):
 		assert contract in content
+
+
+def test_navigation_shell_is_shared_theme_aware_and_persistent():
+	for path in (NAVIGATION_RUNTIME, NAVIGATION_STYLES):
+		assert path.exists(), path
+
+	runtime = read(NAVIGATION_RUNTIME)
+	styles = read(NAVIGATION_STYLES)
+	hooks = read(HOOKS)
+
+	for contract in (
+		"edge-nav-shell-v2",
+		"edge-nav-shell--collapsed",
+		"navigation-collapsed",
+		"Expand navigation",
+		"Collapse navigation",
+		"(min-width: 62rem)",
+		"edge-sidebar__section-toggle",
+	):
+		assert contract in runtime
+
+	for token in (
+		"var(--edge-color-surface)",
+		"var(--edge-color-surface-muted)",
+		"var(--edge-color-border)",
+		"var(--edge-color-brand-50)",
+		"var(--edge-color-brand-600)",
+		"data-edge-appearance=\"dark\"",
+	):
+		assert token in styles
+
+	assert "edgeui_navigation_shell.css" in hooks
+	assert "edgeui_navigation_shell.js" in hooks
+	assert "#1677" not in styles

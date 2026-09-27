@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "release_line": "1.x",
+  "minimum_supported_version": "1.0.0",
+  "highest_established_version": "1.1.0",
+  "authoritative_branch": "main",
+  "active_release_candidate": "qa/edgesuite-ui-full-implementation-2026-08-29",
+  "progression_policy": "continue-stack-reconcile",
+  "reconciled_source_prs": [18, 19, 20, 21]
+}

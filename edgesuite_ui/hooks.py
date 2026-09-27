@@ -17,6 +17,7 @@ app_include_css = [
 	"edgeui_compat.bundle.css",
 	"/assets/edgesuite_ui/css/edgeui_product_menu.css",
 	"/assets/edgesuite_ui/css/edgeui_product_menu_reliability.css",
+	"/assets/edgesuite_ui/css/edgeui_product_switcher_flyout.css",
 	"/assets/edgesuite_ui/css/edgeui_product_menu_host_bridge.css",
 	"/assets/edgesuite_ui/css/edgeui_professional.css",
 	"/assets/edgesuite_ui/css/edgeui_sidebar_refinement.css",
@@ -32,10 +33,41 @@ app_include_css = [
 	"/assets/edgesuite_ui/css/edgeui_documents.css",
 	"/assets/edgesuite_ui/css/edgeui_child_table_layout.css",
 	"/assets/edgesuite_ui/css/edgeui_density.css",
+	"/assets/edgesuite_ui/css/edgeui_theme.css",
+	"/assets/edgesuite_ui/css/edgeui_theme_controls.css",
+	"/assets/edgesuite_ui/css/edgeui_theme_dark_compat.css",
+	"/assets/edgesuite_ui/css/edgeui_frappe_dialog_compat.css",
+	"/assets/edgesuite_ui/css/edgeui_frappe_control_compat.css",
+	"/assets/edgesuite_ui/css/edgeui_theme_transition_guard.css",
+	"/assets/edgesuite_ui/css/edgeui_navigation_shell.css",
+	"/assets/edgesuite_ui/css/edgeui_navigation_active_path.css",
+	"/assets/edgesuite_ui/css/edgeui_desk_access_guard.css",
+	"/assets/edgesuite_ui/css/edgeui_report_export.css",
+	"/assets/edgesuite_ui/css/edgeui_reporting_presentation.css",
+	"/assets/edgesuite_ui/css/edgeui_report_comparison.css",
+	"/assets/edgesuite_ui/css/edgeui_report_grouping.css",
+	"/assets/edgesuite_ui/css/edgeui_report_exceptions.css",
+	"edgeui_report_smart_date.bundle.css",
+	"/assets/edgesuite_ui/css/edgeui_dark_contrast.css",
+	"/assets/edgesuite_ui/css/edgeui_dark_form_controls.css",
 ]
 app_include_js = [
+	"/assets/edgesuite_ui/js/edgeui_theme_bootstrap.js",
 	"edgesuite_ui.bundle.js",
+	"/assets/edgesuite_ui/js/edgeui_desk_access_guard.js",
+	"/assets/edgesuite_ui/js/edgeui_theme_controls.js",
+	"/assets/edgesuite_ui/js/edgeui_frappe_dialog_bridge.js",
+	"/assets/edgesuite_ui/js/edgeui_navigation_shell.js",
+	"/assets/edgesuite_ui/js/edgeui_navigation_component_bridge.js",
 	"/assets/edgesuite_ui/js/edgeui_product_menu_host_bridge.js",
+	"/assets/edgesuite_ui/js/edgeui_product_switcher_flyout.js",
 	"/assets/edgesuite_ui/js/edgeui_ctrl_k_guard.js",
 	"/assets/edgesuite_ui/js/edgeui_ctrl_s_guard.js",
 ]
+
+# Desk access management is an additive interface-exposure layer only. Frappe
+# permissions, User Permissions, Page/Report permissions and product-owned
+# company/branch/workflow authorization remain authoritative.
+extend_bootinfo = "edgesuite_ui.access_control.extend_bootinfo"
+after_install = "edgesuite_ui.access_control.initialize_desk_access_on_install"
+after_migrate = "edgesuite_ui.access_control.ensure_desk_access_field"

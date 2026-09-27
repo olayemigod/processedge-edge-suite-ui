@@ -1,0 +1,84 @@
+/* EdgeSuite Navigation active-path emphasis.
+   The current section and current submenu inherit the selected theme so users
+   can identify their location at both navigation levels without product colors. */
+
+.edge-nav-shell-v2 .edge-sidebar__section:has(.edge-sidebar-item.active) .edge-sidebar__section-toggle,
+.edge-nav-shell-v2 .edge-sidebar__section:has(.edge-sidebar-item[aria-current="page"]) .edge-sidebar__section-toggle {
+  background: color-mix(in srgb, var(--edge-color-brand-100) 58%, var(--edge-color-surface));
+  border-color: color-mix(in srgb, var(--edge-color-brand-200) 54%, transparent);
+  box-shadow: inset 2px 0 0 var(--edge-color-brand-600);
+  color: var(--edge-color-brand-700);
+}
+
+.edge-nav-shell-v2 .edge-sidebar__section:has(.edge-sidebar-item.active) .edge-sidebar__section-toggle > .edge-icon,
+.edge-nav-shell-v2 .edge-sidebar__section:has(.edge-sidebar-item[aria-current="page"]) .edge-sidebar__section-toggle > .edge-icon {
+  color: var(--edge-color-brand-600);
+}
+
+.edge-nav-shell-v2 .edge-sidebar__section:has(.edge-sidebar-item.active) .edge-sidebar__section-toggle:hover:not(:disabled),
+.edge-nav-shell-v2 .edge-sidebar__section:has(.edge-sidebar-item[aria-current="page"]) .edge-sidebar__section-toggle:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--edge-color-brand-100) 72%, var(--edge-color-surface));
+  border-color: color-mix(in srgb, var(--edge-color-brand-200) 66%, transparent);
+  color: var(--edge-color-brand-700);
+}
+
+.edge-nav-shell-v2 .edge-sidebar-item.active,
+.edge-nav-shell-v2 .edge-sidebar-item[aria-current="page"] {
+  background: color-mix(in srgb, var(--edge-color-brand-100) 76%, var(--edge-color-surface));
+  box-shadow: inset 3px 0 0 var(--edge-color-brand-600);
+  color: var(--edge-color-brand-700);
+}
+
+.edge-nav-shell-v2 .edge-sidebar-item.active .edge-sidebar-item__label,
+.edge-nav-shell-v2 .edge-sidebar-item[aria-current="page"] .edge-sidebar-item__label {
+  color: var(--edge-color-brand-700);
+  font-weight: 720;
+}
+
+.edge-nav-shell-v2 .edge-sidebar-item.active > .edge-icon,
+.edge-nav-shell-v2 .edge-sidebar-item[aria-current="page"] > .edge-icon {
+  background: color-mix(in srgb, var(--edge-color-brand-100) 82%, transparent);
+  color: var(--edge-color-brand-700);
+}
+
+.edge-nav-shell-v2 .edge-sidebar-item.active .edge-sidebar-item__badge,
+.edge-nav-shell-v2 .edge-sidebar-item[aria-current="page"] .edge-sidebar-item__badge {
+  background: color-mix(in srgb, var(--edge-color-brand-100) 86%, var(--edge-color-surface));
+  color: var(--edge-color-brand-700);
+}
+
+/* In the collapsed rail the active parent section remains the location cue. */
+.edge-nav-shell-v2.edge-nav-shell--collapsed .edge-sidebar__section:has(.edge-sidebar-item.active) .edge-sidebar__section-toggle,
+.edge-nav-shell-v2.edge-nav-shell--collapsed .edge-sidebar__section:has(.edge-sidebar-item[aria-current="page"]) .edge-sidebar__section-toggle {
+  background: color-mix(in srgb, var(--edge-color-brand-100) 72%, var(--edge-color-surface));
+  box-shadow: inset 3px 0 0 var(--edge-color-brand-600);
+  color: var(--edge-color-brand-700);
+}
+
+:root[data-edge-appearance="dark"] .edge-nav-shell-v2 .edge-sidebar__section:has(.edge-sidebar-item.active) .edge-sidebar__section-toggle,
+:root[data-edge-appearance="dark"] .edge-nav-shell-v2 .edge-sidebar__section:has(.edge-sidebar-item[aria-current="page"]) .edge-sidebar__section-toggle {
+  background: color-mix(in srgb, var(--edge-color-brand-100) 72%, var(--edge-color-surface));
+  border-color: var(--edge-color-brand-200);
+  color: var(--edge-color-brand-text, var(--edge-color-info));
+}
+
+:root[data-edge-appearance="dark"] .edge-nav-shell-v2 .edge-sidebar__section:has(.edge-sidebar-item.active) .edge-sidebar__section-toggle > .edge-icon,
+:root[data-edge-appearance="dark"] .edge-nav-shell-v2 .edge-sidebar__section:has(.edge-sidebar-item[aria-current="page"]) .edge-sidebar__section-toggle > .edge-icon,
+:root[data-edge-appearance="dark"] .edge-nav-shell-v2 .edge-sidebar-item.active,
+:root[data-edge-appearance="dark"] .edge-nav-shell-v2 .edge-sidebar-item[aria-current="page"],
+:root[data-edge-appearance="dark"] .edge-nav-shell-v2 .edge-sidebar-item.active .edge-sidebar-item__label,
+:root[data-edge-appearance="dark"] .edge-nav-shell-v2 .edge-sidebar-item[aria-current="page"] .edge-sidebar-item__label,
+:root[data-edge-appearance="dark"] .edge-nav-shell-v2 .edge-sidebar-item.active > .edge-icon,
+:root[data-edge-appearance="dark"] .edge-nav-shell-v2 .edge-sidebar-item[aria-current="page"] > .edge-icon {
+  color: var(--edge-color-brand-text, var(--edge-color-info));
+}
+
+:root[data-edge-appearance="dark"] .edge-nav-shell-v2 .edge-sidebar-item.active,
+:root[data-edge-appearance="dark"] .edge-nav-shell-v2 .edge-sidebar-item[aria-current="page"] {
+  background: color-mix(in srgb, var(--edge-color-brand-100) 86%, var(--edge-color-surface));
+}
+
+:root[data-edge-appearance="dark"] .edge-nav-shell-v2 .edge-sidebar-item.active > .edge-icon,
+:root[data-edge-appearance="dark"] .edge-nav-shell-v2 .edge-sidebar-item[aria-current="page"] > .edge-icon {
+  background: var(--edge-color-brand-100);
+}

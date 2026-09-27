@@ -1,5 +1,7 @@
 from pathlib import Path
 
+from edgesuite_ui import __version__
+
 ROOT = Path(__file__).resolve().parents[2]
 PRIMITIVES = ROOT / "edgesuite_ui" / "public" / "js" / "edgeui" / "form_primitives.js"
 CSS = ROOT / "edgesuite_ui" / "public" / "css" / "edgeui_form_controls.css"
@@ -72,6 +74,6 @@ def test_063_version_is_consistent():
 	package = read(PACKAGE)
 	init = read(INIT)
 
-	assert 'EDGE_SUITE_UI_VERSION = "0.6.3"' in bundle
-	assert '"version": "0.6.3"' in package
-	assert '__version__ = "0.6.3"' in init
+	assert f'EDGE_SUITE_UI_VERSION = "{__version__}"' in bundle
+	assert f'"version": "{__version__}"' in package
+	assert f'__version__ = "{__version__}"' in init

@@ -2,6 +2,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 JS = ROOT / "edgesuite_ui" / "public" / "js" / "edgeui" / "form_components.js"
+DROPDOWN_VIEWPORT_JS = ROOT / "edgesuite_ui" / "public" / "js" / "edgeui" / "dropdown_viewport_runtime.js"
 MODAL_JS = ROOT / "edgesuite_ui" / "public" / "js" / "edgeui" / "modal_components.js"
 MODAL_COMPAT_JS = ROOT / "edgesuite_ui" / "public" / "js" / "edgeui" / "modal_cross_runtime.js"
 CSS = ROOT / "edgesuite_ui" / "public" / "css" / "edgeui_form_controls.css"
@@ -86,6 +87,29 @@ def test_dropdowns_are_exported_and_styled_globally():
 		".edge-link-field__helper.is-error",
 	):
 		assert selector in styles
+
+
+def test_dropdown_runtime_keeps_open_menus_inside_the_visible_viewport():
+	runtime = read(DROPDOWN_VIEWPORT_JS)
+	bundle = read(BUNDLE)
+
+	for contract in (
+		"installDropdownViewportRuntime",
+		"spaceBelow",
+		"spaceAbove",
+		"openUpward",
+		'data-edge-dropdown-direction',
+		'querySelectorAll(".edge-dropdown.is-open")',
+		'globalObject.addEventListener?.("scroll", schedule, true)',
+		'globalObject.addEventListener?.("resize", schedule)',
+		"MAX_MENU_HEIGHT_PX",
+	):
+		assert contract in runtime
+	assert 'import { installDropdownViewportRuntime } from "./edgeui/dropdown_viewport_runtime";' in bundle
+	assert "installDropdownViewportRuntime(globalThis);" in bundle
+	assert 'export * from "./edgeui/dropdown_viewport_runtime";' in bundle
+	assert "setInterval(" not in runtime
+	assert "MutationObserver" not in runtime
 
 
 def test_both_flyouts_match_control_width_exactly():

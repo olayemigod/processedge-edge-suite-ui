@@ -269,14 +269,23 @@ export const EdgeChildTable = defineComponent({
     readonly: { type: Boolean, default: false },
     addLabel: { type: String, default: "Add row" },
     linkSearcher: { type: Function, default: null },
+    linkCreator: { type: Function, default: null },
+    linkCanCreate: { type: [Boolean, Function], default: false },
+    linkCreateLabel: { type: [String, Function], default: "Create new" },
+    newRowsFirst: { type: Boolean, default: false },
   },
   emits: ["update:rows", "change", "search-options"],
   methods: {
     addRow() {
       const row = Object.fromEntries(this.columns.map((column) => [column.fieldname, column.default ?? ""]));
+      row.__temporary_key = `edge-new-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
       const next = [...this.rows, row];
       this.$emit("update:rows", next);
       this.$emit("change", next);
+    },
+    displayedRows() {
+      const indexed = this.rows.map((row, index) => ({ row, index }));
+      return this.newRowsFirst ? indexed.reverse() : indexed;
     },
     removeRow(index) {
       const next = this.rows.filter((_row, rowIndex) => rowIndex !== index);
@@ -289,6 +298,16 @@ export const EdgeChildTable = defineComponent({
       );
       this.$emit("update:rows", next);
       this.$emit("change", next);
+    },
+    canCreateLink(column, row) {
+      return typeof this.linkCanCreate === "function"
+        ? Boolean(this.linkCanCreate(column, row))
+        : Boolean(this.linkCanCreate);
+    },
+    createLabelFor(column, row) {
+      return typeof this.linkCreateLabel === "function"
+        ? this.linkCreateLabel(column, row)
+        : this.linkCreateLabel;
     },
     renderControl(row, index, column) {
       const type = fieldType(column);
@@ -323,6 +342,11 @@ export const EdgeChildTable = defineComponent({
           searcher: this.linkSearcher
             ? (query) => this.linkSearcher(column, query, row)
             : null,
+          creator: this.linkCreator
+            ? (query, context) => this.linkCreator(column, query, row, context)
+            : null,
+          canCreate: !readonly && this.canCreateLink(column, row),
+          createLabel: this.createLabelFor(column, row),
           "onUpdate:modelValue": (next) => this.updateCell(index, column, next),
           onSelect: (option) => this.$emit("search-options", { field: column, row, option }),
         });
@@ -343,7 +367,7 @@ export const EdgeChildTable = defineComponent({
   render() {
     const headings = this.columns.map((column) => h("th", column.label || column.fieldname));
     if (!this.readonly) headings.push(h("th", { class: "edge-child-table__actions" }, ""));
-    const rows = this.rows.map((row, index) => {
+    const rows = this.displayedRows().map(({ row, index }) => {
       const cells = this.columns.map((column) =>
         h("td", { "data-label": column.label || column.fieldname }, [this.renderControl(row, index, column)]),
       );

@@ -1,0 +1,258 @@
+/* Compact Product App switcher launcher. The source <select> remains in the DOM
+   for the existing permission-aware Product Context switching contract. */
+.edge-product-menu-slot .edge-product-switcher.edge-product-switcher--launcher,
+.edge-product-switcher.edge-product-switcher--launcher {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  display: inline-flex !important;
+  grid-template-columns: none;
+  min-height: 1.9rem;
+  padding: 0;
+}
+
+.edge-product-switcher--launcher:focus-within {
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.edge-product-switcher--launcher > .edge-product-switcher__icon,
+.edge-product-switcher--launcher > .edge-product-switcher__chevron,
+.edge-product-switcher--launcher > .edge-product-switcher__select {
+  display: none !important;
+}
+
+.edge-product-switcher__launcher {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 0.5rem;
+  color: var(--edge-color-ink-700, var(--text-color, #334b61));
+  cursor: pointer;
+  display: inline-flex;
+  height: 1.9rem;
+  justify-content: center;
+  padding: 0.2rem;
+  transition: background 120ms ease, box-shadow 120ms ease, transform 120ms ease;
+  width: 1.9rem;
+}
+
+.edge-product-switcher__launcher img {
+  display: block;
+  height: 1.35rem;
+  object-fit: contain;
+  width: 1.35rem;
+}
+
+.edge-product-switcher__launcher:hover,
+.edge-product-switcher__launcher[aria-expanded="true"] {
+  background: var(--edge-color-brand-50, var(--control-bg, #eef7ff));
+}
+
+.edge-product-switcher__launcher:active {
+  transform: translateY(1px);
+}
+
+.edge-product-switcher__launcher:focus-visible,
+.edge-product-switcher-flyout__app:focus-visible,
+.edge-product-switcher-flyout__close:focus-visible {
+  outline: 2px solid var(--edge-color-brand-500, var(--primary, #1677c8));
+  outline-offset: 2px;
+}
+
+.edge-product-switcher-flyout {
+  background: var(--edge-color-surface, var(--card-bg, #ffffff));
+  border: 1px solid var(--edge-color-border, var(--border-color, #dfe6ec));
+  border-radius: 0.8rem;
+  box-shadow: 0 18px 48px rgb(16 34 53 / 20%);
+  color: var(--edge-color-ink-950, var(--text-color, #102235));
+  overflow: auto;
+  padding: 0.45rem;
+  position: fixed;
+  transform-origin: top right;
+  z-index: 1065;
+}
+
+.edge-product-switcher-flyout:not([hidden]) {
+  animation: edge-product-switcher-flyout-in 140ms ease-out;
+}
+
+.edge-product-switcher-flyout[hidden] {
+  display: none !important;
+}
+
+@keyframes edge-product-switcher-flyout-in {
+  from {
+    opacity: 0;
+    transform: translateY(-0.35rem) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.edge-product-switcher-flyout__header {
+  align-items: center;
+  border-bottom: 1px solid var(--edge-color-border, var(--border-color, #dfe6ec));
+  display: flex;
+  gap: 0.75rem;
+  justify-content: space-between;
+  margin-bottom: 0.4rem;
+  padding: 0.45rem 0.5rem 0.6rem;
+}
+
+.edge-product-switcher-flyout__header strong,
+.edge-product-switcher-flyout__header span {
+  display: block;
+}
+
+.edge-product-switcher-flyout__header strong {
+  font-size: 0.82rem;
+  line-height: 1.1rem;
+}
+
+.edge-product-switcher-flyout__header span {
+  color: var(--edge-color-ink-500, var(--text-muted, #617589));
+  font-size: 0.68rem;
+  line-height: 0.95rem;
+  margin-top: 0.1rem;
+}
+
+.edge-product-switcher-flyout__close {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 0.4rem;
+  color: var(--edge-color-ink-500, var(--text-muted, #617589));
+  cursor: pointer;
+  display: inline-flex;
+  flex: 0 0 auto;
+  font-size: 1.15rem;
+  height: 1.8rem;
+  justify-content: center;
+  line-height: 1;
+  padding: 0;
+  width: 1.8rem;
+}
+
+.edge-product-switcher-flyout__close:hover {
+  background: var(--edge-color-surface-muted, var(--control-bg, #f6f8fa));
+  color: var(--edge-color-ink-950, var(--text-color, #102235));
+}
+
+.edge-product-switcher-flyout__apps {
+  display: grid;
+  gap: 0.35rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.edge-product-switcher-flyout__app {
+  align-items: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 0.65rem;
+  color: inherit;
+  cursor: pointer;
+  display: grid;
+  font: inherit;
+  gap: 0.45rem;
+  grid-template-columns: 2rem minmax(0, 1fr) auto;
+  min-height: 3.4rem;
+  padding: 0.45rem;
+  text-align: left;
+  width: 100%;
+}
+
+.edge-product-switcher-flyout__app:hover {
+  background: var(--edge-color-surface-muted, var(--control-bg, #f6f8fa));
+  border-color: var(--edge-color-border, var(--border-color, #dfe6ec));
+}
+
+.edge-product-switcher-flyout__app.is-active {
+  background: var(--edge-color-brand-50, #eef7ff);
+  border-color: var(--edge-color-brand-200, #b8dcff);
+  color: var(--edge-color-brand-700, var(--primary, #0c4f87));
+}
+
+.edge-product-switcher-flyout__app-mark {
+  align-items: center;
+  background: var(--edge-color-surface-muted, var(--control-bg, #f6f8fa));
+  border: 1px solid var(--edge-color-border, var(--border-color, #dfe6ec));
+  border-radius: 0.5rem;
+  display: inline-flex;
+  font-size: 0.64rem;
+  font-weight: 800;
+  height: 2rem;
+  justify-content: center;
+  letter-spacing: 0.02em;
+  width: 2rem;
+}
+
+.edge-product-switcher-flyout__app.is-active .edge-product-switcher-flyout__app-mark {
+  background: var(--edge-color-brand-100, #d9edff);
+  border-color: var(--edge-color-brand-200, #b8dcff);
+}
+
+.edge-product-switcher-flyout__app-copy {
+  min-width: 0;
+}
+
+.edge-product-switcher-flyout__app-copy strong,
+.edge-product-switcher-flyout__app-copy small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.edge-product-switcher-flyout__app-copy strong {
+  font-size: 0.74rem;
+  line-height: 1rem;
+}
+
+.edge-product-switcher-flyout__app-copy small {
+  color: var(--edge-color-ink-500, var(--text-muted, #617589));
+  font-size: 0.63rem;
+  line-height: 0.9rem;
+  margin-top: 0.1rem;
+}
+
+.edge-product-switcher-flyout__active-mark {
+  color: var(--edge-color-ink-400, var(--text-muted, #7b8c9d));
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.edge-product-switcher-flyout__app.is-active .edge-product-switcher-flyout__active-mark {
+  color: var(--edge-color-brand-700, var(--primary, #0c4f87));
+}
+
+@media (max-width: 48rem) {
+  .edge-product-menu-slot .edge-product-switcher.edge-product-switcher--launcher {
+    display: inline-flex !important;
+    margin: 0 !important;
+  }
+
+  .edge-product-switcher__launcher {
+    height: 2rem;
+    width: 2rem;
+  }
+
+  .edge-product-switcher__launcher img {
+    height: 1.4rem;
+    width: 1.4rem;
+  }
+}
+
+@media (max-width: 28rem) {
+  .edge-product-switcher-flyout__apps {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .edge-product-switcher-flyout:not([hidden]) {
+    animation: none;
+  }
+}

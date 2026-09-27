@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>EdgeSuite Desk Access Fixture</title>
+  <link rel="stylesheet" href="/edgesuite_ui/public/css/edgeui_desk_access_guard.css" />
+</head>
+<body>
+  <nav class="navbar">
+    <a class="navbar-home" href="#">Desk Home</a>
+    <div class="search-bar">Search</div>
+  </nav>
+  <aside class="desk-sidebar">Native Desk Sidebar</aside>
+  <main class="layout-main-section" id="native-content">Native Desk Content</main>
+
+  <script>
+    const params = new URLSearchParams(location.search);
+    const initialRoute = params.get("route") || "List/Sales Invoice";
+    const mode = params.get("mode") || "edgesuite_only";
+    globalThis.__mockRoute = initialRoute.split("/").filter(Boolean);
+    globalThis.__mockRouteChanges = [];
+    globalThis.__routerHandlers = [];
+
+    globalThis.frappe = {
+      boot: {
+        edgesuite_ui_access: {
+          mode,
+          restricted_to_edgesuite: mode === "edgesuite_only",
+          can_use_native_desk: mode === "native_desk",
+          authorization_source: "frappe_permissions",
+        },
+      },
+      session: { user: "browser.user@example.com" },
+      user_roles: ["Sales User"],
+      get_route() {
+        return globalThis.__mockRoute.slice();
+      },
+      set_route(...parts) {
+        globalThis.__mockRoute = parts.flat().map(String).filter(Boolean);
+        globalThis.__mockRouteChanges.push(globalThis.__mockRoute.slice());
+        globalThis.__routerHandlers.forEach((handler) => handler());
+      },
+      router: {
+        on(eventName, handler) {
+          if (eventName === "change" && typeof handler === "function") {
+            globalThis.__routerHandlers.push(handler);
+          }
+        },
+      },
+    };
+
+    globalThis.EdgeSuiteUI = {
+      registerProductMenu(config) {
+        globalThis.__lastProductMenu = config;
+        return true;
+      },
+    };
+  </script>
+  <script src="/edgesuite_ui/public/js/edgeui_desk_access_guard.js"></script>
+</body>
+</html>

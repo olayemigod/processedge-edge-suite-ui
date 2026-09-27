@@ -82,6 +82,7 @@ export const EdgeModal = defineComponent({
     subtitle: { type: String, default: "" },
     size: { type: String, default: "md" },
     busy: { type: Boolean, default: false },
+    busyLabel: { type: String, default: "Processing…" },
     closeOnBackdrop: { type: Boolean, default: true },
   },
   emits: ["close"],
@@ -184,9 +185,10 @@ export const EdgeModal = defineComponent({
           "section",
           {
             ref: "dialog",
-            class: ["edge-modal", `edge-modal--${this.size}`],
+            class: ["edge-modal", `edge-modal--${this.size}`, { "edge-modal--busy": this.busy }],
             role: "dialog",
             "aria-modal": "true",
+            "aria-busy": this.busy ? "true" : "false",
             "aria-labelledby": "edge-modal-title",
             "aria-describedby": this.subtitle ? "edge-modal-subtitle" : undefined,
           },
@@ -210,6 +212,21 @@ export const EdgeModal = defineComponent({
             ]),
             h("div", { class: "edge-modal__body" }, slots.default ? slots.default() : []),
             slots.footer ? h("footer", { class: "edge-modal__footer" }, slots.footer()) : null,
+            this.busy
+              ? h(
+                  "div",
+                  {
+                    class: "edge-modal__busy",
+                    role: "status",
+                    "aria-live": "polite",
+                    "aria-label": this.busyLabel,
+                  },
+                  [
+                    h("span", { class: "edge-modal__busy-spinner", "aria-hidden": "true" }),
+                    h("span", { class: "edge-modal__busy-label" }, this.busyLabel),
+                  ],
+                )
+              : null,
           ],
         ),
       ],

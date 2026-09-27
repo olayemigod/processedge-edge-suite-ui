@@ -4,6 +4,8 @@
   const BRIDGE_ID = "edge-product-menu-navbar-bridge";
   const PRODUCT_MENU_HOST_ID = "edge-product-menu-host";
   const PRODUCT_MENU_TRIGGER_ID = "edge-product-menu-trigger";
+  const PRODUCT_MENU_PANEL_ID = "edge-product-menu-dropdown";
+  const PRODUCT_MENU_SLOT_ID = "edge-product-menu-slot";
   const MAX_ATTEMPTS = 40;
   const RETRY_MS = 150;
   const state = {
@@ -13,105 +15,63 @@
     target: "",
   };
 
-  function isVisible(node) {
-    if (!node || !node.isConnected) return false;
-    const style = global.getComputedStyle?.(node);
-    if (style?.display === "none" || style?.visibility === "hidden") return false;
-    const box = node.getBoundingClientRect?.();
+  function visibleElement(element) {
+    if (!element?.isConnected) return false;
+    const view = element.ownerDocument?.defaultView;
+    let current = element;
+    while (current?.nodeType === 1) {
+      if (current.hidden || current.getAttribute?.("aria-hidden") === "true") return false;
+      const style = view?.getComputedStyle?.(current);
+      if (
+        style?.visibility === "hidden" ||
+        style?.display === "none" ||
+        style?.contentVisibility === "hidden"
+      ) {
+        return false;
+      }
+      current = current.parentElement;
+    }
+    const rects = element.getClientRects?.();
+    if (rects?.length) return true;
+    const box = element.getBoundingClientRect?.();
     return Boolean(box && box.width > 0 && box.height > 0);
   }
 
-  function existingProductMenuExists(doc) {
-    const bridge = doc.getElementById(BRIDGE_ID);
-    const host = doc.getElementById(PRODUCT_MENU_HOST_ID);
-    const trigger = doc.getElementById(PRODUCT_MENU_TRIGGER_ID);
-    const outsideBridge = (node) => Boolean(node && (!bridge || !bridge.contains(node)));
-    return Boolean(
-      (outsideBridge(trigger) && isVisible(trigger)) ||
-        (outsideBridge(host) && isVisible(host)),
+  function edgeShell(doc) {
+    return (
+      Array.from(doc?.querySelectorAll?.(".edge-app-shell[data-edge-product]") || []).find(
+        visibleElement,
+      ) || null
     );
   }
 
-  function supportedNavbarExists(doc) {
-    return Array.from(doc.querySelectorAll(".navbar, .desktop-navbar, header.navbar")).some(
-      (node) => node.id !== BRIDGE_ID && isVisible(node),
-    );
-  }
-
-  function firstVisible(doc, selectors) {
-    for (const selector of selectors) {
-      const nodes = Array.from(doc.querySelectorAll(selector));
-      const match = nodes.find(isVisible);
-      if (match) return { node: match, selector };
-    }
-    return null;
-  }
-
-  function resolveEmbeddedTarget(doc) {
-    return firstVisible(doc, [
-      ".desk-sidebar .sidebar-header",
-      ".desk-sidebar .sidebar-menu",
-      ".workspace-sidebar .sidebar-header",
-      ".workspace-sidebar",
-      ".body-sidebar .sidebar-header",
-      ".body-sidebar",
-      ".layout-side-section .sidebar-menu",
-      ".layout-side-section",
-      ".standard-sidebar",
-      "aside[role='navigation']",
-      "aside",
-    ]);
+  function removeNativeArtifacts(doc) {
+    if (edgeShell(doc)) return false;
+    global.EdgeSuiteUI?.closeProductMenu?.();
+    doc?.getElementById(BRIDGE_ID)?.remove();
+    doc?.getElementById(PRODUCT_MENU_HOST_ID)?.remove();
+    doc?.getElementById(PRODUCT_MENU_PANEL_ID)?.remove();
+    doc?.getElementById(PRODUCT_MENU_SLOT_ID)?.remove();
+    state.installed = false;
+    state.mode = "native-desk-hidden";
+    state.target = "";
+    return true;
   }
 
   function ensureBridge() {
     const doc = global.document;
     if (!doc?.body) return false;
 
-    if (existingProductMenuExists(doc)) {
-      doc.getElementById(BRIDGE_ID)?.remove();
-      state.installed = false;
-      state.mode = "existing-product-menu";
-      state.target = `#${PRODUCT_MENU_HOST_ID}`;
+    const shell = edgeShell(doc);
+    if (!shell) {
+      removeNativeArtifacts(doc);
       return true;
     }
 
-    if (supportedNavbarExists(doc)) {
-      doc.getElementById(BRIDGE_ID)?.remove();
-      state.installed = false;
-      state.mode = "native-navbar";
-      state.target = "existing .navbar";
-      global.EdgeSuiteUI?.mountProductMenu?.();
-      return true;
-    }
-
-    let bridge = doc.getElementById(BRIDGE_ID);
-    if (bridge && bridge.isConnected && isVisible(bridge)) {
-      state.installed = true;
-      global.EdgeSuiteUI?.mountProductMenu?.();
-      return true;
-    }
-
-    bridge?.remove();
-    bridge = doc.createElement("div");
-    bridge.id = BRIDGE_ID;
-    bridge.className = "navbar edge-product-menu-navbar-bridge";
-    bridge.setAttribute("role", "navigation");
-    bridge.setAttribute("aria-label", "EdgeSuite product navigation");
-
-    const embedded = resolveEmbeddedTarget(doc);
-    if (embedded) {
-      bridge.classList.add("edge-product-menu-navbar-bridge--embedded");
-      embedded.node.prepend(bridge);
-      state.mode = "embedded";
-      state.target = embedded.selector;
-    } else {
-      bridge.classList.add("edge-product-menu-navbar-bridge--floating");
-      doc.body.appendChild(bridge);
-      state.mode = "floating";
-      state.target = "document.body";
-    }
-
+    doc.getElementById(BRIDGE_ID)?.remove();
     state.installed = true;
+    state.mode = "edge-shell";
+    state.target = ".edge-app-shell[data-edge-product]";
     global.EdgeSuiteUI?.mountProductMenu?.();
     return true;
   }
@@ -131,15 +91,24 @@
   ["DOMContentLoaded", "toolbar_setup", "sidebar_setup", "desktop_screen", "page-change"].forEach(
     (eventName) => global.document?.addEventListener(eventName, scheduleEnsure),
   );
+  global.document?.addEventListener("visibilitychange", scheduleEnsure);
+  ["hashchange", "popstate", "pageshow"].forEach((eventName) =>
+    global.addEventListener?.(eventName, scheduleEnsure),
+  );
   global.frappe?.router?.on?.("change", scheduleEnsure);
 
   if (global.MutationObserver && global.document?.body) {
     const observer = new global.MutationObserver(() => {
-      const bridge = global.document.getElementById(BRIDGE_ID);
+      const shell = edgeShell(global.document);
       const trigger = global.document.getElementById(PRODUCT_MENU_TRIGGER_ID);
-      if ((trigger && bridge && !bridge.contains(trigger)) || !trigger) scheduleEnsure();
+      if (!shell || !trigger) scheduleEnsure();
     });
-    observer.observe(global.document.body, { childList: true, subtree: true });
+    observer.observe(global.document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["class", "style", "hidden", "aria-hidden"],
+    });
     state.observer = observer;
   }
 

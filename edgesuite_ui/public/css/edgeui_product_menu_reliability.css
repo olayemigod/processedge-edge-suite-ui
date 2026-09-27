@@ -4,50 +4,64 @@
   border: 0;
   display: inline-flex;
   flex: 0 0 auto;
-  min-height: 2.5rem;
-  min-width: 2.5rem;
+  min-height: 2rem;
+  min-width: 2rem;
   padding: 0;
   pointer-events: auto;
   position: relative;
 }
 
-.edge-topbar-actions {
-  position: relative;
+.edge-topbar__brand {
+  min-width: 0;
 }
 
-.edge-topbar-actions > .edge-product-menu-slot {
-  margin: 0 0.25rem 0 0 !important;
-  order: -20 !important;
+.edge-topbar__brand > .edge-product-menu-slot {
+  margin: 0 0 0 0.35rem !important;
   pointer-events: auto !important;
   position: relative !important;
   z-index: 4 !important;
 }
 
-.edge-topbar-actions > .edge-topbar-action-wrap {
-  position: relative;
-  z-index: 1;
-}
-
 .edge-product-menu-slot .edge-product-menu__host {
+  gap: 0.15rem;
   margin: 0;
   pointer-events: auto;
   position: relative;
   z-index: 4;
 }
 
+/* Compact app-grid switcher: navigation control, not a primary page action. */
+.edge-product-menu-slot .edge-product-switcher {
+  border-radius: 0.45rem;
+  grid-template-columns: 0.85rem minmax(3.75rem, auto) 0.7rem;
+  min-height: 1.9rem;
+  padding: 0 0.3rem;
+}
+
+.edge-product-menu-slot .edge-product-switcher__icon svg,
+.edge-product-menu-slot .edge-product-switcher__chevron svg {
+  height: 0.8rem;
+  width: 0.8rem;
+}
+
+.edge-product-menu-slot .edge-product-switcher__select {
+  font-size: 0.72rem;
+  height: 1.75rem;
+  max-width: 7.5rem;
+  padding: 0 0.2rem;
+}
+
 .edge-product-menu-slot .edge-product-menu__trigger {
+  height: 1.9rem;
   pointer-events: auto !important;
   position: relative;
+  width: 1.9rem;
   z-index: 5;
 }
 
-.edge-product-menu-slot--fallback {
-  margin: 0 !important;
-  order: initial !important;
-  position: fixed !important;
-  right: 0.75rem;
-  top: 0.65rem;
-  z-index: 1061 !important;
+.edge-product-menu-slot .edge-product-menu__waffle {
+  height: 1rem;
+  width: 1rem;
 }
 
 .edge-product-menu__favorite-control {
@@ -112,9 +126,9 @@
 }
 
 @media (max-width: 48rem) {
-  .edge-topbar-actions > .edge-product-menu-slot {
+  .edge-topbar__brand > .edge-product-menu-slot {
     display: inline-flex !important;
-    margin-right: 0.2rem !important;
+    margin-left: 0.2rem !important;
   }
 
   .edge-product-menu-slot .edge-product-switcher {

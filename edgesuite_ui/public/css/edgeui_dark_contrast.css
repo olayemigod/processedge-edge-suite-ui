@@ -1,0 +1,283 @@
+/* EdgeSuite dark-mode contrast completion layer.
+   Load this file last. It protects text/background pairing at rendered surface
+   boundaries where shared EdgeSuite components or Frappe overlays can otherwise
+   retain light-theme foreground/background values after appearance switches. */
+
+:root[data-edge-palette] {
+  --edge-color-ink-600: #52667a;
+}
+
+:root[data-edge-appearance="dark"] {
+  --edge-color-ink-600: #aab9c7;
+  --edge-color-overlay-surface: #14202c;
+  --edge-color-overlay-hover: #1b2a38;
+  --edge-color-overlay-selected: var(--edge-color-brand-50);
+  --edge-color-disabled-surface: #172431;
+  --edge-color-disabled-text: #7d90a4;
+}
+
+/* Frappe Desk applies heading colors directly through --heading-color and
+   --gray-900. Remap those semantics at the EdgeSuite shell boundary so plain
+   H1-H6 nodes inherit the active EdgeSuite appearance instead of Frappe's
+   light-theme heading foreground. */
+:root[data-edge-appearance] .edge-app-shell {
+  --text-color: var(--edge-color-ink-950);
+  --heading-color: var(--edge-color-ink-950);
+}
+
+:root[data-edge-appearance="dark"] .edge-app-shell {
+  --gray-900: var(--edge-color-ink-950);
+}
+
+:root[data-edge-appearance="dark"] .edge-app-shell :is(h1, h2, h3, h4, h5, h6) {
+  color: var(--edge-color-ink-950);
+}
+
+/* Shared popup, menu and result surfaces. */
+:root[data-edge-appearance="dark"] .edge-dropdown__menu,
+:root[data-edge-appearance="dark"] .edge-link-field__menu,
+:root[data-edge-appearance="dark"] .edge-export-menu__options,
+:root[data-edge-appearance="dark"] .edge-topbar-menu,
+:root[data-edge-appearance="dark"] .edge-product-menu,
+:root[data-edge-appearance="dark"] .edge-user-menu {
+  background: var(--edge-color-overlay-surface, var(--edge-color-surface)) !important;
+  border-color: var(--edge-color-border-strong) !important;
+  color: var(--edge-color-ink-950) !important;
+}
+
+:root[data-edge-appearance="dark"] .edge-dropdown__option,
+:root[data-edge-appearance="dark"] .edge-link-field__option,
+:root[data-edge-appearance="dark"] .edge-link-field__create,
+:root[data-edge-appearance="dark"] .edge-export-menu__option,
+:root[data-edge-appearance="dark"] .edge-topbar-menu__item,
+:root[data-edge-appearance="dark"] .edge-product-menu__item,
+:root[data-edge-appearance="dark"] .edge-user-menu__item {
+  color: var(--edge-color-ink-800) !important;
+}
+
+:root[data-edge-appearance="dark"] .edge-dropdown__option:hover,
+:root[data-edge-appearance="dark"] .edge-dropdown__option.is-active,
+:root[data-edge-appearance="dark"] .edge-link-field__option:hover,
+:root[data-edge-appearance="dark"] .edge-link-field__option.is-active,
+:root[data-edge-appearance="dark"] .edge-export-menu__option:hover,
+:root[data-edge-appearance="dark"] .edge-topbar-menu__item:hover,
+:root[data-edge-appearance="dark"] .edge-product-menu__item:hover,
+:root[data-edge-appearance="dark"] .edge-user-menu__item:hover {
+  background: var(--edge-color-overlay-hover, var(--edge-color-surface-soft)) !important;
+  border-color: var(--edge-color-border) !important;
+  color: var(--edge-color-ink-950) !important;
+}
+
+:root[data-edge-appearance="dark"] .edge-dropdown__option-label,
+:root[data-edge-appearance="dark"] .edge-link-field__option-label,
+:root[data-edge-appearance="dark"] .edge-product-menu__item-label,
+:root[data-edge-appearance="dark"] .edge-user-menu__item-label {
+  color: var(--edge-color-ink-950) !important;
+}
+
+:root[data-edge-appearance="dark"] .edge-dropdown__option-description,
+:root[data-edge-appearance="dark"] .edge-link-field__option-description,
+:root[data-edge-appearance="dark"] .edge-link-field__loading,
+:root[data-edge-appearance="dark"] .edge-link-field__empty,
+:root[data-edge-appearance="dark"] .edge-dropdown__helper,
+:root[data-edge-appearance="dark"] .edge-link-field__helper {
+  color: var(--edge-color-ink-500) !important;
+}
+
+:root[data-edge-appearance="dark"] .edge-link-field__create {
+  color: var(--edge-color-brand-text, var(--edge-color-info)) !important;
+}
+
+/* Inputs, EdgeLink and read/display states. */
+:root[data-edge-appearance="dark"] .edge-dropdown__trigger,
+:root[data-edge-appearance="dark"] .edge-link-field__input,
+:root[data-edge-appearance="dark"] .edge-input__control,
+:root[data-edge-appearance="dark"] .edge-textarea__control,
+:root[data-edge-appearance="dark"] .edge-form-control {
+  background: var(--edge-color-control-surface, var(--edge-color-surface)) !important;
+  border-color: var(--edge-color-control-border, var(--edge-color-border-strong)) !important;
+  color: var(--edge-color-control-text, var(--edge-color-ink-950)) !important;
+}
+
+:root[data-edge-appearance="dark"] .edge-dropdown__value.is-placeholder,
+:root[data-edge-appearance="dark"] .edge-input__control::placeholder,
+:root[data-edge-appearance="dark"] .edge-textarea__control::placeholder,
+:root[data-edge-appearance="dark"] .edge-link-field__input::placeholder {
+  color: var(--edge-color-ink-400) !important;
+  opacity: 1;
+}
+
+:root[data-edge-appearance="dark"] .edge-input__control:disabled,
+:root[data-edge-appearance="dark"] .edge-textarea__control:disabled,
+:root[data-edge-appearance="dark"] .edge-dropdown.is-disabled .edge-dropdown__trigger,
+:root[data-edge-appearance="dark"] .edge-link-field.is-disabled .edge-link-field__input,
+:root[data-edge-appearance="dark"] .edge-input.is-readonly .edge-input__control,
+:root[data-edge-appearance="dark"] .edge-textarea.is-readonly .edge-textarea__control {
+  background: var(--edge-color-disabled-surface) !important;
+  color: var(--edge-color-disabled-text) !important;
+  opacity: 1;
+}
+
+:root[data-edge-appearance="dark"] .edge-dropdown__label,
+:root[data-edge-appearance="dark"] .edge-link-field__label,
+:root[data-edge-appearance="dark"] .edge-input__label,
+:root[data-edge-appearance="dark"] .edge-textarea__label,
+:root[data-edge-appearance="dark"] .edge-checkbox__label {
+  color: var(--edge-color-ink-800) !important;
+}
+
+:root[data-edge-appearance="dark"] .edge-checkbox__surface {
+  background: var(--edge-color-surface-soft) !important;
+  border-color: var(--edge-color-border-strong) !important;
+  color: var(--edge-color-ink-950) !important;
+}
+
+:root[data-edge-appearance="dark"] .edge-checkbox__description,
+:root[data-edge-appearance="dark"] .edge-checkbox__helper {
+  color: var(--edge-color-ink-500) !important;
+}
+
+/* EdgeSuite modal/dialog copy must not inherit light Frappe text colors. */
+:root[data-edge-appearance="dark"] .edge-modal,
+:root[data-edge-appearance="dark"] .edge-modal__header,
+:root[data-edge-appearance="dark"] .edge-modal__body,
+:root[data-edge-appearance="dark"] .edge-modal__footer {
+  background: var(--edge-color-surface) !important;
+  border-color: var(--edge-color-border) !important;
+  color: var(--edge-color-ink-950) !important;
+  --text-color: var(--edge-color-ink-950);
+  --heading-color: var(--edge-color-ink-950);
+}
+
+:root[data-edge-appearance="dark"] .edge-modal__body h1,
+:root[data-edge-appearance="dark"] .edge-modal__body h2,
+:root[data-edge-appearance="dark"] .edge-modal__body h3,
+:root[data-edge-appearance="dark"] .edge-modal__body h4,
+:root[data-edge-appearance="dark"] .edge-modal__body h5,
+:root[data-edge-appearance="dark"] .edge-modal__body h6,
+:root[data-edge-appearance="dark"] .edge-modal__body p,
+:root[data-edge-appearance="dark"] .edge-modal__body label,
+:root[data-edge-appearance="dark"] .edge-modal__body legend,
+:root[data-edge-appearance="dark"] .edge-modal__body td,
+:root[data-edge-appearance="dark"] .edge-modal__body th,
+:root[data-edge-appearance="dark"] .edge-form-field,
+:root[data-edge-appearance="dark"] .edge-form-field__label {
+  color: var(--edge-color-ink-950) !important;
+}
+
+:root[data-edge-appearance="dark"] .edge-modal__heading p,
+:root[data-edge-appearance="dark"] .edge-form-field small,
+:root[data-edge-appearance="dark"] .edge-modal-state {
+  color: var(--edge-color-ink-500) !important;
+}
+
+:root[data-edge-appearance="dark"] .edge-modal__close {
+  background: transparent !important;
+  border-color: var(--edge-color-border) !important;
+  color: var(--edge-color-ink-700) !important;
+}
+
+:root[data-edge-appearance="dark"] .edge-modal__close:hover {
+  background: var(--edge-color-surface-muted) !important;
+  color: var(--edge-color-ink-950) !important;
+}
+
+/* Tables/cards inside shared EdgeSuite surfaces. */
+:root[data-edge-appearance="dark"] .edge-app-shell .table,
+:root[data-edge-appearance="dark"] .edge-app-shell .table > :not(caption) > * > *,
+:root[data-edge-appearance="dark"] .edge-app-shell .frappe-card {
+  background-color: var(--edge-color-surface) !important;
+  border-color: var(--edge-color-border) !important;
+  color: var(--edge-color-ink-800) !important;
+}
+
+:root[data-edge-appearance="dark"] .edge-app-shell .table thead th {
+  background-color: var(--edge-color-surface-muted) !important;
+  color: var(--edge-color-ink-600) !important;
+}
+
+/* Native Frappe overlays are appended outside the EdgeSuite component tree.
+   When the EdgeSuite shell is active, theme those popup surfaces at body level. */
+:root[data-edge-appearance="dark"] body.edge-suite-shell-active .dropdown-menu,
+:root[data-edge-appearance="dark"] body.edge-suite-shell-active .popover,
+:root[data-edge-appearance="dark"] body.edge-suite-shell-active .datepicker,
+:root[data-edge-appearance="dark"] body.edge-suite-shell-active .awesomplete > ul,
+:root[data-edge-appearance="dark"] body.edge-suite-shell-active .awesomplete > [role="listbox"] {
+  background: var(--edge-color-overlay-surface, var(--edge-color-surface)) !important;
+  border-color: var(--edge-color-border-strong) !important;
+  color: var(--edge-color-ink-950) !important;
+}
+
+:root[data-edge-appearance="dark"] body.edge-suite-shell-active .dropdown-menu .dropdown-item,
+:root[data-edge-appearance="dark"] body.edge-suite-shell-active .dropdown-menu > li > a,
+:root[data-edge-appearance="dark"] body.edge-suite-shell-active .popover-body,
+:root[data-edge-appearance="dark"] body.edge-suite-shell-active .datepicker td,
+:root[data-edge-appearance="dark"] body.edge-suite-shell-active .datepicker th,
+:root[data-edge-appearance="dark"] body.edge-suite-shell-active .awesomplete > ul > li,
+:root[data-edge-appearance="dark"] body.edge-suite-shell-active .awesomplete > ul > [role="option"],
+:root[data-edge-appearance="dark"] body.edge-suite-shell-active .awesomplete > [role="listbox"] > [role="option"] {
+  background: transparent !important;
+  color: var(--edge-color-ink-800) !important;
+}
+
+:root[data-edge-appearance="dark"] body.edge-suite-shell-active .dropdown-menu .dropdown-item:hover,
+:root[data-edge-appearance="dark"] body.edge-suite-shell-active .dropdown-menu .dropdown-item:focus,
+:root[data-edge-appearance="dark"] body.edge-suite-shell-active .dropdown-menu .dropdown-item.active,
+:root[data-edge-appearance="dark"] body.edge-suite-shell-active .dropdown-menu > li > a:hover,
+:root[data-edge-appearance="dark"] body.edge-suite-shell-active .dropdown-menu > li > a:focus,
+:root[data-edge-appearance="dark"] body.edge-suite-shell-active .datepicker td:hover,
+:root[data-edge-appearance="dark"] body.edge-suite-shell-active .datepicker td.active,
+:root[data-edge-appearance="dark"] body.edge-suite-shell-active .awesomplete > ul > li:hover,
+:root[data-edge-appearance="dark"] body.edge-suite-shell-active .awesomplete > ul > li[aria-selected="true"],
+:root[data-edge-appearance="dark"] body.edge-suite-shell-active .awesomplete > ul > [role="option"]:hover,
+:root[data-edge-appearance="dark"] body.edge-suite-shell-active .awesomplete > ul > [role="option"][aria-selected="true"] {
+  background: var(--edge-color-overlay-hover, var(--edge-color-surface-soft)) !important;
+  color: var(--edge-color-ink-950) !important;
+}
+
+:root[data-edge-appearance="dark"] body.edge-suite-shell-active .dropdown-menu .dropdown-item.disabled,
+:root[data-edge-appearance="dark"] body.edge-suite-shell-active .dropdown-menu .dropdown-item:disabled,
+:root[data-edge-appearance="dark"] body.edge-suite-shell-active .dropdown-menu > li.disabled > a {
+  color: var(--edge-color-disabled-text) !important;
+  opacity: 1;
+}
+
+/* Decorated Frappe dialogs: catch generic nested copy and link/result surfaces
+   that are not represented by the narrower v16 compatibility selectors. */
+:root[data-edge-appearance="dark"] .modal.edge-frappe-dialog-host .modal-content,
+:root[data-edge-appearance="dark"] .modal.edge-frappe-dialog-host .modal-header,
+:root[data-edge-appearance="dark"] .modal.edge-frappe-dialog-host .modal-body,
+:root[data-edge-appearance="dark"] .modal.edge-frappe-dialog-host .modal-footer {
+  background: var(--edge-color-surface) !important;
+  border-color: var(--edge-color-border) !important;
+  color: var(--edge-color-ink-950) !important;
+  --text-color: var(--edge-color-ink-950);
+  --heading-color: var(--edge-color-ink-950);
+}
+
+:root[data-edge-appearance="dark"] .modal.edge-frappe-dialog-host .modal-body h1,
+:root[data-edge-appearance="dark"] .modal.edge-frappe-dialog-host .modal-body h2,
+:root[data-edge-appearance="dark"] .modal.edge-frappe-dialog-host .modal-body h3,
+:root[data-edge-appearance="dark"] .modal.edge-frappe-dialog-host .modal-body h4,
+:root[data-edge-appearance="dark"] .modal.edge-frappe-dialog-host .modal-body h5,
+:root[data-edge-appearance="dark"] .modal.edge-frappe-dialog-host .modal-body h6,
+:root[data-edge-appearance="dark"] .modal.edge-frappe-dialog-host .modal-body p,
+:root[data-edge-appearance="dark"] .modal.edge-frappe-dialog-host .modal-body label,
+:root[data-edge-appearance="dark"] .modal.edge-frappe-dialog-host .modal-body legend,
+:root[data-edge-appearance="dark"] .modal.edge-frappe-dialog-host .modal-body td,
+:root[data-edge-appearance="dark"] .modal.edge-frappe-dialog-host .modal-body th,
+:root[data-edge-appearance="dark"] .modal.edge-frappe-dialog-host .modal-title {
+  color: var(--edge-color-ink-950) !important;
+}
+
+:root[data-edge-appearance="dark"] .modal.edge-frappe-dialog-host .text-muted,
+:root[data-edge-appearance="dark"] .modal.edge-frappe-dialog-host .help-box,
+:root[data-edge-appearance="dark"] .modal.edge-frappe-dialog-host .description,
+:root[data-edge-appearance="dark"] .modal.edge-frappe-dialog-host .form-text,
+:root[data-edge-appearance="dark"] .modal.edge-frappe-dialog-host small {
+  color: var(--edge-color-ink-500) !important;
+}
+
+:root[data-edge-appearance="dark"] .modal.edge-frappe-dialog-host a:not(.btn) {
+  color: var(--edge-color-brand-text, var(--edge-color-info)) !important;
+}

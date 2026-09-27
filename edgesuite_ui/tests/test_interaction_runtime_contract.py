@@ -1,5 +1,7 @@
 from pathlib import Path
 
+from edgesuite_ui import __version__
+
 ROOT = Path(__file__).resolve().parents[2]
 APP = ROOT / "edgesuite_ui"
 PACKAGE = ROOT / "package.json"
@@ -23,14 +25,14 @@ def test_latest_runtime_installs_switcher_commands_density_and_menu_extras():
 		'installSidebarAccordionRuntime(globalThis)',
 		'installWorkflowSaveBridge(globalThis)',
 		'installProductMenuExtras(runtime, globalThis)',
-		'EDGE_SUITE_UI_VERSION = "0.6.3"',
+		f'EDGE_SUITE_UI_VERSION = "{__version__}"',
 		'export * from "./edgeui/interaction_runtime"',
 		'export * from "./edgeui/product_menu_extras"',
 		'export * from "./edgeui/sidebar_accordion_runtime"',
 		'export * from "./edgeui/workflow_save_bridge"',
 	):
 		assert expected in bundle
-	assert '"version": "0.6.3"' in package
+	assert f'"version": "{__version__}"' in package
 
 	for expected in (
 		'const COMMAND_VERSION = "1.0.0"',
@@ -62,8 +64,8 @@ def test_latest_runtime_installs_switcher_commands_density_and_menu_extras():
 		assert expected in extras
 
 	for expected in (
-		'target.addEventListener?.("resize", scheduleMount)',
-		'target.addEventListener?.("orientationchange", scheduleMount)',
+		'["resize", "orientationchange", "hashchange", "popstate", "pageshow"].forEach',
+		'document.addEventListener("visibilitychange", scheduleMount)',
 		"mountAtPreferredTarget();",
 		"preferredTarget(document)",
 	):
@@ -74,12 +76,16 @@ def test_latest_runtime_installs_switcher_commands_density_and_menu_extras():
 		"function enforceSidebar",
 		"shell.dataset.edgeMultiSection = \"true\"",
 		"sectionIdentity(section)",
-		"preferred || (active && sectionExpanded(active) ? active : expanded[0])",
-		"setSectionExpanded(shell, preferred, true)",
+		"preferred || expanded[0]",
+		"if (routePending && active)",
+		"keep = active",
+		"if (keep && !sectionExpanded(keep))",
+		"setSectionExpanded(shell, keep, true)",
 		"delete shell.dataset[SIDEBAR_OPEN_SECTION_KEY]",
 		"scheduleEnforce()",
 	):
 		assert expected in sidebar
+	assert "preferred || active || expanded[0]" not in sidebar
 
 	for expected in (
 		"function workflowSaveButton",
