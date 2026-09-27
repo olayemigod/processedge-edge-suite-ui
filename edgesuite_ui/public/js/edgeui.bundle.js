@@ -98,6 +98,7 @@ if (typeof globalThis !== "undefined") {
 export * from "./edgeui/components";
 export * from "./edgeui/context_components";
 export * from "./edgeui/context_identity";
+export * from "./edgeui/create_navigation";
 export * from "./edgeui/document_components";
 export * from "./edgeui/dropdown_viewport_runtime";
 export { EdgeEmptyState, emptyStateComponents } from "./edgeui/empty_state_components";
