@@ -146,8 +146,8 @@ The runtime delegates to `frappe.new_doc()`, so Frappe remains responsible for t
 - native Quick Entry retains Frappe's built-in **Edit Full Form** action;
 - DocTypes that are not valid for Quick Entry fall through to the full persistent Form;
 - create permission is checked through Frappe's client permission helper when available;
-- EdgeSuite-only users are denied native creation by default; a product may pass `allowRestricted: true` only after it has established a safe containment policy for any native Form escape;
-- existing documents use `openExistingDocument(doctype, name)` and always open the persistent Form.
+- EdgeSuite-only users are denied native creation by default; a product may pass the literal boolean `allowRestricted: true` only after it has established a safe containment policy for any native Form escape;
+- existing documents use `openExistingDocument(doctype, name)` and target the persistent native Form; this is also denied in EdgeSuite-only mode unless the product explicitly passes the literal boolean `allowRestricted: true` under a safe containment policy.
 
 Do not maintain a separate EdgeSuite list of Quick Entry DocTypes and do not recreate or force Frappe Quick Entry internals.
 
