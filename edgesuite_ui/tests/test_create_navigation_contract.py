@@ -10,8 +10,9 @@ def test_native_create_navigation_uses_frappe_authority():
     assert "target.frappe?.model?.can_create" in source
     assert 'edgesuite_ui_access?.mode === "edgesuite_only"' in source
     assert "allowRestricted = false" in source
-    assert "restrictedToEdgeSuite(target) && !allowRestricted" in source
+    assert source.count("restrictedToEdgeSuite(target) && allowRestricted !== true") == 2
     assert 'setRoute("Form", normalizedDoctype, normalizedName)' in source
+    assert "openExistingDocument" in source
     assert "make_quick_entry" not in source
 
     for forbidden in ("Customer", "Supplier", "Item", "Sales Invoice", "Purchase Invoice"):
