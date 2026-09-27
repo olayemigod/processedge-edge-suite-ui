@@ -1,5 +1,6 @@
 import * as Vue from "vue";
 
+import { openCreateSurface, openExistingDocument } from "./create_navigation";
 import { createProductContextController } from "./product_context";
 import { createProductMenuController } from "./product_menu";
 
@@ -87,6 +88,14 @@ export function createEdgeSuiteRuntime({ version, components = {} } = {}) {
 
     getAdapter(name) {
       return adapterRegistry[name] || null;
+    },
+
+    openCreateSurface(doctype, options = {}) {
+      return openCreateSurface(doctype, { ...options, target });
+    },
+
+    openExistingDocument(doctype, name, options = {}) {
+      return openExistingDocument(doctype, name, { ...options, target });
     },
 
     registerProduct(descriptor) {
