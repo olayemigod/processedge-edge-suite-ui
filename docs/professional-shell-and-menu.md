@@ -145,6 +145,8 @@ The runtime delegates directly to `frappe.new_doc()`. Frappe therefore remains r
 
 Do not maintain a separate EdgeSuite list of Quick Entry DocTypes and do not recreate Frappe Quick Entry internals.
 
+When a product supplies its own `navigate(item)` handler, that handler remains authoritative for role, containment, and product-specific workflow rules. The shared create-intent handling is used only when no custom product navigator is supplied.
+
 Product-menu items can explicitly request generic document creation with a create intent:
 
 ```javascript
