@@ -56,6 +56,7 @@ jobs:
             edgesuite_ui/tests/test_edgeui_asset_contract.py \
             edgesuite_ui/tests/test_release_governance_contract.py \
             edgesuite_ui/tests/test_product_menu_contract.py \
+            edgesuite_ui/tests/test_create_navigation_contract.py \
             edgesuite_ui/tests/test_product_context_contract.py \
             edgesuite_ui/tests/test_interaction_runtime_contract.py \
             edgesuite_ui/tests/test_shell_enhancement_contract.py \
