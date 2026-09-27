@@ -27,6 +27,23 @@ function showPermissionMessage(target, doctype) {
   }
 }
 
+function restrictedToEdgeSuite(target) {
+  return target.frappe?.boot?.edgesuite_ui_access?.mode === "edgesuite_only";
+}
+
+function showRestrictedMessage(target) {
+  const message = "This account is limited to EdgeSuite operational pages.";
+  if (target.frappe?.msgprint) {
+    target.frappe.msgprint({
+      title: "EdgeSuite Access",
+      message,
+      indicator: "orange",
+    });
+  } else {
+    target.console?.warn?.(message);
+  }
+}
+
 export function canCreateDocument(doctype, { target = globalThis } = {}) {
   const normalized = normalizeDoctype(doctype);
   const checker = target.frappe?.model?.can_create;
@@ -36,13 +53,23 @@ export function canCreateDocument(doctype, { target = globalThis } = {}) {
 
 export function openCreateSurface(
   doctype,
-  { defaults = {}, initCallback = null, target = globalThis } = {},
+  {
+    defaults = {},
+    initCallback = null,
+    allowRestricted = false,
+    target = globalThis,
+  } = {},
 ) {
   const normalized = normalizeDoctype(doctype);
   const frappe = target.frappe;
 
   if (!frappe || typeof frappe.new_doc !== "function") {
     throw new Error("Frappe native document creation is unavailable.");
+  }
+
+  if (restrictedToEdgeSuite(target) && !allowRestricted) {
+    showRestrictedMessage(target);
+    return Promise.resolve(false);
   }
 
   if (!canCreateDocument(normalized, { target })) {
@@ -53,6 +80,9 @@ export function openCreateSurface(
   const values =
     defaults && typeof defaults === "object" && !Array.isArray(defaults) ? { ...defaults } : {};
 
+  // EdgeSuite-only callers must opt in explicitly after the product has
+  // established an appropriate containment policy for any native Form escape.
+  //
   // Frappe owns the creation-surface decision. In Frappe v16, frappe.new_doc()
   // honors a DocType create route when present, otherwise opens native Quick
   // Entry when supported and falls through to the full Form when it is not.
