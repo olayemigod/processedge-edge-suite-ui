@@ -146,6 +146,14 @@ function visibleNavbar(document) {
 }
 
 function routeTo(target, config, item) {
+  // Product navigation remains authoritative for containment, role and
+  // product-specific workflow decisions. Shared create handling is the
+  // default only when the product has not supplied its own navigator.
+  if (config?.navigate) {
+    config.navigate(item);
+    return;
+  }
+
   if (item?.link_type === "DocType" && item?.intent === "create") {
     const openCreate = target.EdgeSuiteUI?.openCreateSurface;
     if (typeof openCreate === "function") {
@@ -153,11 +161,6 @@ function routeTo(target, config, item) {
     } else {
       target.frappe?.new_doc?.(item.link_to);
     }
-    return;
-  }
-
-  if (config?.navigate) {
-    config.navigate(item);
     return;
   }
 
