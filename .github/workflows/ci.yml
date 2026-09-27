@@ -133,7 +133,7 @@ jobs:
 
   frappe-v16:
     name: Frappe v16 integration
-    if: github.event_name == 'workflow_dispatch' || github.head_ref == 'qa/edgesuite-ui-full-implementation-2026-08-29'
+    if: github.event_name == 'workflow_dispatch' || github.head_ref == 'qa/edgesuite-ui-full-implementation-2026-08-29' || github.head_ref == 'qa/native-create-surface-validation-20260927'
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     services:
