@@ -134,6 +134,9 @@ Generic ERPNext/Frappe document creation should use the shared EdgeSuite creatio
 
 ```javascript
 window.EdgeSuiteUI.openCreateSurface("Customer");
+
+// Product-owned guarded exception for a restricted operational flow:
+window.EdgeSuiteUI.openCreateSurface("Customer", { allowRestricted: true });
 ```
 
 The runtime delegates to `frappe.new_doc()`, so Frappe remains responsible for the best native creation surface:
@@ -143,6 +146,7 @@ The runtime delegates to `frappe.new_doc()`, so Frappe remains responsible for t
 - native Quick Entry retains Frappe's built-in **Edit Full Form** action;
 - DocTypes that are not valid for Quick Entry fall through to the full persistent Form;
 - create permission is checked through Frappe's client permission helper when available;
+- EdgeSuite-only users are denied native creation by default; a product may pass `allowRestricted: true` only after it has established a safe containment policy for any native Form escape;
 - existing documents use `openExistingDocument(doctype, name)` and always open the persistent Form.
 
 Do not maintain a separate EdgeSuite list of Quick Entry DocTypes and do not recreate or force Frappe Quick Entry internals.
