@@ -31,6 +31,9 @@ def test_product_menu_supports_explicit_create_intent():
     assert 'item?.link_type === "DocType" && item?.intent === "create"' in source
     assert "target.EdgeSuiteUI?.openCreateSurface" in source
     assert 'data-intent="${escapeHtml(item.intent)}"' in source
+    navigator = source.index("if (config?.navigate)")
+    shared_create = source.index('item?.link_type === "DocType" && item?.intent === "create"')
+    assert navigator < shared_create
 
 
 def test_create_contract_is_documented():
