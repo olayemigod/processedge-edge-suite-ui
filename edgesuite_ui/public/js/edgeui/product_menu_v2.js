@@ -3,6 +3,7 @@ import { openCreateSurface } from "./create_navigation";
 import { normalizeProductKey } from "./product_context";
 
 const TRIGGER_ID = "edge-product-menu-trigger";
+const GLOBAL_ACTION_ID = "edge-product-global-action";
 const HOST_ID = "edge-product-menu-host";
 const PANEL_ID = "edge-product-menu-dropdown";
 const SWITCHER_ID = "edge-product-app-switcher";
@@ -81,6 +82,10 @@ function normalizeConfig(config = {}) {
     icon: String(config.icon || "apps").trim() || "apps",
     subtitle: String(config.subtitle || config.description || "").trim(),
     sections,
+    global_action:
+      config.global_action && typeof config.global_action === "object"
+        ? normalizeItem(config.global_action)
+        : null,
     profile: config.profile && typeof config.profile === "object" ? { ...config.profile } : {},
     navigate: typeof config.navigate === "function" ? config.navigate : null,
     activate: typeof config.activate === "function" ? config.activate : null,
@@ -200,6 +205,7 @@ export function createProductMenuController({ target = globalThis, productContex
 
   const document = () => target.document;
   const trigger = () => document()?.getElementById(TRIGGER_ID) || null;
+  const globalAction = () => document()?.getElementById(GLOBAL_ACTION_ID) || null;
   const panel = () => document()?.getElementById(PANEL_ID) || null;
   const switcher = () => document()?.getElementById(SWITCHER_ID) || null;
 
@@ -422,6 +428,36 @@ export function createProductMenuController({ target = globalThis, productContex
     };
   }
 
+  function syncGlobalAction(host) {
+    const action = config?.global_action;
+    let button = host.querySelector(`#${GLOBAL_ACTION_ID}`);
+
+    if (!action || !itemIsVisible(target, action)) {
+      button?.remove();
+      return;
+    }
+
+    if (!button) {
+      button = document().createElement("button");
+      button.id = GLOBAL_ACTION_ID;
+      button.type = "button";
+      button.className = "edge-product-global-action";
+      host.appendChild(button);
+    }
+
+    button.setAttribute("aria-label", action.label || "Create");
+    button.title = action.label || "Create";
+    button.innerHTML = `
+      <span class="edge-product-global-action__icon" aria-hidden="true">${edgeIconMarkup(action.icon || "plus", { target })}</span>
+      <span class="edge-product-global-action__label">${escapeHtml(action.label || "Create")}</span>`;
+    button.onclick = (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      close();
+      routeTo(target, config, action);
+    };
+  }
+
   function syncHost(host) {
     syncActiveConfig();
     syncSwitcher(host);
@@ -429,6 +465,7 @@ export function createProductMenuController({ target = globalThis, productContex
     if (!menuTrigger) return;
     menuTrigger.hidden = !config || !config.sections.length;
     menuTrigger.setAttribute("aria-label", `Open ${config?.product || "active product"} menu`);
+    syncGlobalAction(host);
   }
 
   function mount() {
@@ -624,4 +661,4 @@ export function createProductMenuController({ target = globalThis, productContex
   };
 }
 
-export { HOST_ID, PANEL_ID, SWITCHER_ID, TRIGGER_ID };
+export { GLOBAL_ACTION_ID, HOST_ID, PANEL_ID, SWITCHER_ID, TRIGGER_ID };

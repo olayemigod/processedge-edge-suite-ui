@@ -128,6 +128,12 @@ Supported item properties:
 
 The menu automatically supports search, active route highlighting, role visibility, outside-click dismissal, Escape dismissal, navbar remounting, and Desk route changes.
 
+## Global top-bar action
+
+Products may optionally register one persistent `global_action` in the product-menu configuration. EdgeSuite renders that action beside the product-menu/waffle trigger and delegates execution through the product's existing `navigate(item)` handler. This keeps permission, containment, and workflow decisions product-owned while avoiding duplicate toolbar implementations.
+
+The action is hidden when it is absent or not visible for the current user. On narrow/mobile layouts the label collapses and the icon remains accessible through the button's label/title.
+
 ## Native create navigation
 
 Generic ERPNext/Frappe document creation should use the shared EdgeSuite creation contract:

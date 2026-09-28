@@ -49,6 +49,10 @@ class TestProductMenuContract(unittest.TestCase):
 			"edge-product-menu__search",
 			"edge-product-menu__section-heading",
 			"edge-product-menu__item-copy",
+			"GLOBAL_ACTION_ID",
+			"config.global_action",
+			"edge-product-global-action",
+			"routeTo(target, config, action)",
 			"desktop_screen",
 			"sidebar_setup",
 			"toolbar_setup",
@@ -69,6 +73,8 @@ class TestProductMenuContract(unittest.TestCase):
 			".edge-product-switcher",
 			".edge-product-switcher__select",
 			".edge-product-menu__trigger",
+			".edge-product-global-action",
+			".edge-product-global-action__label",
 		):
 			self.assertIn(expected, menu_styles)
 		for expected in (
