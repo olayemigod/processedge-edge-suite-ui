@@ -277,6 +277,175 @@ export const EdgeFinancialCompositionPanel = defineComponent({
   },
 });
 
+
+function chartRows(chart = {}) {
+  const valueField = String(chart.value_field || "value");
+  return list(chart.rows)
+    .map((row, index) => ({ ...row, __index: index, __value: Number(row?.[valueField]) }))
+    .filter((row) => Number.isFinite(row.__value));
+}
+
+function chartLabel(row, chart = {}) {
+  const field = String(chart.label_field || chart.x_field || "label");
+  const value = row?.[field];
+  if (!value) return "";
+  if (String(chart.label_type || "").toLowerCase() === "date") {
+    try {
+      return new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" }).format(new Date(`${value}T00:00:00`));
+    } catch (_error) {
+      return String(value);
+    }
+  }
+  return String(value);
+}
+
+function chartMetric(row, chart = {}) {
+  return {
+    value: row.__value,
+    datatype: chart.datatype || "Currency",
+    currency: chart.currency || "",
+    availability: "available",
+  };
+}
+
+export const EdgeFinancialChartPanel = defineComponent({
+  name: "EdgeFinancialChartPanel",
+  props: {
+    chart: { type: Object, default: () => ({}) },
+  },
+  emits: ["action"],
+  setup(props, { emit }) {
+    const emitRowAction = (row) => {
+      if (validAction(row?.action)) emit("action", row.action);
+    };
+    const renderEmpty = (chart) => h(EdgeEmptyState, {
+      title: chart.empty_title || "No chart data",
+      description: chart.empty_description || "There is no chart data for this authorised scope.",
+    });
+    const renderHorizontalBars = (chart, rows) => {
+      const maxAbs = Math.max(...rows.map((row) => Math.abs(row.__value)), 1);
+      return h("div", { class: "edge-financial-chart__horizontal-bars" },
+        rows.map((row, index) => h(
+          validAction(row.action) ? "button" : "div",
+          {
+            key: row.id || row.name || row.label || index,
+            type: validAction(row.action) ? "button" : undefined,
+            class: ["edge-financial-chart__horizontal-row", validAction(row.action) ? "is-actionable" : ""],
+            onClick: validAction(row.action) ? () => emitRowAction(row) : undefined,
+          },
+          [
+            h("span", { class: "edge-financial-chart__horizontal-label" }, chartLabel(row, chart)),
+            h("span", { class: "edge-financial-chart__horizontal-track" }, [
+              h("span", {
+                class: ["edge-financial-chart__horizontal-fill", row.__value < 0 ? "is-negative" : ""],
+                style: { width: `${Math.max(2, Math.abs(row.__value) / maxAbs * 100)}%` },
+              }),
+            ]),
+            h("strong", formatFinancialMetric(chartMetric(row, chart), { compact: true })),
+          ],
+        )),
+      );
+    };
+    const renderBars = (chart, rows) => {
+      const maxAbs = Math.max(...rows.map((row) => Math.abs(row.__value)), 1);
+      const labelStride = Math.max(1, Math.ceil(rows.length / 8));
+      return h("div", { class: "edge-financial-chart__bar-wrap" }, [
+        h("div", { class: "edge-financial-chart__bars", role: "img", "aria-label": chart.aria_label || chart.title || "Financial bar chart" },
+          rows.map((row, index) => h("button", {
+            key: row.id || row.name || index,
+            type: "button",
+            class: ["edge-financial-chart__bar-slot", validAction(row.action) ? "is-actionable" : ""],
+            disabled: !validAction(row.action),
+            title: `${chartLabel(row, chart)}: ${formatFinancialMetric(chartMetric(row, chart))}`,
+            onClick: validAction(row.action) ? () => emitRowAction(row) : undefined,
+          }, [
+            h("span", {
+              class: ["edge-financial-chart__bar", row.__value < 0 ? "is-negative" : ""],
+              style: { height: `${Math.max(3, Math.abs(row.__value) / maxAbs * 100)}%` },
+            }),
+            h("small", { class: "edge-financial-chart__bar-label" }, index % labelStride === 0 || index === rows.length - 1 ? chartLabel(row, chart) : ""),
+          ])),
+        ),
+      ]);
+    };
+    const renderLine = (chart, rows) => {
+      const width = 1000;
+      const height = 260;
+      const padX = 28;
+      const padY = 24;
+      let min = Math.min(...rows.map((row) => row.__value), 0);
+      let max = Math.max(...rows.map((row) => row.__value), 0);
+      if (max === min) max = min + 1;
+      const x = (index) => rows.length <= 1 ? width / 2 : padX + index * ((width - padX * 2) / (rows.length - 1));
+      const y = (value) => padY + (max - value) / (max - min) * (height - padY * 2);
+      const zeroY = y(0);
+      const points = rows.map((row, index) => `${x(index).toFixed(1)},${y(row.__value).toFixed(1)}`).join(" ");
+      const labelStride = Math.max(1, Math.ceil(rows.length / 5));
+      return h("div", { class: "edge-financial-chart__line-wrap" }, [
+        h("div", { class: "edge-financial-chart__range" }, [
+          h("span", formatFinancialMetric({ ...chartMetric({ __value: max }, chart) }, { compact: true })),
+          h("span", formatFinancialMetric({ ...chartMetric({ __value: min }, chart) }, { compact: true })),
+        ]),
+        h("svg", {
+          class: "edge-financial-chart__line",
+          viewBox: `0 0 ${width} ${height}`,
+          preserveAspectRatio: "none",
+          role: "img",
+          "aria-label": chart.aria_label || chart.title || "Financial trend chart",
+        }, [
+          h("line", { x1: padX, x2: width - padX, y1: zeroY, y2: zeroY, class: "edge-financial-chart__zero" }),
+          h("polyline", { points, class: "edge-financial-chart__polyline", fill: "none" }),
+          ...rows.map((row, index) => h("circle", {
+            key: row.id || row.name || index,
+            cx: x(index),
+            cy: y(row.__value),
+            r: validAction(row.action) ? 7 : 5,
+            class: ["edge-financial-chart__point", validAction(row.action) ? "is-actionable" : ""],
+            tabindex: validAction(row.action) ? 0 : undefined,
+            role: validAction(row.action) ? "button" : undefined,
+            "aria-label": `${chartLabel(row, chart)}: ${formatFinancialMetric(chartMetric(row, chart))}`,
+            onClick: validAction(row.action) ? () => emitRowAction(row) : undefined,
+            onKeydown: validAction(row.action)
+              ? (event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    emitRowAction(row);
+                  }
+                }
+              : undefined,
+          }, [h("title", `${chartLabel(row, chart)}: ${formatFinancialMetric(chartMetric(row, chart))}`)])),
+        ]),
+        h("div", { class: "edge-financial-chart__labels" },
+          rows.map((row, index) => index % labelStride === 0 || index === rows.length - 1
+            ? h("span", { key: row.id || row.name || index }, chartLabel(row, chart))
+            : null).filter(Boolean),
+        ),
+      ]);
+    };
+    return () => {
+      const chart = object(props.chart);
+      const rows = chartRows(chart);
+      if (!rows.length) return renderEmpty(chart);
+      const kind = String(chart.kind || "bar").toLowerCase();
+      const visual = chart.orientation === "horizontal"
+        ? renderHorizontalBars(chart, rows)
+        : kind === "line"
+          ? renderLine(chart, rows)
+          : renderBars(chart, rows);
+      return h("article", { class: "edge-financial-chart" }, [
+        h("div", { class: "edge-financial-chart__head" }, [
+          h("div", {}, [
+            h("strong", chart.title || "Chart"),
+            chart.description ? h("small", chart.description) : null,
+          ]),
+          chart.value_label ? h("span", chart.value_label) : null,
+        ]),
+        visual,
+      ]);
+    };
+  },
+});
+
 function metricGroup(payload, group) {
   return list(payload.summary).filter((metric) => String(metric.group || "executive") === group);
 }
@@ -353,8 +522,9 @@ export const EdgeFinancialDashboard = defineComponent({
     renderTableSection(section, fallbackTitle) {
       const data = object(section);
       const rows = sectionRows(data);
-      const state = availability(data.availability || (rows.length ? "available" : "empty"));
-      if (!rows.length) {
+      const visuals = list(data.visuals);
+      const state = availability(data.availability || (rows.length || visuals.length ? "available" : "empty"));
+      if (!rows.length && !visuals.length) {
         if (!["restricted", "unavailable", "error", "partial"].includes(state)) return null;
         const title = panelTitle(data, fallbackTitle);
         const stateTitle = state === "restricted" ? `${title} restricted` : `${title} unavailable`;
@@ -372,17 +542,30 @@ export const EdgeFinancialDashboard = defineComponent({
       return h(EdgeDashboardSection, {
         title: panelTitle(data, fallbackTitle),
         description: panelDescription(data),
-        span: data.span || "auto",
+        span: data.span || (visuals.length ? "2" : "auto"),
       }, {
-        default: () => h(EdgeReportTable, {
-          columns: sectionColumns(data),
-          rows,
-          rowKey: data.row_key || "name",
-          compact: true,
-          sortingEnabled: false,
-          onCellClick: ({ row }) => this.emitAction(row?.action),
-          onRowClick: (row) => this.emitAction(row?.action),
-        }),
+        default: () => h("div", { class: "edge-financial-section-content" }, [
+          visuals.length
+            ? h("div", { class: "edge-financial-chart-grid" }, visuals.map((chart, index) =>
+                h(EdgeFinancialChartPanel, {
+                  key: chart.id || chart.title || index,
+                  chart,
+                  onAction: (action) => this.emitAction(action),
+                }),
+              ))
+            : null,
+          rows.length
+            ? h(EdgeReportTable, {
+                columns: sectionColumns(data),
+                rows,
+                rowKey: data.row_key || "name",
+                compact: true,
+                sortingEnabled: false,
+                onCellClick: ({ row }) => this.emitAction(row?.action),
+                onRowClick: (row) => this.emitAction(row?.action),
+              })
+            : null,
+        ].filter(Boolean)),
       });
     },
   },
@@ -555,4 +738,5 @@ export const financialDashboardComponents = Object.freeze({
   EdgeFinancialDashboard,
   EdgeFinancialMetricCard,
   EdgeFinancialCompositionPanel,
+  EdgeFinancialChartPanel,
 });
