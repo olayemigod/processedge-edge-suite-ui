@@ -18,3 +18,8 @@ Authoritative lineage: stacked on EdgeSuite UI PR #24 exact head `133bdd60f87eea
 
 
 Validation note: repository CI is configured for pull requests targeting `main`; the exact stacked head is temporarily validated against `main` before the PR base is returned to PR #24's authoritative branch.
+
+
+## Additive chart presentation
+
+Financial sections may optionally publish a `visuals` array without changing schema version 1. EdgeSuite treats each visual as presentation metadata only: products provide authorised rows, labels, datatypes, currencies and drill actions. The shared renderer supports line, vertical bar and horizontal comparison charts while preserving the section's detail table and existing restricted/unavailable behavior. EdgeSuite does not calculate product financial values or infer ERP/accounting semantics from chart definitions.
