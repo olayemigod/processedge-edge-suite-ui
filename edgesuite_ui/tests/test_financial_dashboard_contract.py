@@ -17,6 +17,7 @@ def test_signature_financial_dashboard_is_registered_as_shared_component():
         'name: "EdgeFinancialDashboard"',
         'name: "EdgeFinancialMetricCard"',
         'name: "EdgeFinancialCompositionPanel"',
+        'name: "EdgeFinancialChartPanel"',
         "FINANCIAL_DASHBOARD_SCHEMA_VERSION = 1",
         "financialDashboardComponents",
     ):
@@ -91,6 +92,32 @@ def test_composition_renderer_pairs_visual_and_table_and_falls_back_for_signed_v
         assert expected in css
 
 
+def test_financial_dashboard_supports_declarative_line_and_bar_visuals():
+    source = SOURCE.read_text()
+    css = CSS.read_text()
+
+    for expected in (
+        "EdgeFinancialChartPanel",
+        "chartRows(chart",
+        'const kind = String(chart.kind || "bar").toLowerCase()',
+        'kind === "line"',
+        'chart.orientation === "horizontal"',
+        "list(data.visuals)",
+        "edge-financial-chart-grid",
+        "onAction: (action) => this.emitAction(action)",
+    ):
+        assert expected in source
+
+    for expected in (
+        ".edge-financial-chart-grid",
+        ".edge-financial-chart__line",
+        ".edge-financial-chart__bars",
+        ".edge-financial-chart__horizontal-bars",
+        ".edge-financial-chart__point.is-actionable",
+    ):
+        assert expected in css
+
+
 def test_shared_financial_dashboard_contains_no_product_data_or_accounting_queries():
     source = SOURCE.read_text()
 
@@ -131,5 +158,5 @@ def test_financial_dashboard_preserves_restricted_and_unavailable_section_states
 
 def test_empty_optional_sections_can_still_remain_hidden():
     source = SOURCE.read_text()
-    assert 'data.availability || (rows.length ? "available" : "empty")' in source
+    assert 'data.availability || (rows.length || visuals.length ? "available" : "empty")' in source
     assert 'if (!["restricted", "unavailable", "error", "partial"].includes(state)) return null;' in source
