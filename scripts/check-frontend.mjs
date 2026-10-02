@@ -11,6 +11,7 @@ const productContextEntrypoint = resolve(javascriptRoot, "edgeui/product_context
 const themeRuntimeEntrypoint = resolve(javascriptRoot, "edgeui/theme_runtime.js");
 const exportRuntimeEntrypoint = resolve(javascriptRoot, "edgeui/export_runtime.js");
 const exportComponentEntrypoint = resolve(javascriptRoot, "edgeui/export_components.js");
+const printingRuntimeEntrypoint = resolve(javascriptRoot, "edgeui/printing_runtime.js");
 
 async function javascriptFiles(directory) {
   const entries = await readdir(directory, { withFileTypes: true });
@@ -158,6 +159,96 @@ if (exportRuntimeModule.EDGE_EXPORT_FORMATS.map((format) => format.value).join("
   throw new Error("Shared export formats should expose CSV, Excel, and Print / PDF.");
 }
 
+
+const printingRuntimeBuild = await build({
+  entryPoints: [printingRuntimeEntrypoint],
+  bundle: true,
+  format: "esm",
+  logLevel: "warning",
+  platform: "node",
+  write: false,
+});
+const printingRuntimeModule = await import(
+  `data:text/javascript;base64,${Buffer.from(printingRuntimeBuild.outputFiles[0].text).toString("base64")}`
+);
+
+const serialWrites = [];
+let serialOpenOptions = null;
+let serialClosed = false;
+const fakeSerialPort = {
+  readable: null,
+  writable: null,
+  async open(options) {
+    serialOpenOptions = options;
+    this.readable = {};
+    this.writable = {
+      getWriter() {
+        return {
+          async write(payload) {
+            serialWrites.push([...payload]);
+          },
+          releaseLock() {},
+        };
+      },
+    };
+  },
+  async close() {
+    serialClosed = true;
+    this.readable = null;
+    this.writable = null;
+  },
+  getInfo() {
+    return { bluetoothServiceClassId: "test-printer" };
+  },
+};
+const fakePrintingTarget = {
+  isSecureContext: true,
+  navigator: {
+    serial: {
+      async requestPort() {
+        return fakeSerialPort;
+      },
+      async getPorts() {
+        return [fakeSerialPort];
+      },
+    },
+  },
+  print() {},
+};
+const printingCapabilities = printingRuntimeModule
+  .createPrintManager({ target: fakePrintingTarget })
+  .detectCapabilities();
+if (!printingCapabilities.webSerial || !printingCapabilities.systemPrint) {
+  throw new Error("Shared printing capability detection should expose Web Serial and system print.");
+}
+const insecurePrintingCapabilities = printingRuntimeModule
+  .createPrintManager({ target: { ...fakePrintingTarget, isSecureContext: false } })
+  .detectCapabilities();
+if (insecurePrintingCapabilities.webSerial) {
+  throw new Error("Direct serial printing must fail closed outside a secure context.");
+}
+const printingManager = printingRuntimeModule.createPrintManager({ target: fakePrintingTarget });
+const authorizedPorts = await printingManager.getTransport("serial").authorizedPorts();
+if (authorizedPorts.length !== 1 || authorizedPorts[0] !== fakeSerialPort) {
+  throw new Error("Shared serial transport should expose previously authorized ports.");
+}
+await printingManager.getTransport("serial").requestDevice();
+await printingManager.connect("serial", { openOptions: { baudRate: 19200 } });
+if (serialOpenOptions?.baudRate !== 19200) {
+  throw new Error("Shared serial transport should respect configured baud rate.");
+}
+const writeResult = await printingManager.write(Uint8Array.from([0x1b, 0x40, 0x0a]));
+if (writeResult.bytesWritten !== 3 || serialWrites[0]?.join(",") !== "27,64,10") {
+  throw new Error("Shared serial transport should write byte-oriented printer payloads.");
+}
+if (printingManager.getStatus("serial").state !== "connected") {
+  throw new Error("Shared serial transport should return to connected state after a successful write.");
+}
+await printingManager.disconnect("serial");
+if (!serialClosed || printingManager.getStatus("serial").state !== "disconnected") {
+  throw new Error("Shared serial transport should close the selected printer cleanly.");
+}
+
 const exportComponentSource = await readFile(exportComponentEntrypoint, "utf8");
 if (!exportComponentSource.includes("EdgeExportMenu") || !exportComponentSource.includes("loadDataset")) {
   throw new Error("Shared EdgeExportMenu must support on-demand dataset loading.");
@@ -165,6 +256,9 @@ if (!exportComponentSource.includes("EdgeExportMenu") || !exportComponentSource.
 const runtimeSource = await readFile(entrypoint, "utf8");
 if (!runtimeSource.includes('runtime.registerAdapter("export", edgeExportAdapter)')) {
   throw new Error("EdgeSuite UI runtime must expose the shared export adapter.");
+}
+if (!runtimeSource.includes('runtime.registerAdapter("print", edgePrintAdapter)') || !runtimeSource.includes("runtime.print = edgePrintAdapter")) {
+  throw new Error("EdgeSuite UI runtime must expose the shared print adapter.");
 }
 
 await build({
@@ -202,4 +296,4 @@ await build({
   write: false,
 });
 
-console.log("Frontend syntax, product routes, theme resolution, shared export runtime, runtime bundle, and Vue bridge validation passed.");
+console.log("Frontend syntax, product routes, theme resolution, shared export runtime, shared printing runtime, runtime bundle, and Vue bridge validation passed.");
