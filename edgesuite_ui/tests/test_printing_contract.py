@@ -45,6 +45,8 @@ def test_serial_transport_fails_closed_and_remains_byte_oriented():
         "writer.ready",
         "payload.subarray",
         "chunksWritten",
+        'addEventListener?.("disconnect"',
+        "deviceConnected",
         "writer.releaseLock()",
     ):
         assert expected in source
