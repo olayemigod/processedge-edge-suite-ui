@@ -106,6 +106,21 @@ export const EdgePrinterSetupCard = defineComponent({
           return this.profile;
         }
 
+        const capabilities = adapter.detectCapabilities?.() || {};
+        if (!capabilities.webSerial) {
+          this.bindingPresent = false;
+          this.status = {
+            state: "unsupported",
+            connected: false,
+            configured: true,
+            supported: false,
+            transport: "serial",
+            reason: capabilities.serialReason || "api_unavailable",
+          };
+          this.emitStatus();
+          return this.profile;
+        }
+
         const restored = await adapter.devices.restoreSerial(this.profile.name);
         this.bindingPresent = Boolean(restored);
         this.status = adapter.getStatus("serial");
@@ -124,6 +139,14 @@ export const EdgePrinterSetupCard = defineComponent({
       if (!this.profile) throw new Error("No active print profile is configured for this context.");
       if (this.profile.transport !== "serial") {
         throw new Error("This print profile does not use a directly connected serial printer.");
+      }
+      const capabilities = adapter.detectCapabilities?.() || {};
+      if (!capabilities.webSerial) {
+        throw new Error(
+          capabilities.serialReason === "insecure_context"
+            ? "Direct printer access requires a secure HTTPS connection."
+            : "This browser cannot access serial or Bluetooth receipt printers from the web.",
+        );
       }
 
       this.busy = true;
@@ -250,7 +273,8 @@ export const EdgePrinterSetupCard = defineComponent({
     const connected = Boolean(this.status?.connected);
     const configured = Boolean(profile);
     const serial = profile?.transport === "serial";
-    const canReconnect = serial && this.bindingPresent && !connected;
+    const unsupported = serial && this.status?.state === "unsupported";
+    const canReconnect = serial && this.bindingPresent && !connected && !unsupported;
     const disabled = this.loading || this.busy;
 
     return h("section", { class: "edge-printer-setup edge-card" }, [
@@ -292,7 +316,7 @@ export const EdgePrinterSetupCard = defineComponent({
         : null,
       h("div", { class: "edge-printer-setup__actions" }, [
         button("Refresh", () => this.refresh().catch(() => {}), { disabled }),
-        serial && !this.bindingPresent
+        serial && !this.bindingPresent && !unsupported
           ? button("Connect Printer", () => this.connect().catch(() => {}), { primary: true, disabled })
           : null,
         canReconnect
@@ -308,13 +332,21 @@ export const EdgePrinterSetupCard = defineComponent({
           ? button("Forget Printer", () => this.forget().catch(() => {}), { danger: true, disabled })
           : null,
       ].filter(Boolean)),
-      profile && !serial
+      unsupported
         ? h(
             "p",
-            { class: "edge-printer-setup__note" },
-            "This profile uses system/browser printing and does not require a direct device binding.",
+            { class: "edge-printer-setup__note", role: "status" },
+            this.status?.reason === "insecure_context"
+              ? "Direct printer access requires HTTPS. Open this site through its secure address and try again."
+              : "This browser does not expose Web Serial. Use a supported browser or a native printing bridge.",
           )
-        : null,
+        : profile && !serial
+          ? h(
+              "p",
+              { class: "edge-printer-setup__note" },
+              "This profile uses system/browser printing and does not require a direct device binding.",
+            )
+          : null,
     ]);
   },
 });

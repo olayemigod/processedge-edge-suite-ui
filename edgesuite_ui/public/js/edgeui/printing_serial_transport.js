@@ -15,14 +15,54 @@ function normalizedOpenOptions(defaults, overrides) {
   return { ...options, baudRate };
 }
 
+function positiveInteger(value, fallback, label) {
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed <= 0) {
+    if (fallback !== null) return fallback;
+    throw new TypeError(`${label} must be a positive integer.`);
+  }
+  return parsed;
+}
+
+function nonNegativeInteger(value, fallback, label) {
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed < 0) {
+    if (fallback !== null) return fallback;
+    throw new TypeError(`${label} must be a non-negative integer.`);
+  }
+  return parsed;
+}
+
+function sleep(target, milliseconds) {
+  if (!milliseconds) return Promise.resolve();
+  const schedule = typeof target?.setTimeout === "function" ? target.setTimeout.bind(target) : setTimeout;
+  return new Promise((resolve) => schedule(resolve, milliseconds));
+}
+
 export function createWebSerialTransport({
   target = globalThis,
   defaultOpenOptions = { baudRate: 9600 },
+  writeChunkSize = 256,
+  interChunkDelayMs = 0,
 } = {}) {
+  const chunkSize = positiveInteger(writeChunkSize, 256, "writeChunkSize");
+  const chunkDelay = nonNegativeInteger(interChunkDelayMs, 0, "interChunkDelayMs");
   let port = null;
   let state = detectPrintCapabilities(target).webSerial
     ? EDGE_PRINT_STATES.NOT_CONFIGURED
     : EDGE_PRINT_STATES.UNSUPPORTED;
+
+  function onPortDisconnect() {
+    if (port) state = EDGE_PRINT_STATES.DISCONNECTED;
+  }
+
+  function detachPortEvents(currentPort = port) {
+    currentPort?.removeEventListener?.("disconnect", onPortDisconnect);
+  }
+
+  function attachPortEvents(nextPort) {
+    nextPort?.addEventListener?.("disconnect", onPortDisconnect);
+  }
 
   function serialApi() {
     return target?.navigator?.serial || null;
@@ -43,7 +83,9 @@ export function createWebSerialTransport({
     if (!nextPort || typeof nextPort !== "object") {
       throw new TypeError("A SerialPort object is required.");
     }
+    if (port !== nextPort) detachPortEvents(port);
     port = nextPort;
+    attachPortEvents(port);
     state = EDGE_PRINT_STATES.DISCONNECTED;
     return port;
   }
@@ -106,9 +148,25 @@ export function createWebSerialTransport({
     const writer = port.writable.getWriter();
     state = EDGE_PRINT_STATES.PRINTING;
     try {
-      await writer.write(payload);
+      let chunksWritten = 0;
+      for (let offset = 0; offset < payload.byteLength; offset += chunkSize) {
+        const chunk = payload.subarray(offset, Math.min(offset + chunkSize, payload.byteLength));
+        if (writer.ready && typeof writer.ready.then === "function") {
+          await writer.ready;
+        }
+        await writer.write(chunk);
+        chunksWritten += 1;
+        if (chunkDelay && offset + chunkSize < payload.byteLength) {
+          await sleep(target, chunkDelay);
+        }
+      }
       state = EDGE_PRINT_STATES.PRINTED;
-      const result = { bytesWritten: payload.byteLength, status: getStatus() };
+      const result = {
+        bytesWritten: payload.byteLength,
+        chunksWritten,
+        chunkSize,
+        status: getStatus(),
+      };
       state = EDGE_PRINT_STATES.CONNECTED;
       return result;
     } catch (error) {
@@ -145,6 +203,7 @@ export function createWebSerialTransport({
 
   async function clearDevice() {
     if (port) await disconnect();
+    detachPortEvents(port);
     port = null;
     state = detectPrintCapabilities(target).webSerial
       ? EDGE_PRINT_STATES.NOT_CONFIGURED
@@ -153,6 +212,15 @@ export function createWebSerialTransport({
   }
 
   function getStatus() {
+    if (
+      port?.connected === false &&
+      [EDGE_PRINT_STATES.CONNECTED, EDGE_PRINT_STATES.PRINTING, EDGE_PRINT_STATES.PRINTED].includes(
+        state,
+      )
+    ) {
+      state = EDGE_PRINT_STATES.DISCONNECTED;
+    }
+
     let portInfo = null;
     try {
       portInfo = typeof port?.getInfo === "function" ? port.getInfo() : null;
@@ -166,6 +234,7 @@ export function createWebSerialTransport({
       supported: detectPrintCapabilities(target).webSerial,
       configured: Boolean(port),
       connected: state === EDGE_PRINT_STATES.CONNECTED || state === EDGE_PRINT_STATES.PRINTING,
+      deviceConnected: typeof port?.connected === "boolean" ? port.connected : null,
       portInfo,
     });
   }

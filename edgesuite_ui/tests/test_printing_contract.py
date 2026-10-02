@@ -41,6 +41,12 @@ def test_serial_transport_fails_closed_and_remains_byte_oriented():
         "SERIAL_NOT_CONNECTED",
         "SERIAL_WRITE_FAILED",
         "normalizePrintBytes(bytes)",
+        "writeChunkSize = 256",
+        "writer.ready",
+        "payload.subarray",
+        "chunksWritten",
+        'addEventListener?.("disconnect"',
+        "deviceConnected",
         "writer.releaseLock()",
     ):
         assert expected in source

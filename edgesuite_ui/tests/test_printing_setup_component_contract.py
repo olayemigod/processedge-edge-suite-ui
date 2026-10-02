@@ -32,6 +32,10 @@ def test_printer_setup_component_uses_shared_profile_binding_and_transport_layer
         "Test Print",
         "Disconnect",
         "Forget Printer",
+        'state: "unsupported"',
+        "serialReason",
+        "This browser does not expose Web Serial",
+        "Direct printer access requires HTTPS",
     ):
         assert expected in source
 
