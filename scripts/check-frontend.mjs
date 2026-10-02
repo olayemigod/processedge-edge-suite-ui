@@ -183,13 +183,22 @@ const printingRuntimeModule = await import(
 );
 
 const serialWrites = [];
+const serialPortListeners = new Map();
 let serialOpenOptions = null;
 let serialClosed = false;
 const fakeSerialPort = {
+  connected: false,
+  addEventListener(name, handler) {
+    serialPortListeners.set(name, handler);
+  },
+  removeEventListener(name, handler) {
+    if (serialPortListeners.get(name) === handler) serialPortListeners.delete(name);
+  },
   readable: null,
   writable: null,
   async open(options) {
     serialOpenOptions = options;
+    this.connected = true;
     this.readable = {};
     this.writable = {
       getWriter() {
@@ -204,6 +213,7 @@ const fakeSerialPort = {
   },
   async close() {
     serialClosed = true;
+    this.connected = false;
     this.readable = null;
     this.writable = null;
   },
@@ -352,6 +362,20 @@ if (
   throw new Error("Shared serial transport should preserve bytes across configured write chunks.");
 }
 await chunkingTransport.disconnect();
+
+serialClosed = false;
+const disconnectAdapter = printingRuntimeModule.createEdgePrintAdapter({ target: fakePrintingTarget });
+const disconnectTransport = disconnectAdapter.createSerialTransport();
+disconnectTransport.usePort(fakeSerialPort);
+await disconnectTransport.connect({ openOptions: { baudRate: 19200 } });
+serialPortListeners.get("disconnect")?.();
+if (
+  disconnectTransport.getStatus().state !== "disconnected" ||
+  disconnectTransport.getStatus().connected
+) {
+  throw new Error("Physical serial disconnect events should clear the connected printer state.");
+}
+await disconnectTransport.disconnect();
 
 const receipt58 = {
   paper: 58,
