@@ -15,10 +15,38 @@ function normalizedOpenOptions(defaults, overrides) {
   return { ...options, baudRate };
 }
 
+function positiveInteger(value, fallback, label) {
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed <= 0) {
+    if (fallback !== null) return fallback;
+    throw new TypeError(`${label} must be a positive integer.`);
+  }
+  return parsed;
+}
+
+function nonNegativeInteger(value, fallback, label) {
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed < 0) {
+    if (fallback !== null) return fallback;
+    throw new TypeError(`${label} must be a non-negative integer.`);
+  }
+  return parsed;
+}
+
+function sleep(target, milliseconds) {
+  if (!milliseconds) return Promise.resolve();
+  const schedule = typeof target?.setTimeout === "function" ? target.setTimeout.bind(target) : setTimeout;
+  return new Promise((resolve) => schedule(resolve, milliseconds));
+}
+
 export function createWebSerialTransport({
   target = globalThis,
   defaultOpenOptions = { baudRate: 9600 },
+  writeChunkSize = 256,
+  interChunkDelayMs = 0,
 } = {}) {
+  const chunkSize = positiveInteger(writeChunkSize, 256, "writeChunkSize");
+  const chunkDelay = nonNegativeInteger(interChunkDelayMs, 0, "interChunkDelayMs");
   let port = null;
   let state = detectPrintCapabilities(target).webSerial
     ? EDGE_PRINT_STATES.NOT_CONFIGURED
@@ -106,9 +134,25 @@ export function createWebSerialTransport({
     const writer = port.writable.getWriter();
     state = EDGE_PRINT_STATES.PRINTING;
     try {
-      await writer.write(payload);
+      let chunksWritten = 0;
+      for (let offset = 0; offset < payload.byteLength; offset += chunkSize) {
+        const chunk = payload.subarray(offset, Math.min(offset + chunkSize, payload.byteLength));
+        if (writer.ready && typeof writer.ready.then === "function") {
+          await writer.ready;
+        }
+        await writer.write(chunk);
+        chunksWritten += 1;
+        if (chunkDelay && offset + chunkSize < payload.byteLength) {
+          await sleep(target, chunkDelay);
+        }
+      }
       state = EDGE_PRINT_STATES.PRINTED;
-      const result = { bytesWritten: payload.byteLength, status: getStatus() };
+      const result = {
+        bytesWritten: payload.byteLength,
+        chunksWritten,
+        chunkSize,
+        status: getStatus(),
+      };
       state = EDGE_PRINT_STATES.CONNECTED;
       return result;
     } catch (error) {
