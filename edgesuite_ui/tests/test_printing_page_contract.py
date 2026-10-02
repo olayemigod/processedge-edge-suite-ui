@@ -1,7 +1,6 @@
 import json
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[2]
 PAGE_ROOT = ROOT / "edgesuite_ui" / "edgesuite_ui" / "page" / "edge_printing"
 PAGE_JSON = PAGE_ROOT / "edge_printing.json"
