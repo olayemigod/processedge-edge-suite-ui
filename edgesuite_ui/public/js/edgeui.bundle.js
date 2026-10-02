@@ -6,6 +6,7 @@ import { installDropdownViewportRuntime } from "./edgeui/dropdown_viewport_runti
 import { emptyStateComponents } from "./edgeui/empty_state_components";
 import { exportComponents } from "./edgeui/export_components";
 import { edgeExportAdapter } from "./edgeui/export_runtime";
+import { edgePrintAdapter } from "./edgeui/printing_runtime";
 import { applyFrappeCompatibility } from "./edgeui/frappe_compat";
 import { formComponents } from "./edgeui/form_components";
 import { formPrimitiveComponents } from "./edgeui/form_primitives";
@@ -74,6 +75,8 @@ const runtime = createEdgeSuiteRuntime({
 });
 
 runtime.registerAdapter("export", edgeExportAdapter);
+runtime.registerAdapter("print", edgePrintAdapter);
+runtime.print = edgePrintAdapter;
 
 if (typeof globalThis !== "undefined") {
   exposeEdgeSuiteRuntime(runtime, globalThis);
@@ -114,6 +117,10 @@ export * from "./edgeui/modal_components";
 export * from "./edgeui/modal_cross_runtime";
 export * from "./edgeui/multiselect_compat";
 export * from "./edgeui/notification_runtime";
+export * from "./edgeui/printing_capabilities";
+export * from "./edgeui/printing_contract";
+export * from "./edgeui/printing_runtime";
+export * from "./edgeui/printing_serial_transport";
 export * from "./edgeui/product_context";
 export * from "./edgeui/product_context_bridge";
 export * from "./edgeui/product_menu";
