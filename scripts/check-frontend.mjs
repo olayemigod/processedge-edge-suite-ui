@@ -297,6 +297,23 @@ const insecurePrintingCapabilities = printingRuntimeModule
 if (insecurePrintingCapabilities.webSerial) {
   throw new Error("Direct serial printing must fail closed outside a secure context.");
 }
+if (insecurePrintingCapabilities.serialReason !== "insecure_context") {
+  throw new Error("Printing capability detection should explain insecure-context serial failures.");
+}
+const unsupportedPrintingCapabilities = printingRuntimeModule
+  .createPrintManager({
+    target: {
+      ...fakePrintingTarget,
+      navigator: {},
+    },
+  })
+  .detectCapabilities();
+if (
+  unsupportedPrintingCapabilities.webSerial ||
+  unsupportedPrintingCapabilities.serialReason !== "api_unavailable"
+) {
+  throw new Error("Printing capability detection should explain missing Web Serial support.");
+}
 const printingManager = printingRuntimeModule.createPrintManager({ target: fakePrintingTarget });
 const authorizedPorts = await printingManager.getTransport("serial").authorizedPorts();
 if (authorizedPorts.length !== 1 || authorizedPorts[0] !== fakeSerialPort) {
@@ -318,6 +335,23 @@ await printingManager.disconnect("serial");
 if (!serialClosed || printingManager.getStatus("serial").state !== "disconnected") {
   throw new Error("Shared serial transport should close the selected printer cleanly.");
 }
+
+serialWrites.length = 0;
+serialClosed = false;
+const chunkingAdapter = printingRuntimeModule.createEdgePrintAdapter({ target: fakePrintingTarget });
+const chunkingTransport = chunkingAdapter.createSerialTransport({ writeChunkSize: 2 });
+chunkingTransport.usePort(fakeSerialPort);
+await chunkingTransport.connect({ openOptions: { baudRate: 19200 } });
+const chunkedWrite = await chunkingTransport.write(Uint8Array.from([1, 2, 3, 4, 5]));
+if (
+  chunkedWrite.bytesWritten !== 5 ||
+  chunkedWrite.chunksWritten !== 3 ||
+  chunkedWrite.chunkSize !== 2 ||
+  serialWrites.map((row) => row.join(",")).join("|") !== "1,2|3,4|5"
+) {
+  throw new Error("Shared serial transport should preserve bytes across configured write chunks.");
+}
+await chunkingTransport.disconnect();
 
 const receipt58 = {
   paper: 58,
