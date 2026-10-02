@@ -7,6 +7,7 @@ import { detectPrintCapabilities } from "./printing_capabilities";
 import { createWebSerialTransport } from "./printing_serial_transport";
 import { normalizeReceiptDocument } from "./printing_document";
 import { edgeEscPos, encodeEscPosDocument } from "./printing_escpos";
+import { createPrinterBindingStore, createPrinterDeviceManager } from "./printing_device_binding";
 
 function normalizeTransportName(name) {
   const normalized = String(name || "").trim().toLowerCase();
@@ -109,6 +110,8 @@ export function createPrintManager({ target = globalThis } = {}) {
 
 export function createEdgePrintAdapter({ target = globalThis } = {}) {
   const manager = createPrintManager({ target });
+  const bindingStore = createPrinterBindingStore({ target });
+  const devices = createPrinterDeviceManager({ target, printManager: manager, store: bindingStore });
 
   return Object.freeze({
     contractVersion: 1,
@@ -119,10 +122,20 @@ export function createEdgePrintAdapter({ target = globalThis } = {}) {
       createPrintManager({ ...options, target: options.target || target }),
     createSerialTransport: (options = {}) =>
       createWebSerialTransport({ ...options, target: options.target || target }),
+    createBindingStore: (options = {}) =>
+      createPrinterBindingStore({ ...options, target: options.target || target }),
+    createDeviceManager: (options = {}) =>
+      createPrinterDeviceManager({
+        ...options,
+        target: options.target || target,
+        printManager: options.printManager || manager,
+      }),
     escpos: edgeEscPos,
     normalizeReceipt: normalizeReceiptDocument,
     encodeReceipt: (document, options) => manager.encodeReceipt(document, options),
     printReceipt: (document, options) => manager.printReceipt(document, options),
+    bindingStore,
+    devices,
     manager,
     connect: (name, options) => manager.connect(name, options),
     disconnect: (name) => manager.disconnect(name),
