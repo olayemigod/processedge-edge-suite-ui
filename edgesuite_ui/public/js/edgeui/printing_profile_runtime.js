@@ -32,30 +32,30 @@ function integer(value, fallback) {
 
 export function normalizePrintProfile(profile = null) {
   if (!profile || typeof profile !== "object") return null;
-  const name = scalar(profile.name || profile.profile_name).trim();
+  const name = scalar(profile.name || profile.profileName || profile.profile_name).trim();
   if (!name) return null;
 
   return Object.freeze({
     name,
-    profileName: scalar(profile.profile_name || name).trim() || name,
+    profileName: scalar(profile.profileName || profile.profile_name || name).trim() || name,
     purpose: scalar(profile.purpose || "Receipt"),
-    productKey: scalar(profile.product_key).trim(),
-    scopeType: scalar(profile.scope_type || "Global"),
-    scopeValue: scalar(profile.scope_value).trim(),
+    productKey: scalar(profile.productKey ?? profile.product_key).trim(),
+    scopeType: scalar(profile.scopeType || profile.scope_type || "Global"),
+    scopeValue: scalar(profile.scopeValue ?? profile.scope_value).trim(),
     priority: integer(profile.priority, 0),
     transport: scalar(profile.transport || "Serial").toLowerCase(),
     protocol: scalar(profile.protocol || "ESC/POS"),
-    paperWidth: integer(profile.paper_width, 80),
-    charactersPerLine: integer(profile.characters_per_line, 48),
-    baudRate: integer(profile.baud_rate, 9600),
-    autoCut: Boolean(Number(profile.auto_cut) || profile.auto_cut === true),
-    cutMode: scalar(profile.cut_mode || "Partial").toLowerCase(),
-    cashDrawer: Boolean(Number(profile.cash_drawer) || profile.cash_drawer === true),
-    drawerPin: integer(profile.drawer_pin, 0),
-    feedLines: integer(profile.feed_lines, 3),
+    paperWidth: integer(profile.paperWidth ?? profile.paper_width, 80),
+    charactersPerLine: integer(profile.charactersPerLine ?? profile.characters_per_line, 48),
+    baudRate: integer(profile.baudRate ?? profile.baud_rate, 9600),
+    autoCut: Boolean(Number(profile.autoCut ?? profile.auto_cut) || profile.autoCut === true || profile.auto_cut === true),
+    cutMode: scalar(profile.cutMode || profile.cut_mode || "Partial").toLowerCase(),
+    cashDrawer: Boolean(Number(profile.cashDrawer ?? profile.cash_drawer) || profile.cashDrawer === true || profile.cash_drawer === true),
+    drawerPin: integer(profile.drawerPin ?? profile.drawer_pin, 0),
+    feedLines: integer(profile.feedLines ?? profile.feed_lines, 3),
     copies: Math.max(1, integer(profile.copies, 1)),
-    printLogo: Boolean(Number(profile.print_logo) || profile.print_logo === true),
-    printQr: Boolean(Number(profile.print_qr) || profile.print_qr === true),
+    printLogo: Boolean(Number(profile.printLogo ?? profile.print_logo) || profile.printLogo === true || profile.print_logo === true),
+    printQr: Boolean(Number(profile.printQr ?? profile.print_qr) || profile.printQr === true || profile.print_qr === true),
   });
 }
 
