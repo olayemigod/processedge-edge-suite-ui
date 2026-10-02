@@ -80,10 +80,16 @@ function normalizeColumns(columns, charactersPerLine) {
 }
 
 function normalizeRowBlock(block, charactersPerLine) {
+  const source = Array.isArray(block.columns) ? block.columns : [];
+  const gap = integer(block.gap, 0, { min: 0, max: 4 });
+  const totalGap = Math.max(0, source.length - 1) * gap;
+  if (totalGap >= charactersPerLine) {
+    throw new RangeError("Receipt row column gaps exceed the paper profile.");
+  }
   return Object.freeze({
     type: "row",
-    columns: normalizeColumns(block.columns, charactersPerLine),
-    gap: integer(block.gap, 0, { min: 0, max: 4 }),
+    columns: normalizeColumns(source, charactersPerLine - totalGap),
+    gap,
     bold: Boolean(block.bold),
   });
 }
