@@ -21,6 +21,7 @@ import { installProductMenuExtras } from "./edgeui/product_menu_extras";
 import { installProductMenuMountEnhancements } from "./edgeui/product_menu_mount";
 import { installProductMenuReliability } from "./edgeui/product_menu_reliability";
 import { professionalComponents } from "./edgeui/professional_components";
+import { printingComponents } from "./edgeui/printing_components";
 import { reportComparisonComponents } from "./edgeui/report_comparison";
 import { reportExceptionComponents } from "./edgeui/report_exceptions";
 import { installEdgeSuiteReportExportRuntime, reportComponents } from "./edgeui/report_export";
@@ -51,6 +52,7 @@ const components = Object.freeze(
       ...baseComponents,
       ...exportComponents,
       ...financialDashboardComponents,
+      ...printingComponents,
       ...reportComparisonComponents,
       ...reportExceptionComponents,
       ...reportGroupingComponents,
@@ -118,9 +120,11 @@ export * from "./edgeui/modal_cross_runtime";
 export * from "./edgeui/multiselect_compat";
 export * from "./edgeui/notification_runtime";
 export * from "./edgeui/printing_capabilities";
+export * from "./edgeui/printing_components";
 export * from "./edgeui/printing_device_binding";
 export * from "./edgeui/printing_document";
 export * from "./edgeui/printing_escpos";
+export * from "./edgeui/printing_profile_runtime";
 export * from "./edgeui/printing_contract";
 export * from "./edgeui/printing_runtime";
 export * from "./edgeui/printing_serial_transport";
