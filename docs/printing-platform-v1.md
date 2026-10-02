@@ -50,13 +50,23 @@ The first user grant must be initiated from an explicit user action. Previously 
 are exposed through the transport's `authorizedPorts()` method and can later support reconnect
 flows.
 
+## ESC/POS foundation now implemented
+
+The shared runtime now accepts a product-neutral normalized receipt document with 58 mm and 80 mm
+paper profiles. Supported primitives are text, rules, fixed/flexible rows, feeds, QR, CODE128,
+packed monochrome raster images, paper cut, and cash-drawer pulse.
+
+The manager can encode a normalized receipt and send it through the selected registered transport.
+Products therefore provide document data rather than raw ESC/POS bytes. Text encoding remains
+injectable because low-cost printers differ in code-page and UTF-8 support.
+
 ## Not included in this slice
 
 The following remain subsequent milestones:
 
-- ESC/POS encoding and receipt layout;
-- 58 mm / 80 mm rendering;
-- logo, QR, barcode, cutter, and cash-drawer commands;
+- higher-level receipt template composition and product adapters;
+- browser-side logo/image preprocessing into packed monochrome raster bytes;
+- code-page profiles and printer-specific text encoding;
 - persistent Edge Print Profile DocType;
 - IndexedDB device binding;
 - shared Devices & Printing UI;
