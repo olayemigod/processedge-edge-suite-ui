@@ -52,6 +52,18 @@ export function createWebSerialTransport({
     ? EDGE_PRINT_STATES.NOT_CONFIGURED
     : EDGE_PRINT_STATES.UNSUPPORTED;
 
+  function onPortDisconnect() {
+    if (port) state = EDGE_PRINT_STATES.DISCONNECTED;
+  }
+
+  function detachPortEvents(currentPort = port) {
+    currentPort?.removeEventListener?.("disconnect", onPortDisconnect);
+  }
+
+  function attachPortEvents(nextPort) {
+    nextPort?.addEventListener?.("disconnect", onPortDisconnect);
+  }
+
   function serialApi() {
     return target?.navigator?.serial || null;
   }
@@ -71,7 +83,9 @@ export function createWebSerialTransport({
     if (!nextPort || typeof nextPort !== "object") {
       throw new TypeError("A SerialPort object is required.");
     }
+    if (port !== nextPort) detachPortEvents(port);
     port = nextPort;
+    attachPortEvents(port);
     state = EDGE_PRINT_STATES.DISCONNECTED;
     return port;
   }
@@ -189,6 +203,7 @@ export function createWebSerialTransport({
 
   async function clearDevice() {
     if (port) await disconnect();
+    detachPortEvents(port);
     port = null;
     state = detectPrintCapabilities(target).webSerial
       ? EDGE_PRINT_STATES.NOT_CONFIGURED
@@ -197,6 +212,15 @@ export function createWebSerialTransport({
   }
 
   function getStatus() {
+    if (
+      port?.connected === false &&
+      [EDGE_PRINT_STATES.CONNECTED, EDGE_PRINT_STATES.PRINTING, EDGE_PRINT_STATES.PRINTED].includes(
+        state,
+      )
+    ) {
+      state = EDGE_PRINT_STATES.DISCONNECTED;
+    }
+
     let portInfo = null;
     try {
       portInfo = typeof port?.getInfo === "function" ? port.getInfo() : null;
@@ -210,6 +234,7 @@ export function createWebSerialTransport({
       supported: detectPrintCapabilities(target).webSerial,
       configured: Boolean(port),
       connected: state === EDGE_PRINT_STATES.CONNECTED || state === EDGE_PRINT_STATES.PRINTING,
+      deviceConnected: typeof port?.connected === "boolean" ? port.connected : null,
       portInfo,
     });
   }
