@@ -12,6 +12,10 @@ const themeRuntimeEntrypoint = resolve(javascriptRoot, "edgeui/theme_runtime.js"
 const exportRuntimeEntrypoint = resolve(javascriptRoot, "edgeui/export_runtime.js");
 const exportComponentEntrypoint = resolve(javascriptRoot, "edgeui/export_components.js");
 const printingRuntimeEntrypoint = resolve(javascriptRoot, "edgeui/printing_runtime.js");
+const printingPageEntrypoint = resolve(
+  repositoryRoot,
+  "edgesuite_ui/edgesuite_ui/page/edge_printing/edge_printing.js",
+);
 
 async function javascriptFiles(directory) {
   const entries = await readdir(directory, { withFileTypes: true });
@@ -29,6 +33,12 @@ for (const path of await javascriptFiles(javascriptRoot)) {
   const result = spawnSync(process.execPath, ["--check", path], { stdio: "inherit" });
   if (result.status !== 0) process.exit(result.status ?? 1);
 }
+const printingPageSyntax = spawnSync(
+  process.execPath,
+  ["--check", printingPageEntrypoint],
+  { stdio: "inherit" },
+);
+if (printingPageSyntax.status !== 0) process.exit(printingPageSyntax.status ?? 1);
 
 const productContextBuild = await build({
   entryPoints: [productContextEntrypoint],
@@ -204,6 +214,35 @@ const fakeSerialPort = {
 const localPrintingStorage = new Map();
 const fakePrintingTarget = {
   isSecureContext: true,
+  frappe: {
+    call({ method, args, callback }) {
+      const profile = {
+        name: "Default Receipt",
+        profile_name: "Default Receipt",
+        purpose: args?.purpose || "Receipt",
+        product_key: args?.product_key || "",
+        scope_type: "Global",
+        scope_value: "",
+        priority: 0,
+        transport: "Serial",
+        protocol: "ESC/POS",
+        paper_width: "80",
+        characters_per_line: 48,
+        baud_rate: 19200,
+        auto_cut: 1,
+        cut_mode: "Partial",
+        cash_drawer: 0,
+        drawer_pin: 0,
+        feed_lines: 3,
+        copies: 1,
+        print_logo: 1,
+        print_qr: 1,
+      };
+      callback({
+        message: method.endsWith("get_active_print_profiles") ? [profile] : profile,
+      });
+    },
+  },
   localStorage: {
     getItem(key) {
       return localPrintingStorage.has(key) ? localPrintingStorage.get(key) : null;
@@ -227,6 +266,25 @@ const fakePrintingTarget = {
   },
   print() {},
 };
+const profileAdapter = printingRuntimeModule.createEdgePrintAdapter({
+  target: fakePrintingTarget,
+});
+const resolvedProfile = await profileAdapter.profiles.resolve({
+  purpose: "Receipt",
+  productKey: "retail",
+});
+if (
+  resolvedProfile?.name !== "Default Receipt" ||
+  resolvedProfile.paperWidth !== 80 ||
+  resolvedProfile.baudRate !== 19200
+) {
+  throw new Error("Shared print profile client should normalize server policy for browser use.");
+}
+const profileConnection = profileAdapter.profiles.connectionOptions(resolvedProfile);
+if (profileConnection?.openOptions?.baudRate !== 19200) {
+  throw new Error("Serial print profiles should produce Web Serial connection options.");
+}
+
 const printingCapabilities = printingRuntimeModule
   .createPrintManager({ target: fakePrintingTarget })
   .detectCapabilities();
