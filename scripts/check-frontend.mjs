@@ -201,8 +201,20 @@ const fakeSerialPort = {
     return { bluetoothServiceClassId: "test-printer" };
   },
 };
+const localPrintingStorage = new Map();
 const fakePrintingTarget = {
   isSecureContext: true,
+  localStorage: {
+    getItem(key) {
+      return localPrintingStorage.has(key) ? localPrintingStorage.get(key) : null;
+    },
+    setItem(key, value) {
+      localPrintingStorage.set(key, String(value));
+    },
+    removeItem(key) {
+      localPrintingStorage.delete(key);
+    },
+  },
   navigator: {
     serial: {
       async requestPort() {
@@ -345,6 +357,39 @@ if (!overflowRejected) {
   throw new Error("Receipt normalization must reject rows that exceed the paper profile.");
 }
 await printingManager.disconnect("serial");
+
+await printingManager.disconnect("serial");
+
+const bindingAdapter = printingRuntimeModule.createEdgePrintAdapter({ target: fakePrintingTarget });
+const selected = await bindingAdapter.devices.requestAndBindSerial("default_receipt");
+if (selected.binding.profileKey !== "default_receipt") {
+  throw new Error("Device binding should persist the selected printer against a profile key.");
+}
+const storedBinding = bindingAdapter.bindingStore.get("default_receipt");
+if (
+  storedBinding?.portInfo?.bluetoothServiceClassId !== "test-printer" ||
+  storedBinding.transport !== "serial"
+) {
+  throw new Error("Device binding should persist only serial transport identity metadata.");
+}
+const restoredAdapter = printingRuntimeModule.createEdgePrintAdapter({ target: fakePrintingTarget });
+const restored = await restoredAdapter.devices.restoreSerial("default_receipt");
+if (!restored || restored.port !== fakeSerialPort) {
+  throw new Error("A new EdgeSuite runtime should restore a uniquely matching authorized printer.");
+}
+await restoredAdapter.devices.connectBoundSerial("default_receipt", {
+  openOptions: { baudRate: 19200 },
+});
+if (!restoredAdapter.getStatus("serial").connected) {
+  throw new Error("A restored printer binding should reconnect through the shared transport.");
+}
+await restoredAdapter.disconnect("serial");
+if (!restoredAdapter.devices.forget("default_receipt")) {
+  throw new Error("Printer bindings should be explicitly forgettable on the local device.");
+}
+if (restoredAdapter.bindingStore.get("default_receipt") !== null) {
+  throw new Error("Forgotten printer bindings must not remain in local device storage.");
+}
 
 const exportComponentSource = await readFile(exportComponentEntrypoint, "utf8");
 if (!exportComponentSource.includes("EdgeExportMenu") || !exportComponentSource.includes("loadDataset")) {
