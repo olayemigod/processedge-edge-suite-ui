@@ -1,6 +1,5 @@
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[2]
 DOCUMENT = ROOT / "edgesuite_ui" / "public" / "js" / "edgeui" / "printing_document.js"
 ESCPOS = ROOT / "edgesuite_ui" / "public" / "js" / "edgeui" / "printing_escpos.js"
