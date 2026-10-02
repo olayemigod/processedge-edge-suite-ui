@@ -60,17 +60,31 @@ The manager can encode a normalized receipt and send it through the selected reg
 Products therefore provide document data rather than raw ESC/POS bytes. Text encoding remains
 injectable because low-cost printers differ in code-page and UTF-8 support.
 
+## Profile, binding, and setup layer now implemented
+
+EdgeSuite now also provides:
+
+- **Edge Print Profile** as server-side printing policy/configuration only;
+- scope-aware profile resolution for Global, Company, Branch, and User scopes;
+- optional product-specific profiles validated against the current user's available products;
+- device-local binding that stores browser-exposed port identity metadata only;
+- restoration through previously authorised Web Serial ports;
+- fail-closed handling when multiple authorised ports are indistinguishable;
+- a shared `EdgePrinterSetupCard` with Connect, Reconnect, Test Print, Disconnect, and Forget actions;
+- a standard **Devices & Printing** page at `/app/edge-printing`;
+- optional route context through `product_key`, `company`, `branch`, and `purpose`.
+
+Server profiles never store browser `SerialPort` objects, Bluetooth MAC addresses, or browser
+permissions. The local device binding and server policy remain separate by design.
+
 ## Not included in this slice
 
 The following remain subsequent milestones:
 
-- higher-level receipt template composition and product adapters;
+- higher-level product receipt templates and product adapters;
 - browser-side logo/image preprocessing into packed monochrome raster bytes;
-- code-page profiles and printer-specific text encoding;
-- persistent Edge Print Profile DocType;
-- IndexedDB device binding;
-- shared Devices & Printing UI;
-- automatic reconnect and connection event UX;
+- printer code-page profiles and text-encoding selection;
+- automatic reconnect event UX beyond explicit reconnect;
 - RetailEdge transaction integration;
 - network printer and native Android bridge adapters.
 
