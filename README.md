@@ -116,6 +116,17 @@ Generated downloads are validated before saving so empty responses, HTML error p
 
 See [`docs/reporting-standard-v1.md`](docs/reporting-standard-v1.md) for the reporting, presentation, performance and export contract.
 
+## Shared device printing
+
+EdgeSuite exposes a product-neutral printing adapter at `window.EdgeSuiteUI.print` and
+`window.EdgeSuiteUI.getAdapter("print")`. The initial V1 foundation provides secure-context
+capability detection and a Web Serial transport for authorized local printers while keeping
+product receipt data and workflow decisions inside each product app.
+
+Product applications must not call browser serial APIs directly. See
+[`docs/printing-platform-v1.md`](docs/printing-platform-v1.md) for the ownership boundary,
+transport contract, failure model, and staged implementation scope.
+
 ## Continuous integration
 
 Pull requests and pushes to `main` run Python/Ruff contract checks and reproducible frontend syntax and bundle validation. Reporting provider, export, print and presentation-shell contracts are part of Fast Validation. The manual `workflow_dispatch` trigger additionally provisions a clean Frappe v16 bench containing only Frappe and EdgeSuite UI, then builds, migrates, and tests the app.

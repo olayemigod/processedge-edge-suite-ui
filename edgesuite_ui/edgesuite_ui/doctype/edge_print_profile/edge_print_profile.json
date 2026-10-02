@@ -1,0 +1,233 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "field:profile_name",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "profile_name",
+  "enabled",
+  "purpose",
+  "product_key",
+  "scope_section",
+  "scope_type",
+  "scope_value",
+  "priority",
+  "printer_section",
+  "transport",
+  "protocol",
+  "paper_width",
+  "characters_per_line",
+  "baud_rate",
+  "behavior_section",
+  "auto_cut",
+  "cut_mode",
+  "cash_drawer",
+  "drawer_pin",
+  "feed_lines",
+  "copies",
+  "print_logo",
+  "print_qr",
+  "notes"
+ ],
+ "fields": [
+  {
+   "fieldname": "profile_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Profile Name",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "default": "1",
+   "fieldname": "enabled",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Enabled"
+  },
+  {
+   "default": "Receipt",
+   "fieldname": "purpose",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Purpose",
+   "options": "Receipt\nDocument\nLabel\nOther",
+   "reqd": 1
+  },
+  {
+   "description": "Optional product key. Leave blank for a profile reusable by any EdgeSuite product.",
+   "fieldname": "product_key",
+   "fieldtype": "Data",
+   "label": "Product Key"
+  },
+  {
+   "fieldname": "scope_section",
+   "fieldtype": "Section Break",
+   "label": "Scope"
+  },
+  {
+   "default": "Global",
+   "fieldname": "scope_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Scope Type",
+   "options": "Global\nCompany\nBranch\nUser",
+   "reqd": 1
+  },
+  {
+   "depends_on": "eval:doc.scope_type != 'Global'",
+   "description": "Exact company, branch, or user identifier. EdgeSuite does not grant access to that business scope.",
+   "fieldname": "scope_value",
+   "fieldtype": "Data",
+   "label": "Scope Value",
+   "mandatory_depends_on": "eval:doc.scope_type != 'Global'"
+  },
+  {
+   "default": "0",
+   "description": "Higher values win inside the same scope specificity.",
+   "fieldname": "priority",
+   "fieldtype": "Int",
+   "label": "Priority"
+  },
+  {
+   "fieldname": "printer_section",
+   "fieldtype": "Section Break",
+   "label": "Printer"
+  },
+  {
+   "default": "Serial",
+   "fieldname": "transport",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Transport",
+   "options": "Serial\nSystem\nBrowser",
+   "reqd": 1
+  },
+  {
+   "default": "ESC/POS",
+   "fieldname": "protocol",
+   "fieldtype": "Select",
+   "label": "Protocol",
+   "options": "ESC/POS\nSystem",
+   "reqd": 1
+  },
+  {
+   "default": "80",
+   "fieldname": "paper_width",
+   "fieldtype": "Select",
+   "label": "Paper Width (mm)",
+   "options": "58\n80",
+   "reqd": 1
+  },
+  {
+   "default": "48",
+   "fieldname": "characters_per_line",
+   "fieldtype": "Int",
+   "label": "Characters per Line",
+   "reqd": 1
+  },
+  {
+   "default": "9600",
+   "depends_on": "eval:doc.transport == 'Serial'",
+   "fieldname": "baud_rate",
+   "fieldtype": "Int",
+   "label": "Baud Rate"
+  },
+  {
+   "fieldname": "behavior_section",
+   "fieldtype": "Section Break",
+   "label": "Receipt Behaviour"
+  },
+  {
+   "default": "1",
+   "fieldname": "auto_cut",
+   "fieldtype": "Check",
+   "label": "Auto Cut"
+  },
+  {
+   "default": "Partial",
+   "depends_on": "auto_cut",
+   "fieldname": "cut_mode",
+   "fieldtype": "Select",
+   "label": "Cut Mode",
+   "options": "Partial\nFull"
+  },
+  {
+   "default": "0",
+   "fieldname": "cash_drawer",
+   "fieldtype": "Check",
+   "label": "Cash Drawer"
+  },
+  {
+   "default": "0",
+   "depends_on": "cash_drawer",
+   "fieldname": "drawer_pin",
+   "fieldtype": "Select",
+   "label": "Drawer Pin",
+   "options": "0\n1"
+  },
+  {
+   "default": "3",
+   "fieldname": "feed_lines",
+   "fieldtype": "Int",
+   "label": "Feed Lines"
+  },
+  {
+   "default": "1",
+   "fieldname": "copies",
+   "fieldtype": "Int",
+   "label": "Copies"
+  },
+  {
+   "default": "1",
+   "fieldname": "print_logo",
+   "fieldtype": "Check",
+   "label": "Print Logo"
+  },
+  {
+   "default": "1",
+   "fieldname": "print_qr",
+   "fieldtype": "Check",
+   "label": "Print QR Code"
+  },
+  {
+   "fieldname": "notes",
+   "fieldtype": "Small Text",
+   "label": "Notes"
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "module": "EdgeSuite UI",
+ "name": "Edge Print Profile",
+ "naming_rule": "By fieldname",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "creation": "2026-10-02 00:00:00.000000",
+ "docstatus": 0,
+ "idx": 0,
+ "issingle": 0,
+ "istable": 0,
+ "modified": "2026-10-02 00:00:00.000000",
+ "modified_by": "Administrator",
+ "owner": "Administrator",
+ "search_fields": "profile_name,purpose,product_key,scope_type,scope_value",
+ "title_field": "profile_name",
+ "track_changes": 1
+}
