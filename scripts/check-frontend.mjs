@@ -249,6 +249,103 @@ if (!serialClosed || printingManager.getStatus("serial").state !== "disconnected
   throw new Error("Shared serial transport should close the selected printer cleanly.");
 }
 
+const receipt58 = {
+  paper: 58,
+  blocks: [
+    { type: "text", text: "EDGE TEST", align: "center", bold: true },
+    { type: "rule" },
+    {
+      type: "row",
+      gap: 1,
+      columns: [
+        { text: "Item", width: 18 },
+        { text: "Qty", width: 4, align: "right" },
+        { text: "Total", align: "right" },
+      ],
+    },
+    { type: "qr", value: "https://example.com/receipt/1", size: 4 },
+    { type: "barcode", value: "ACC-SINV-0001", symbology: "CODE128" },
+    { type: "image", width: 8, height: 1, data: [0b10101010] },
+    { type: "drawer", pin: 0, onMs: 100, offMs: 200 },
+    { type: "feed", lines: 2 },
+    { type: "cut", mode: "partial" },
+  ],
+};
+const normalized58 = printingRuntimeModule
+  .createEdgePrintAdapter({ target: fakePrintingTarget })
+  .normalizeReceipt(receipt58);
+if (normalized58.paper.widthMm !== 58 || normalized58.paper.charactersPerLine !== 32) {
+  throw new Error("Shared receipt normalization must preserve the approved 58mm profile.");
+}
+const normalized80 = printingRuntimeModule
+  .createEdgePrintAdapter({ target: fakePrintingTarget })
+  .normalizeReceipt({ paper: 80, blocks: [] });
+if (normalized80.paper.charactersPerLine !== 48) {
+  throw new Error("Shared receipt normalization must preserve the approved 80mm profile.");
+}
+
+serialClosed = false;
+await printingManager.getTransport("serial").usePort(fakeSerialPort);
+await printingManager.connect("serial", { openOptions: { baudRate: 19200 } });
+const receiptResult = await printingManager.printReceipt(receipt58);
+if (receiptResult.documentType !== "receipt" || receiptResult.bytesWritten <= 20) {
+  throw new Error("Shared print manager should encode and write normalized receipts.");
+}
+const receiptBytes = serialWrites.at(-1);
+if (receiptBytes?.[0] !== 0x1b || receiptBytes?.[1] !== 0x40) {
+  throw new Error("ESC/POS receipts must initialize the printer before document content.");
+}
+const receiptText = new TextDecoder().decode(Uint8Array.from(receiptBytes));
+if (!receiptText.includes("EDGE TEST") || !receiptText.includes("ACC-SINV-0001")) {
+  throw new Error("ESC/POS receipt encoding should contain normalized text and CODE128 data.");
+}
+const hasCut = receiptBytes.some(
+  (value, index) => value === 0x1d && receiptBytes[index + 1] === 0x56,
+);
+const hasDrawer = receiptBytes.some(
+  (value, index) => value === 0x1b && receiptBytes[index + 1] === 0x70,
+);
+const hasQr = receiptBytes.some(
+  (value, index) =>
+    value === 0x1d &&
+    receiptBytes[index + 1] === 0x28 &&
+    receiptBytes[index + 2] === 0x6b,
+);
+const hasRaster = receiptBytes.some(
+  (value, index) =>
+    value === 0x1d &&
+    receiptBytes[index + 1] === 0x76 &&
+    receiptBytes[index + 2] === 0x30,
+);
+if (!hasCut || !hasDrawer || !hasQr || !hasRaster) {
+  throw new Error("ESC/POS receipts should encode cut, drawer, QR, and raster-image primitives.");
+}
+
+let overflowRejected = false;
+try {
+  printingRuntimeModule
+    .createEdgePrintAdapter({ target: fakePrintingTarget })
+    .normalizeReceipt({
+      paper: 58,
+      blocks: [
+        {
+          type: "row",
+          gap: 2,
+          columns: [
+            { text: "A", width: 20 },
+            { text: "B", width: 20 },
+          ],
+        },
+      ],
+    });
+} catch (error) {
+  overflowRejected = error instanceof RangeError;
+}
+if (!overflowRejected) {
+  throw new Error("Receipt normalization must reject rows that exceed the paper profile.");
+}
+await printingManager.disconnect("serial");
+
 const exportComponentSource = await readFile(exportComponentEntrypoint, "utf8");
 if (!exportComponentSource.includes("EdgeExportMenu") || !exportComponentSource.includes("loadDataset")) {
   throw new Error("Shared EdgeExportMenu must support on-demand dataset loading.");
