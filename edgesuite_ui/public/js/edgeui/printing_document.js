@@ -63,6 +63,9 @@ function normalizeColumns(columns, charactersPerLine) {
 
   const flexible = requested.filter((column) => column.width === 0);
   let remaining = charactersPerLine - fixed;
+  if (flexible.length && remaining < flexible.length) {
+    throw new RangeError("Receipt row does not have enough width for flexible columns.");
+  }
   return Object.freeze(
     requested.map((column, index) => {
       if (column.width) return Object.freeze(column);
