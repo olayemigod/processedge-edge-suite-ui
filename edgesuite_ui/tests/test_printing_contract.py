@@ -1,6 +1,5 @@
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[2]
 BUNDLE = ROOT / "edgesuite_ui" / "public" / "js" / "edgeui.bundle.js"
 PRINTING_RUNTIME = ROOT / "edgesuite_ui" / "public" / "js" / "edgeui" / "printing_runtime.js"
