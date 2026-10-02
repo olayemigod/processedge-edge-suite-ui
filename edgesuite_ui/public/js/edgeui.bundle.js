@@ -118,6 +118,7 @@ export * from "./edgeui/modal_cross_runtime";
 export * from "./edgeui/multiselect_compat";
 export * from "./edgeui/notification_runtime";
 export * from "./edgeui/printing_capabilities";
+export * from "./edgeui/printing_device_binding";
 export * from "./edgeui/printing_document";
 export * from "./edgeui/printing_escpos";
 export * from "./edgeui/printing_contract";
