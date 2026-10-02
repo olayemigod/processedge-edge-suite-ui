@@ -3,6 +3,9 @@ from __future__ import annotations
 from typing import Any
 
 import frappe
+from frappe import _
+
+from edgesuite_ui.api.product_context import get_available_products
 
 PRINT_PROFILE_FIELDS = (
 	"name",
@@ -44,6 +47,27 @@ def _require_authenticated_user() -> str:
 
 def _normalize(value: Any) -> str:
 	return str(value or "").strip()
+
+
+def _normalize_product_key(value: Any) -> str:
+	return "-".join(
+		part
+		for part in "".join(
+			character.lower() if character.isalnum() or character in {"_", "-"} else "-"
+			for character in _normalize(value)
+		).split("-")
+		if part
+	)
+
+
+def _require_product_available(product_key: str) -> str:
+	key = _normalize_product_key(product_key)
+	if not key:
+		return ""
+	available = {str(product.get("key") or "") for product in get_available_products()}
+	if key not in available:
+		frappe.throw(_("This product is not currently available."), frappe.PermissionError)
+	return key
 
 
 def _profile_matches(
@@ -98,7 +122,7 @@ def get_active_print_profiles(
 
 	user = _require_authenticated_user()
 	purpose = _normalize(purpose) or "Receipt"
-	product_key = _normalize(product_key)
+	product_key = _require_product_available(_normalize(product_key))
 	company = _normalize(company)
 	branch = _normalize(branch)
 
