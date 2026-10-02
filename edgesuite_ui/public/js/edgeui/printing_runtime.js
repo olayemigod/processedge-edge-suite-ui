@@ -5,6 +5,8 @@ import {
 } from "./printing_contract";
 import { detectPrintCapabilities } from "./printing_capabilities";
 import { createWebSerialTransport } from "./printing_serial_transport";
+import { normalizeReceiptDocument } from "./printing_document";
+import { edgeEscPos, encodeEscPosDocument } from "./printing_escpos";
 
 function normalizeTransportName(name) {
   const normalized = String(name || "").trim().toLowerCase();
@@ -70,6 +72,23 @@ export function createPrintManager({ target = globalThis } = {}) {
     return getTransport(transport).write(bytes);
   }
 
+  function encodeReceipt(document, options = {}) {
+    return encodeEscPosDocument(normalizeReceiptDocument(document), options);
+  }
+
+  async function printReceipt(
+    document,
+    { transport = EDGE_PRINT_TRANSPORTS.SERIAL, encodeText } = {},
+  ) {
+    const bytes = encodeReceipt(document, { encodeText });
+    const result = await write(bytes, { transport });
+    return Object.freeze({
+      ...result,
+      transport,
+      documentType: "receipt",
+    });
+  }
+
   function getStatus(name = EDGE_PRINT_TRANSPORTS.SERIAL) {
     return getTransport(name).getStatus();
   }
@@ -81,6 +100,8 @@ export function createPrintManager({ target = globalThis } = {}) {
     connect,
     disconnect,
     write,
+    encodeReceipt,
+    printReceipt,
     getStatus,
     detectCapabilities: () => detectPrintCapabilities(target),
   });
@@ -98,6 +119,10 @@ export function createEdgePrintAdapter({ target = globalThis } = {}) {
       createPrintManager({ ...options, target: options.target || target }),
     createSerialTransport: (options = {}) =>
       createWebSerialTransport({ ...options, target: options.target || target }),
+    escpos: edgeEscPos,
+    normalizeReceipt: normalizeReceiptDocument,
+    encodeReceipt: (document, options) => manager.encodeReceipt(document, options),
+    printReceipt: (document, options) => manager.printReceipt(document, options),
     manager,
     connect: (name, options) => manager.connect(name, options),
     disconnect: (name) => manager.disconnect(name),
