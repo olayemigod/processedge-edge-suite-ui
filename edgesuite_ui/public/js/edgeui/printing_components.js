@@ -291,21 +291,21 @@ export const EdgePrinterSetupCard = defineComponent({
           ])
         : null,
       h("div", { class: "edge-printer-setup__actions" }, [
-        button("Refresh", () => this.refresh(), { disabled }),
+        button("Refresh", () => this.refresh().catch(() => {}), { disabled }),
         serial && !this.bindingPresent
-          ? button("Connect Printer", () => this.connect(), { primary: true, disabled })
+          ? button("Connect Printer", () => this.connect().catch(() => {}), { primary: true, disabled })
           : null,
         canReconnect
-          ? button("Reconnect", () => this.reconnect(), { primary: true, disabled })
+          ? button("Reconnect", () => this.reconnect().catch(() => {}), { primary: true, disabled })
           : null,
         connected
-          ? button("Test Print", () => this.testPrint(), { primary: true, disabled })
+          ? button("Test Print", () => this.testPrint().catch(() => {}), { primary: true, disabled })
           : null,
         connected
-          ? button("Disconnect", () => this.disconnect(), { disabled })
+          ? button("Disconnect", () => this.disconnect().catch(() => {}), { disabled })
           : null,
         this.bindingPresent
-          ? button("Forget Printer", () => this.forget(), { danger: true, disabled })
+          ? button("Forget Printer", () => this.forget().catch(() => {}), { danger: true, disabled })
           : null,
       ].filter(Boolean)),
       profile && !serial
