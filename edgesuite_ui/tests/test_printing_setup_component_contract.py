@@ -1,6 +1,5 @@
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[2]
 COMPONENT = ROOT / "edgesuite_ui" / "public" / "js" / "edgeui" / "printing_components.js"
 PROFILE_RUNTIME = ROOT / "edgesuite_ui" / "public" / "js" / "edgeui" / "printing_profile_runtime.js"
