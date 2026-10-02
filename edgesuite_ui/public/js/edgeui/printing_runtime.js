@@ -8,6 +8,7 @@ import { createWebSerialTransport } from "./printing_serial_transport";
 import { normalizeReceiptDocument } from "./printing_document";
 import { edgeEscPos, encodeEscPosDocument } from "./printing_escpos";
 import { createPrinterBindingStore, createPrinterDeviceManager } from "./printing_device_binding";
+import { createPrintProfileClient } from "./printing_profile_runtime";
 
 function normalizeTransportName(name) {
   const normalized = String(name || "").trim().toLowerCase();
@@ -112,6 +113,7 @@ export function createEdgePrintAdapter({ target = globalThis } = {}) {
   const manager = createPrintManager({ target });
   const bindingStore = createPrinterBindingStore({ target });
   const devices = createPrinterDeviceManager({ target, printManager: manager, store: bindingStore });
+  const profiles = createPrintProfileClient({ target });
 
   return Object.freeze({
     contractVersion: 1,
@@ -136,6 +138,7 @@ export function createEdgePrintAdapter({ target = globalThis } = {}) {
     printReceipt: (document, options) => manager.printReceipt(document, options),
     bindingStore,
     devices,
+    profiles,
     manager,
     connect: (name, options) => manager.connect(name, options),
     disconnect: (name) => manager.disconnect(name),
