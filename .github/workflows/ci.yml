@@ -91,6 +91,7 @@ jobs:
             edgesuite_ui/tests/test_printing_escpos_contract.py \
             edgesuite_ui/tests/test_printing_device_binding_contract.py \
             edgesuite_ui/tests/test_print_profile_contract.py \
+            edgesuite_ui/tests/test_printing_setup_component_contract.py \
             2>&1 | tee contract-tests.log
       - name: Upload contract diagnostics
         if: steps.contracts.outcome == 'failure'
