@@ -86,6 +86,8 @@ def _profile_matches(
 
 	scope_type = _normalize(profile.get("scope_type")) or "Global"
 	scope_value = _normalize(profile.get("scope_value"))
+	if scope_type in {"Company", "Branch"} and not profile_product:
+		return False
 	if scope_type == "Global":
 		return True
 	if scope_type == "Company":
