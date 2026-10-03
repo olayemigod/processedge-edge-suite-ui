@@ -32,6 +32,10 @@ def test_printer_setup_component_uses_shared_profile_binding_and_transport_layer
         "Test Print",
         "Disconnect",
         "Forget Printer",
+        "Currency sample: NGN 1,234.56 | ₦",
+        "EDGE-PRINT-TEST",
+        "EDGEPRINT01",
+        "adapter.profiles.textEncoder",
         'state: "unsupported"',
         "serialReason",
         "This browser does not expose Web Serial",
@@ -51,6 +55,9 @@ def test_print_profile_runtime_bridges_frappe_policy_without_device_access():
     assert "normalizePrintProfile" in source
     assert "receiptDocumentOptionsFromProfile" in source
     assert "connectionOptionsFromProfile" in source
+    assert "textEncoderFromProfile" in source
+    assert "ASCII Safe" in source
+    assert 'replaceAll("₦", "NGN ")' in source
 
     assert "navigator.serial" not in source
     assert "localStorage" not in source
