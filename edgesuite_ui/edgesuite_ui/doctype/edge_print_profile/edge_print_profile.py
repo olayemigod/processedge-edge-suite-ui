@@ -57,6 +57,11 @@ class EdgePrintProfile(Document):
 
 	def _validate_product_key(self) -> None:
 		if not self.product_key:
+			if self.scope_type in {"Company", "Branch"}:
+				frappe.throw(
+					"Company and Branch printer profiles must belong to a product so the product can "
+					"authorize that business context."
+				)
 			return
 		available = {str(row.get("key") or "") for row in get_available_products()}
 		if self.product_key not in available:
