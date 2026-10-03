@@ -77,6 +77,9 @@ class EdgePrintProfile(Document):
 			frappe.throw(f"{scope_doctype} {self.scope_value} does not exist.")
 
 	def _validate_physical_settings(self) -> None:
+		if self.text_encoding not in {"ASCII Safe", "UTF-8"}:
+			frappe.throw("Text Encoding must be ASCII Safe or UTF-8.")
+
 		paper_width = int(self.paper_width or 0)
 		if paper_width not in {58, 80}:
 			frappe.throw("Paper Width must be 58 or 80 mm.")
