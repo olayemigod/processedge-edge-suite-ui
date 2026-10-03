@@ -11,6 +11,7 @@
   "product_key",
   "scope_section",
   "scope_type",
+  "scope_doctype",
   "scope_value",
   "priority",
   "printer_section",
@@ -52,14 +53,15 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Purpose",
-   "options": "Receipt\nDocument\nLabel\nOther",
+   "options": "Receipt",
    "reqd": 1
   },
   {
-   "description": "Optional product key. Leave blank for a profile reusable by any EdgeSuite product.",
+   "description": "Optional product. Leave blank only for a genuinely shared receipt-printer policy.",
    "fieldname": "product_key",
-   "fieldtype": "Data",
-   "label": "Product Key"
+   "fieldtype": "Select",
+   "label": "Product Key",
+   "options": ""
   },
   {
    "fieldname": "scope_section",
@@ -76,12 +78,20 @@
    "reqd": 1
   },
   {
-   "depends_on": "eval:doc.scope_type != 'Global'",
-   "description": "Exact company, branch, or user identifier. EdgeSuite does not grant access to that business scope.",
-   "fieldname": "scope_value",
+   "fieldname": "scope_doctype",
    "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Scope DocType",
+   "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.scope_type != 'Global'",
+   "description": "Choose a valid Company, Branch, or User for this printer policy.",
+   "fieldname": "scope_value",
+   "fieldtype": "Dynamic Link",
    "label": "Scope Value",
-   "mandatory_depends_on": "eval:doc.scope_type != 'Global'"
+   "mandatory_depends_on": "eval:doc.scope_type != 'Global'",
+   "options": "scope_doctype"
   },
   {
    "default": "0",
@@ -101,7 +111,7 @@
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Transport",
-   "options": "Serial\nSystem\nBrowser",
+   "options": "Serial",
    "reqd": 1
   },
   {
@@ -109,7 +119,7 @@
    "fieldname": "protocol",
    "fieldtype": "Select",
    "label": "Protocol",
-   "options": "ESC/POS\nSystem",
+   "options": "ESC/POS",
    "reqd": 1
   },
   {
@@ -180,10 +190,13 @@
    "label": "Copies"
   },
   {
-   "default": "1",
+   "default": "0",
    "fieldname": "print_logo",
    "fieldtype": "Check",
-   "label": "Print Logo"
+   "label": "Print Logo",
+   "hidden": 1,
+   "read_only": 1,
+   "description": "Reserved for a later logo rasterization milestone."
   },
   {
    "default": "1",
