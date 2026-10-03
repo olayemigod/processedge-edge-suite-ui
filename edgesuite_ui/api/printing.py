@@ -20,6 +20,7 @@ PRINT_PROFILE_FIELDS = (
 	"paper_width",
 	"characters_per_line",
 	"baud_rate",
+	"text_encoding",
 	"auto_cut",
 	"cut_mode",
 	"cash_drawer",
