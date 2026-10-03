@@ -27,16 +27,16 @@ window.EdgeSuiteUI.getAdapter("print")
 window.EdgeSuiteUI.print
 ```
 
-The first implementation slice provides:
+The V1 implementation provides:
 
-- explicit shared printer states;
-- secure-context capability detection;
-- transport registration through a shared print manager;
-- Web Serial discovery/authorization;
-- Web Serial connect/disconnect;
-- byte-oriented writes suitable for the later ESC/POS encoder;
-- deterministic error codes for unsupported, unselected, disconnected, connect, write, and
-  disconnect failures;
+- explicit shared printer states and secure-context capability detection;
+- Web Serial discovery/authorization, connect/disconnect, device-local binding, and reconnect;
+- serialized/backpressure-aware chunked writes so concurrent jobs cannot interleave;
+- deterministic error codes and physical-disconnect tracking;
+- ESC/POS receipt encoding for 58 mm and 80 mm printers;
+- explicit UTF-8 or ASCII-safe text encoding policy;
+- deterministic, fail-closed printer-profile resolution;
+- product-owned Company/Branch scope validation;
 - testable browser abstractions with no physical printer requirement in CI.
 
 ## Web Serial boundary
@@ -47,8 +47,8 @@ printer preferences, while a later device-binding layer will map those profiles 
 authorized on that device.
 
 The first user grant must be initiated from an explicit user action. Previously authorized ports
-are exposed through the transport's `authorizedPorts()` method and can later support reconnect
-flows.
+are restored through the device-binding layer. Writes are queued per transport and split into
+bounded chunks while respecting WritableStream backpressure.
 
 ## ESC/POS foundation now implemented
 
@@ -57,8 +57,9 @@ paper profiles. Supported primitives are text, rules, fixed/flexible rows, feeds
 packed monochrome raster images, paper cut, and cash-drawer pulse.
 
 The manager can encode a normalized receipt and send it through the selected registered transport.
-Products therefore provide document data rather than raw ESC/POS bytes. Text encoding remains
-injectable because low-cost printers differ in code-page and UTF-8 support.
+Products therefore provide document data rather than raw ESC/POS bytes. V1 profiles explicitly
+choose **ASCII Safe** or **UTF-8**. ASCII Safe converts the naira sign to `NGN`, transliterates
+common accented Latin text, and replaces unsupported symbols rather than printing corrupt bytes.
 
 ## Profile, binding, and setup layer now implemented
 
@@ -81,14 +82,26 @@ permissions. The local device binding and server policy remain separate by desig
 
 The following remain subsequent milestones:
 
-- higher-level product receipt templates and product adapters;
-- browser-side logo/image preprocessing into packed monochrome raster bytes;
-- printer code-page profiles and text-encoding selection;
-- automatic reconnect event UX beyond explicit reconnect;
-- RetailEdge transaction integration;
+- browser-side merchant-logo preprocessing into packed monochrome raster bytes;
+- printer-specific legacy ESC/POS code-page tables beyond UTF-8 / ASCII Safe;
+- automatic reconnect UX beyond explicit reconnect and disconnect-state tracking;
 - network printer and native Android bridge adapters.
+
+RetailEdge receipt integration and POSNext web-app consumption are implemented downstream while
+remaining outside EdgeSuite's product-neutral business layer.
 
 ## Product integration rule
 
 Product applications must not call `navigator.serial` directly. They consume EdgeSuite's shared
 printing adapter so device handling can evolve without product-specific rewrites.
+
+
+## V1 configuration guardrails
+
+The V1 profile form exposes only the implementation that exists today: **Receipt + Serial +
+ESC/POS**. System/Browser profile modes and logo output are deliberately not advertised as active
+capabilities. Product keys are normalized, Company/Branch/User scope values use validated links,
+58/80 mm width changes receive sensible character-width defaults, and equal effective profile
+priority fails closed instead of selecting an arbitrary printer.
+
+The diagnostic Test Print exercises width/wrapping, encoding, QR, CODE128, feed and cutter policy.
