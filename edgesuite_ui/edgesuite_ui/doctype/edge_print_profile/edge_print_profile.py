@@ -5,7 +5,6 @@ from frappe.model.document import Document
 
 from edgesuite_ui.api.product_context import get_available_products
 
-
 SUPPORTED_PURPOSE = "Receipt"
 SUPPORTED_TRANSPORT = "Serial"
 SUPPORTED_PROTOCOL = "ESC/POS"
