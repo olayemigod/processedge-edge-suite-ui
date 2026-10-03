@@ -28,6 +28,7 @@ def test_printing_runtime_owns_transport_contract_not_product_business_logic():
         "createwebserialtransport",
         "detectprintcapabilities",
         "writebytes",
+        "writequeues",
     ):
         assert expected in source.replace(" ", "").replace("_", "").lower()
 
@@ -45,6 +46,7 @@ def test_serial_transport_fails_closed_and_remains_byte_oriented():
         "writer.ready",
         "payload.subarray",
         "chunksWritten",
+        "completedState",
         'addEventListener?.("disconnect"',
         "deviceConnected",
         "writer.releaseLock()",
