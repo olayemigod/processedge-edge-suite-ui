@@ -36,6 +36,7 @@ _SCOPE_SPECIFICITY = {
 	"Branch": 300,
 	"User": 400,
 }
+PRINT_CONTEXT_VALIDATOR_HOOK = "edgesuite_print_context_validators"
 
 
 def _require_authenticated_user() -> str:
@@ -95,12 +96,66 @@ def _profile_matches(
 	return False
 
 
-def _profile_rank(profile: dict[str, Any], product_key: str) -> tuple[int, int, int, str]:
+def _profile_effective_rank(profile: dict[str, Any], product_key: str) -> tuple[int, int, int]:
 	scope_type = _normalize(profile.get("scope_type")) or "Global"
 	specificity = _SCOPE_SPECIFICITY.get(scope_type, 0)
 	product_specific = 1 if _normalize(profile.get("product_key")) == product_key and product_key else 0
 	priority = int(profile.get("priority") or 0)
-	return specificity, product_specific, priority, _normalize(profile.get("name"))
+	return specificity, product_specific, priority
+
+
+def _profile_rank(profile: dict[str, Any], product_key: str) -> tuple[int, int, int, str]:
+	return (*_profile_effective_rank(profile, product_key), _normalize(profile.get("name")))
+
+
+def _validate_product_scope(
+	*,
+	user: str,
+	purpose: str,
+	product_key: str,
+	company: str,
+	branch: str,
+) -> tuple[str, str]:
+	if not product_key or not (company or branch):
+		return company, branch
+
+	validators = frappe.get_hooks(PRINT_CONTEXT_VALIDATOR_HOOK, default=[]) or []
+	for validator_path in validators:
+		try:
+			validator = frappe.get_attr(validator_path)
+			result = validator(
+				product_key=product_key,
+				company=company,
+				branch=branch,
+				purpose=purpose,
+				user=user,
+			)
+		except frappe.PermissionError:
+			raise
+		except Exception:
+			frappe.log_error(
+				title=f"EdgeSuite print context validator failed: {validator_path}",
+				message=frappe.get_traceback(),
+			)
+			continue
+
+		if not isinstance(result, dict) or not result.get("handled"):
+			continue
+		if result.get("allowed") is False:
+			frappe.throw(
+				result.get("reason") or _("You do not have access to this printing context."),
+				frappe.PermissionError,
+			)
+		return (
+			_normalize(result.get("company")) or company,
+			_normalize(result.get("branch")) or branch,
+		)
+
+	frappe.throw(
+		_("This product does not provide a validated Company/Branch printing context."),
+		frappe.PermissionError,
+	)
+	return company, branch
 
 
 def _safe_profile(profile: dict[str, Any]) -> dict[str, Any]:
@@ -125,6 +180,13 @@ def get_active_print_profiles(
 	product_key = _require_product_available(_normalize(product_key))
 	company = _normalize(company)
 	branch = _normalize(branch)
+	company, branch = _validate_product_scope(
+		user=user,
+		purpose=purpose,
+		product_key=product_key,
+		company=company,
+		branch=branch,
+	)
 
 	profiles = frappe.get_all(
 		"Edge Print Profile",
@@ -161,4 +223,17 @@ def resolve_print_profile(
 		company=company,
 		branch=branch,
 	)
-	return profiles[0] if profiles else None
+	if not profiles:
+		return None
+
+	normalized_product_key = _normalize_product_key(product_key)
+	if len(profiles) > 1 and _profile_effective_rank(
+		profiles[0], normalized_product_key
+	) == _profile_effective_rank(profiles[1], normalized_product_key):
+		frappe.throw(
+			_(
+				"Multiple active printer profiles match this context with the same effective priority. "
+				"Disable one profile or assign distinct priorities."
+			)
+		)
+	return profiles[0]
