@@ -239,13 +239,14 @@ const fakePrintingTarget = {
         paper_width: "80",
         characters_per_line: 48,
         baud_rate: 19200,
+        text_encoding: "ASCII Safe",
         auto_cut: 1,
         cut_mode: "Partial",
         cash_drawer: 0,
         drawer_pin: 0,
         feed_lines: 3,
         copies: 1,
-        print_logo: 1,
+        print_logo: 0,
         print_qr: 1,
       };
       callback({
@@ -286,9 +287,15 @@ const resolvedProfile = await profileAdapter.profiles.resolve({
 if (
   resolvedProfile?.name !== "Default Receipt" ||
   resolvedProfile.paperWidth !== 80 ||
-  resolvedProfile.baudRate !== 19200
+  resolvedProfile.baudRate !== 19200 ||
+  resolvedProfile.textEncoding !== "ascii-safe"
 ) {
   throw new Error("Shared print profile client should normalize server policy for browser use.");
+}
+const safeEncoder = profileAdapter.profiles.textEncoder(resolvedProfile);
+const safeText = new TextDecoder().decode(safeEncoder("₦ café — test"));
+if (safeText !== "NGN cafe - test") {
+  throw new Error("ASCII-safe printing should replace the naira sign and unsupported Unicode.");
 }
 const profileConnection = profileAdapter.profiles.connectionOptions(resolvedProfile);
 if (profileConnection?.openOptions?.baudRate !== 19200) {
@@ -335,8 +342,13 @@ if (serialOpenOptions?.baudRate !== 19200) {
   throw new Error("Shared serial transport should respect configured baud rate.");
 }
 const writeResult = await printingManager.write(Uint8Array.from([0x1b, 0x40, 0x0a]));
-if (writeResult.bytesWritten !== 3 || serialWrites[0]?.join(",") !== "27,64,10") {
-  throw new Error("Shared serial transport should write byte-oriented printer payloads.");
+if (
+  writeResult.bytesWritten !== 3 ||
+  serialWrites[0]?.join(",") !== "27,64,10" ||
+  writeResult.completedState !== "printed" ||
+  !writeResult.status?.connected
+) {
+  throw new Error("Shared serial transport should write bytes and return a connected success status.");
 }
 if (printingManager.getStatus("serial").state !== "connected") {
   throw new Error("Shared serial transport should return to connected state after a successful write.");
@@ -344,6 +356,36 @@ if (printingManager.getStatus("serial").state !== "connected") {
 await printingManager.disconnect("serial");
 if (!serialClosed || printingManager.getStatus("serial").state !== "disconnected") {
   throw new Error("Shared serial transport should close the selected printer cleanly.");
+}
+
+let activeQueuedWrites = 0;
+let maxQueuedWrites = 0;
+const queuedOrder = [];
+const queuedManager = printingRuntimeModule.createPrintManager({ target: fakePrintingTarget });
+queuedManager.registerTransport("queued-test", {
+  isSupported: () => true,
+  connect: async () => ({}),
+  disconnect: async () => ({}),
+  getStatus: () => ({ state: "connected", connected: true }),
+  async write(payload) {
+    activeQueuedWrites += 1;
+    maxQueuedWrites = Math.max(maxQueuedWrites, activeQueuedWrites);
+    queuedOrder.push(`start:${payload[0]}`);
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    queuedOrder.push(`end:${payload[0]}`);
+    activeQueuedWrites -= 1;
+    return { bytesWritten: payload.byteLength };
+  },
+});
+await Promise.all([
+  queuedManager.write(Uint8Array.from([1]), { transport: "queued-test" }),
+  queuedManager.write(Uint8Array.from([2]), { transport: "queued-test" }),
+]);
+if (
+  maxQueuedWrites !== 1 ||
+  queuedOrder.join("|") !== "start:1|end:1|start:2|end:2"
+) {
+  throw new Error("Print manager must serialize concurrent writes per transport.");
 }
 
 serialWrites.length = 0;
