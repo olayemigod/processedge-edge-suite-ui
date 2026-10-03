@@ -105,3 +105,7 @@ capabilities. Product keys are normalized, Company/Branch/User scope values use 
 priority fails closed instead of selecting an arbitrary printer.
 
 The diagnostic Test Print exercises width/wrapping, encoding, QR, CODE128, feed and cutter policy.
+
+Company/Branch-scoped profiles must declare a product key so the owning product can authorize
+that business context. Only truly Global or current-User profiles may remain product-neutral.
+Legacy blank-product Company/Branch rows are ignored at runtime until corrected.
