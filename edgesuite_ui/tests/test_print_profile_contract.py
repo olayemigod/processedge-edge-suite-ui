@@ -98,6 +98,7 @@ def test_profile_resolution_is_authenticated_product_and_scope_aware():
     assert "frappe.PermissionError" in source
     assert "ignore_permissions=True" not in source
     assert "same effective priority" in source
+    assert 'scope_type in {"Company", "Branch"} and not profile_product' in source
     assert 'result["product_key"] = _normalize_product_key' in source
     assert 'result["text_encoding"] = _normalize(profile.get("text_encoding")) or "ASCII Safe"' in source
     assert 'result["print_logo"] = 0' in source
@@ -112,6 +113,8 @@ def test_profile_controller_validates_physical_print_settings():
         'SUPPORTED_PROTOCOL = "ESC/POS"',
         "_normalize_product_key",
         "_validate_effective_rank_is_unique",
+        'self.scope_type in {"Company", "Branch"}',
+        "must belong to a product",
         "Paper Width must be 58 or 80 mm.",
         "Characters per Line must be between 16 and 80.",
         "Baud Rate must be between 300 and 1000000.",
