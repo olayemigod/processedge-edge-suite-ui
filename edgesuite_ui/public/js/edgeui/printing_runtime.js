@@ -27,6 +27,7 @@ function assertTransportContract(name, transport) {
 
 export function createPrintManager({ target = globalThis } = {}) {
   const transports = new Map();
+  const writeQueues = new Map();
   transports.set(
     EDGE_PRINT_TRANSPORTS.SERIAL,
     createWebSerialTransport({ target }),
@@ -71,7 +72,13 @@ export function createPrintManager({ target = globalThis } = {}) {
   }
 
   async function write(bytes, { transport = EDGE_PRINT_TRANSPORTS.SERIAL } = {}) {
-    return getTransport(transport).write(bytes);
+    const normalized = normalizeTransportName(transport);
+    const previous = writeQueues.get(normalized) || Promise.resolve();
+    const queued = previous
+      .catch(() => undefined)
+      .then(() => getTransport(normalized).write(bytes));
+    writeQueues.set(normalized, queued.catch(() => undefined));
+    return queued;
   }
 
   function encodeReceipt(document, options = {}) {
