@@ -1,9 +1,9 @@
 from __future__ import annotations
 
+from edgesuite_ui.api.product_context import get_available_products
+
 import frappe
 from frappe.model.document import Document
-
-from edgesuite_ui.api.product_context import get_available_products
 
 
 SUPPORTED_PURPOSE = "Receipt"
