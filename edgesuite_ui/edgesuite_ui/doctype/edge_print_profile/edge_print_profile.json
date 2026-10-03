@@ -20,6 +20,7 @@
   "paper_width",
   "characters_per_line",
   "baud_rate",
+  "text_encoding",
   "behavior_section",
   "auto_cut",
   "cut_mode",
@@ -143,6 +144,15 @@
    "fieldname": "baud_rate",
    "fieldtype": "Int",
    "label": "Baud Rate"
+  },
+  {
+   "default": "ASCII Safe",
+   "description": "ASCII Safe replaces unsupported symbols (including the naira sign) with portable text such as NGN. Use UTF-8 only for printers confirmed to support it.",
+   "fieldname": "text_encoding",
+   "fieldtype": "Select",
+   "label": "Text Encoding",
+   "options": "ASCII Safe\nUTF-8",
+   "reqd": 1
   },
   {
    "fieldname": "behavior_section",
