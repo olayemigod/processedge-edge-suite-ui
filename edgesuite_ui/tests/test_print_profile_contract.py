@@ -98,6 +98,9 @@ def test_profile_resolution_is_authenticated_product_and_scope_aware():
     assert "frappe.PermissionError" in source
     assert "ignore_permissions=True" not in source
     assert "same effective priority" in source
+    assert 'result["product_key"] = _normalize_product_key' in source
+    assert 'result["text_encoding"] = _normalize(profile.get("text_encoding")) or "ASCII Safe"' in source
+    assert 'result["print_logo"] = 0' in source
 
 
 def test_profile_controller_validates_physical_print_settings():
