@@ -30,6 +30,29 @@ function integer(value, fallback) {
   return Number.isFinite(parsed) ? Math.trunc(parsed) : fallback;
 }
 
+function utf8Encode(value) {
+  return new TextEncoder().encode(String(value ?? ""));
+}
+
+function asciiSafeText(value) {
+  return String(value ?? "")
+    .replaceAll("₦", "NGN ")
+    .replaceAll("–", "-")
+    .replaceAll("—", "-")
+    .replaceAll("“", '"')
+    .replaceAll("”", '"')
+    .replaceAll("’", "'")
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^\x09\x0a\x0d\x20-\x7e]/g, "?");
+}
+
+export function textEncoderFromProfile(profile) {
+  const normalized = normalizePrintProfile(profile);
+  if (!normalized || normalized.textEncoding === "utf-8") return utf8Encode;
+  return (value) => utf8Encode(asciiSafeText(value));
+}
+
 export function normalizePrintProfile(profile = null) {
   if (!profile || typeof profile !== "object") return null;
   const name = scalar(profile.name || profile.profileName || profile.profile_name).trim();
@@ -48,6 +71,10 @@ export function normalizePrintProfile(profile = null) {
     paperWidth: integer(profile.paperWidth ?? profile.paper_width, 80),
     charactersPerLine: integer(profile.charactersPerLine ?? profile.characters_per_line, 48),
     baudRate: integer(profile.baudRate ?? profile.baud_rate, 9600),
+    textEncoding: scalar(profile.textEncoding ?? profile.text_encoding ?? "ASCII Safe")
+      .trim()
+      .toLowerCase()
+      .replaceAll(" ", "-"),
     autoCut: Boolean(Number(profile.autoCut ?? profile.auto_cut) || profile.autoCut === true || profile.auto_cut === true),
     cutMode: scalar(profile.cutMode || profile.cut_mode || "Partial").toLowerCase(),
     cashDrawer: Boolean(Number(profile.cashDrawer ?? profile.cash_drawer) || profile.cashDrawer === true || profile.cash_drawer === true),
@@ -113,6 +140,7 @@ export function createPrintProfileClient({ target = globalThis } = {}) {
     normalize: normalizePrintProfile,
     receiptOptions: receiptDocumentOptionsFromProfile,
     connectionOptions: connectionOptionsFromProfile,
+    textEncoder: textEncoderFromProfile,
   });
 }
 
