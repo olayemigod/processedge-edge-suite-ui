@@ -60,9 +60,8 @@
   {
    "description": "Optional product. Leave blank only for a genuinely shared receipt-printer policy.",
    "fieldname": "product_key",
-   "fieldtype": "Select",
-   "label": "Product Key",
-   "options": ""
+   "fieldtype": "Autocomplete",
+   "label": "Product Key"
   },
   {
    "fieldname": "scope_section",
