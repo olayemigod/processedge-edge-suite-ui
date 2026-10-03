@@ -57,7 +57,7 @@ def test_print_profile_runtime_bridges_frappe_policy_without_device_access():
     assert "connectionOptionsFromProfile" in source
     assert "textEncoderFromProfile" in source
     assert "ASCII Safe" in source
-    assert 'replaceAll("₦", "NGN ")' in source
+    assert 'replaceAll("₦", "NGN")' in source
 
     assert "navigator.serial" not in source
     assert "localStorage" not in source
