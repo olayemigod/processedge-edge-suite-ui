@@ -35,7 +35,7 @@ async function loadProductOptions(frm) {
   const current = String(frm.doc.product_key || "").trim();
   const keys = products.map((row) => String(row.key || "").trim()).filter(Boolean);
   if (current && !keys.includes(current)) keys.push(current);
-  frm.set_df_property("product_key", "options", ["", ...keys].join("\n"));
+  frm.set_df_property("product_key", "options", keys);
   frm.refresh_field("product_key");
 }
 
