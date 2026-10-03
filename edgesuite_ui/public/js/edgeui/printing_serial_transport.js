@@ -160,15 +160,15 @@ export function createWebSerialTransport({
           await sleep(target, chunkDelay);
         }
       }
-      state = EDGE_PRINT_STATES.PRINTED;
-      const result = {
+      const completedState = EDGE_PRINT_STATES.PRINTED;
+      state = EDGE_PRINT_STATES.CONNECTED;
+      return {
         bytesWritten: payload.byteLength,
         chunksWritten,
         chunkSize,
+        completedState,
         status: getStatus(),
       };
-      state = EDGE_PRINT_STATES.CONNECTED;
-      return result;
     } catch (error) {
       state = EDGE_PRINT_STATES.FAILED;
       throw new EdgePrintError("SERIAL_WRITE_FAILED", "The printer did not accept the print data.", {
