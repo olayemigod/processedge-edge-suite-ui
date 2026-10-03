@@ -178,6 +178,8 @@ def get_active_print_profiles(
 
 	user = _require_authenticated_user()
 	purpose = _normalize(purpose) or "Receipt"
+	if purpose != "Receipt":
+		frappe.throw(_("Printing V1 currently supports Receipt profiles only."))
 	product_key = _require_product_available(_normalize(product_key))
 	company = _normalize(company)
 	branch = _normalize(branch)
@@ -191,7 +193,12 @@ def get_active_print_profiles(
 
 	profiles = frappe.get_all(
 		"Edge Print Profile",
-		filters={"enabled": 1, "purpose": purpose},
+		filters={
+			"enabled": 1,
+			"purpose": purpose,
+			"transport": "Serial",
+			"protocol": "ESC/POS",
+		},
 		fields=list(PRINT_PROFILE_FIELDS),
 		order_by="priority desc, modified desc",
 	)
