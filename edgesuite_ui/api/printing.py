@@ -162,7 +162,14 @@ def _validate_product_scope(
 
 
 def _safe_profile(profile: dict[str, Any]) -> dict[str, Any]:
-	return {field: profile.get(field) for field in PRINT_PROFILE_FIELDS}
+	result = {field: profile.get(field) for field in PRINT_PROFILE_FIELDS}
+	result["product_key"] = _normalize_product_key(profile.get("product_key"))
+	result["text_encoding"] = _normalize(profile.get("text_encoding")) or "ASCII Safe"
+	# Logo raster preprocessing is deliberately outside V1. Existing rows created
+	# before this hardening may still contain print_logo=1, so never expose that
+	# stale flag as an active runtime capability.
+	result["print_logo"] = 0
+	return result
 
 
 @frappe.whitelist()
