@@ -80,7 +80,7 @@ def _profile_matches(
 	company: str,
 	branch: str,
 ) -> bool:
-	profile_product = _normalize(profile.get("product_key"))
+	profile_product = _normalize_product_key(profile.get("product_key"))
 	if profile_product and profile_product != product_key:
 		return False
 
@@ -100,7 +100,9 @@ def _profile_matches(
 def _profile_effective_rank(profile: dict[str, Any], product_key: str) -> tuple[int, int, int]:
 	scope_type = _normalize(profile.get("scope_type")) or "Global"
 	specificity = _SCOPE_SPECIFICITY.get(scope_type, 0)
-	product_specific = 1 if _normalize(profile.get("product_key")) == product_key and product_key else 0
+	product_specific = (
+		1 if _normalize_product_key(profile.get("product_key")) == product_key and product_key else 0
+	)
 	priority = int(profile.get("priority") or 0)
 	return specificity, product_specific, priority
 
