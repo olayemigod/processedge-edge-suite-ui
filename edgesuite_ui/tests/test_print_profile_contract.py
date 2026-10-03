@@ -49,6 +49,7 @@ def test_edge_print_profile_is_shared_policy_not_device_permission_storage():
         assert fieldname in fields
 
     assert fields["purpose"]["options"] == "Receipt"
+    assert fields["product_key"]["fieldtype"] == "Autocomplete"
     assert fields["transport"]["options"] == "Serial"
     assert fields["protocol"]["options"] == "ESC/POS"
     assert fields["scope_value"]["fieldtype"] == "Dynamic Link"
