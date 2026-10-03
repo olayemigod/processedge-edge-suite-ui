@@ -11,6 +11,7 @@ PROFILE_JSON = (
     / "edge_print_profile.json"
 )
 PROFILE_CONTROLLER = PROFILE_JSON.with_suffix(".py")
+PROFILE_CLIENT = PROFILE_JSON.with_suffix(".js")
 API = ROOT / "edgesuite_ui" / "api" / "printing.py"
 
 
@@ -35,6 +36,7 @@ def test_edge_print_profile_is_shared_policy_not_device_permission_storage():
         "paper_width",
         "characters_per_line",
         "baud_rate",
+        "text_encoding",
         "auto_cut",
         "cut_mode",
         "cash_drawer",
@@ -45,6 +47,14 @@ def test_edge_print_profile_is_shared_policy_not_device_permission_storage():
         "print_qr",
     ):
         assert fieldname in fields
+
+    assert fields["purpose"]["options"] == "Receipt"
+    assert fields["transport"]["options"] == "Serial"
+    assert fields["protocol"]["options"] == "ESC/POS"
+    assert fields["scope_value"]["fieldtype"] == "Dynamic Link"
+    assert fields["scope_value"]["options"] == "scope_doctype"
+    assert fields["print_logo"]["default"] == "0"
+    assert fields["print_logo"]["hidden"] == 1
 
     serialized = PROFILE_JSON.read_text().lower()
     for forbidden in ("mac address", "bluetooth address", "serialport", "device permission"):
@@ -71,6 +81,9 @@ def test_profile_resolution_is_authenticated_product_and_scope_aware():
         "get_available_products",
         "_profile_matches",
         "_profile_rank",
+        "_profile_effective_rank",
+        "_validate_product_scope",
+        "PRINT_CONTEXT_VALIDATOR_HOOK",
         '"Global": 100',
         '"Company": 200',
         '"Branch": 300',
@@ -83,17 +96,39 @@ def test_profile_resolution_is_authenticated_product_and_scope_aware():
     assert "Guest" in source
     assert "frappe.PermissionError" in source
     assert "ignore_permissions=True" not in source
+    assert "same effective priority" in source
 
 
 def test_profile_controller_validates_physical_print_settings():
     source = PROFILE_CONTROLLER.read_text()
 
     for expected in (
-        'if self.transport == "Serial" and self.protocol != "ESC/POS"',
+        'SUPPORTED_PURPOSE = "Receipt"',
+        'SUPPORTED_TRANSPORT = "Serial"',
+        'SUPPORTED_PROTOCOL = "ESC/POS"',
+        "_normalize_product_key",
+        "_validate_effective_rank_is_unique",
         "Paper Width must be 58 or 80 mm.",
         "Characters per Line must be between 16 and 80.",
         "Baud Rate must be between 300 and 1000000.",
         "Feed Lines must be between 0 and 20.",
         "Copies must be between 1 and 10.",
+    ):
+        assert expected in source
+
+
+
+def test_print_profile_form_uses_smart_context_and_width_defaults():
+    source = PROFILE_CLIENT.read_text()
+
+    for expected in (
+        "loadProductOptions",
+        "get_product_context",
+        "scope_doctype",
+        "clearInvalid: true",
+        "width === 58",
+        'set_value("characters_per_line", 32)',
+        "width === 80",
+        'set_value("characters_per_line", 48)',
     ):
         assert expected in source
