@@ -16,6 +16,10 @@ const printingPageEntrypoint = resolve(
   repositoryRoot,
   "edgesuite_ui/edgesuite_ui/page/edge_printing/edge_printing.js",
 );
+const printProfileFormEntrypoint = resolve(
+  repositoryRoot,
+  "edgesuite_ui/edgesuite_ui/doctype/edge_print_profile/edge_print_profile.js",
+);
 
 async function javascriptFiles(directory) {
   const entries = await readdir(directory, { withFileTypes: true });
@@ -39,6 +43,12 @@ const printingPageSyntax = spawnSync(
   { stdio: "inherit" },
 );
 if (printingPageSyntax.status !== 0) process.exit(printingPageSyntax.status ?? 1);
+const printProfileFormSyntax = spawnSync(
+  process.execPath,
+  ["--check", printProfileFormEntrypoint],
+  { stdio: "inherit" },
+);
+if (printProfileFormSyntax.status !== 0) process.exit(printProfileFormSyntax.status ?? 1);
 
 const productContextBuild = await build({
   entryPoints: [productContextEntrypoint],
