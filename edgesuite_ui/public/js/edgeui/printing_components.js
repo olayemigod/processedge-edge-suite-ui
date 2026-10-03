@@ -244,18 +244,29 @@ export const EdgePrinterSetupCard = defineComponent({
             align: "center",
           },
           { type: "text", text: "Connection: OK", align: "center", bold: true },
+          {
+            type: "text",
+            text: `Encoding: ${this.profile.textEncoding || "ascii-safe"}`,
+            align: "center",
+          },
+          { type: "text", text: "Currency sample: NGN 1,234.56 | ₦", align: "center" },
+          { type: "qr", value: "EDGE-PRINT-TEST", size: 4, align: "center" },
+          { type: "barcode", value: "EDGEPRINT01", symbology: "CODE128", align: "center" },
           { type: "feed", lines: Math.max(1, receiptOptions.feedLines) },
         ];
         if (receiptOptions.autoCut) {
           blocks.push({ type: "cut", mode: receiptOptions.cutMode });
         }
 
-        const result = await adapter.printReceipt({
-          paper: receiptOptions.paper,
-          charactersPerLine: receiptOptions.charactersPerLine,
-          blocks,
-          metadata: { purpose: "diagnostic" },
-        });
+        const result = await adapter.printReceipt(
+          {
+            paper: receiptOptions.paper,
+            charactersPerLine: receiptOptions.charactersPerLine,
+            blocks,
+            metadata: { purpose: "diagnostic" },
+          },
+          { encodeText: adapter.profiles.textEncoder(this.profile) },
+        );
         this.status = adapter.getStatus("serial");
         this.emitStatus();
         this.$emit("printed", result);
