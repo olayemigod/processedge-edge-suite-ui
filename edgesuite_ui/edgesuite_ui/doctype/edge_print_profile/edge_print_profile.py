@@ -29,10 +29,15 @@ def _normalize_product_key(value: object) -> str:
 
 
 class EdgePrintProfile(Document):
-	def validate(self) -> None:
+	def before_validate(self) -> None:
 		self.profile_name = (self.profile_name or "").strip()
 		self.product_key = _normalize_product_key(self.product_key)
 		self.scope_value = (self.scope_value or "").strip()
+		self.scope_doctype = _SCOPE_DOCTYPES.get(self.scope_type, "")
+		if self.scope_type == "Global":
+			self.scope_value = ""
+
+	def validate(self) -> None:
 		self._validate_v1_capabilities()
 		self._validate_product_key()
 		self._validate_scope()
