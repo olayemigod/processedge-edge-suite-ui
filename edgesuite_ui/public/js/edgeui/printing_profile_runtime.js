@@ -36,7 +36,7 @@ function utf8Encode(value) {
 
 function asciiSafeText(value) {
   return String(value ?? "")
-    .replaceAll("₦", "NGN ")
+    .replaceAll("₦", "NGN")
     .replaceAll("–", "-")
     .replaceAll("—", "-")
     .replaceAll("“", '"')
