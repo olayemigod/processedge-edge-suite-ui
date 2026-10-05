@@ -78,6 +78,31 @@ EdgeSuite now also provides:
 Server profiles never store browser `SerialPort` objects, Bluetooth MAC addresses, or browser
 permissions. The local device binding and server policy remain separate by design.
 
+## Virtual Printer QA mode
+
+System Managers can enable an in-memory **Virtual Printer (QA)** from **Devices & Printing** when no
+physical printer is available. The simulator deliberately replaces only the registered Serial
+transport. Product apps still resolve the normal Print Profile, build the normal receipt document,
+use the normal EdgeSuite ESC/POS encoder, and call the normal shared print manager.
+
+The virtual transport captures the exact encoded bytes that would have been written to the printer
+and exposes a QA summary including byte count, best-effort thermal text preview, a hexadecimal byte
+sample, and detected feed, cut, cash-drawer, QR, and barcode commands. QA can also make the next
+write fail to prove that a printer failure does not mutate or roll back an already completed
+business transaction.
+
+Simulation safety boundaries:
+
+- simulation state is browser-memory only and resets on reload;
+- enabling simulation never creates or edits an `Edge Print Profile`;
+- no fake device binding, SerialPort object, Bluetooth identifier, or simulator flag is persisted;
+- leaving simulation restores the real Web Serial transport;
+- simulation is a QA transport, not a merchant-selectable production printer type.
+
+A physical printer is still required for final hardware acceptance of Bluetooth/USB pairing, baud
+compatibility, actual paper alignment, cutter operation, cash-drawer pulse, and printer-specific
+QR/barcode/UTF-8 behaviour.
+
 ## Not included in this slice
 
 The following remain subsequent milestones:
