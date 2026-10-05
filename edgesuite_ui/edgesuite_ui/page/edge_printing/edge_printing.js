@@ -23,10 +23,20 @@ function edgePrintingRequire(assetName) {
   });
 }
 
-function hideNativeSidebar(wrapper) {
+function suppressNativePageChrome(wrapper) {
+  const edgeUI = globalThis.EdgeSuiteUI;
+  if (typeof edgeUI?.suppressNativeDeskPageChrome === "function") {
+    edgeUI.suppressNativeDeskPageChrome(wrapper);
+    return;
+  }
   const pageContainer = wrapper.closest?.(".page-container") || wrapper;
+  const pageHead = pageContainer.querySelector?.(".page-head");
   const sideSection = pageContainer.querySelector?.(".layout-side-section");
   const mainWrapper = pageContainer.querySelector?.(".layout-main-section-wrapper");
+  if (pageHead) {
+    pageHead.hidden = true;
+    pageHead.setAttribute("aria-hidden", "true");
+  }
   if (sideSection) {
     sideSection.hidden = true;
     sideSection.setAttribute("aria-hidden", "true");
@@ -48,8 +58,40 @@ function routeContext(edgeUI) {
   };
 }
 
+function pageUrl(page, context = {}) {
+  const params = new URLSearchParams();
+  if (context.purpose) params.set("purpose", context.purpose);
+  if (context.productKey) params.set("product_key", context.productKey);
+  if (context.company) params.set("company", context.company);
+  if (context.branch) params.set("branch", context.branch);
+  const query = params.toString();
+  return `/app/${page}${query ? `?${query}` : ""}`;
+}
+
 function canManageProfiles() {
   return (frappe.user_roles || []).includes("System Manager");
+}
+
+function printingFallbackMenu(context = {}) {
+  const items = [
+    {
+      label: "Devices & Printing",
+      route: pageUrl("edge-printing", context),
+      icon: "settings",
+      link_type: "Page",
+      link_to: "edge-printing",
+    },
+  ];
+  if (canManageProfiles()) {
+    items.push({
+      label: "Print Profiles",
+      route: pageUrl("edge-print-profiles", context),
+      icon: "list",
+      link_type: "Page",
+      link_to: "edge-print-profiles",
+    });
+  }
+  return [{ key: "printing", label: "Printing", icon: "settings", defaultCollapsed: false, items }];
 }
 
 function appendContextBadge(actions, label) {
@@ -108,7 +150,9 @@ function buildEdgeSuitePageChrome(context) {
   appendContextBadge(actions, context.branch ? `Branch: ${context.branch}` : "");
 
   if (canManageProfiles()) {
-    const manage = actionButton("Manage Print Profiles", () => frappe.set_route("edge-print-profiles"));
+    const manage = actionButton("Manage Print Profiles", () => {
+      globalThis.location.assign(pageUrl("edge-print-profiles", context));
+    });
     actions.appendChild(manage);
   }
 
@@ -260,8 +304,8 @@ async function mountPrintingPage(wrapper, page) {
     await edgePrintingRequire(EDGE_SUITE_ASSET);
   }
   const edgeUI = globalThis.EdgeSuiteUI;
-  if (!edgeUI?.getComponent?.("EdgePrinterSetupCard")) {
-    throw new Error("EdgeSuite shared printing runtime is unavailable.");
+  if (!edgeUI?.getComponent?.("EdgePrinterSetupCard") || typeof edgeUI.mountSharedPageShell !== "function") {
+    throw new Error("EdgeSuite shared printing shell is unavailable.");
   }
 
   try {
@@ -270,9 +314,19 @@ async function mountPrintingPage(wrapper, page) {
     // Global/user print profiles remain usable even if product availability refresh is unavailable.
   }
 
+  suppressNativePageChrome(wrapper);
   const context = routeContext(edgeUI);
   const { root, host, simulatorHost } = buildEdgeSuitePageChrome(context);
-  page.body.append(root);
+  wrapper._edgePrintingShell?.app?.unmount?.();
+  wrapper._edgePrintingShell = await edgeUI.mountSharedPageShell({
+    target: page.body,
+    content: root,
+    productKey: context.productKey,
+    activeRoute: pageUrl("edge-printing", context),
+    fallbackMenuItems: printingFallbackMenu(context),
+    tenantName: context.company,
+    branchName: context.branch,
+  });
 
   const component = edgeUI.getComponent("EdgePrinterSetupCard");
   async function renderPrinter() {
@@ -295,7 +349,7 @@ async function mountPrintingPage(wrapper, page) {
 
 frappe.pages[EDGE_PRINTING_PAGE].on_page_load = async function onEdgePrintingPageLoad(wrapper) {
   wrapper.setAttribute("data-edge-suite-page", "true");
-  hideNativeSidebar(wrapper);
+  suppressNativePageChrome(wrapper);
 
   const page = frappe.ui.make_app_page({
     parent: wrapper,
@@ -303,7 +357,6 @@ frappe.pages[EDGE_PRINTING_PAGE].on_page_load = async function onEdgePrintingPag
     single_column: true,
   });
   wrapper.page = page;
-  page.body?.setAttribute?.("data-edge-suite-page", "true");
 
   const loading = document.createElement("section");
   loading.className = "edge-state edge-state--loading edge-loading-state";
@@ -329,11 +382,12 @@ frappe.pages[EDGE_PRINTING_PAGE].on_page_load = async function onEdgePrintingPag
     message.className = "edge-state__description";
     message.textContent = error?.message || __("Please refresh and try again.");
     node.append(title, message);
+    page.body.empty?.();
     page.body.append(node);
   }
 };
 
 frappe.pages[EDGE_PRINTING_PAGE].on_page_show = function onEdgePrintingPageShow(wrapper) {
   wrapper.setAttribute("data-edge-suite-page", "true");
-  hideNativeSidebar(wrapper);
+  suppressNativePageChrome(wrapper);
 };
