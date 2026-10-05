@@ -30,12 +30,43 @@ PRINT_PROFILE_FIELDS = (
 	"print_logo",
 	"print_qr",
 )
+MANAGED_PRINT_PROFILE_FIELDS = (
+	"name",
+	"profile_name",
+	"enabled",
+	"purpose",
+	"product_key",
+	"scope_type",
+	"scope_value",
+	"priority",
+	"transport",
+	"protocol",
+	"paper_width",
+	"characters_per_line",
+	"baud_rate",
+	"text_encoding",
+	"auto_cut",
+	"cut_mode",
+	"cash_drawer",
+	"drawer_pin",
+	"feed_lines",
+	"copies",
+	"print_logo",
+	"print_qr",
+	"notes",
+	"modified",
+)
 
 _SCOPE_SPECIFICITY = {
 	"Global": 100,
 	"Company": 200,
 	"Branch": 300,
 	"User": 400,
+}
+_SCOPE_DOCTYPES = {
+	"Company": "Company",
+	"Branch": "Branch",
+	"User": "User",
 }
 PRINT_CONTEXT_VALIDATOR_HOOK = "edgesuite_print_context_validators"
 
@@ -44,6 +75,13 @@ def _require_authenticated_user() -> str:
 	user = frappe.session.user
 	if not user or user == "Guest":
 		frappe.throw("Authentication is required to resolve print profiles.", frappe.PermissionError)
+	return user
+
+
+def _require_print_profile_manager() -> str:
+	user = _require_authenticated_user()
+	if user != "Administrator" and "System Manager" not in frappe.get_roles(user):
+		frappe.throw(_("System Manager permission is required to manage printer profiles."), frappe.PermissionError)
 	return user
 
 
@@ -174,6 +212,14 @@ def _safe_profile(profile: dict[str, Any]) -> dict[str, Any]:
 	return result
 
 
+def _managed_profile(profile: dict[str, Any]) -> dict[str, Any]:
+	result = {field: profile.get(field) for field in MANAGED_PRINT_PROFILE_FIELDS}
+	result["product_key"] = _normalize_product_key(profile.get("product_key"))
+	result["text_encoding"] = _normalize(profile.get("text_encoding")) or "ASCII Safe"
+	result["print_logo"] = 0
+	return result
+
+
 @frappe.whitelist()
 def get_active_print_profiles(
 	purpose: str = "Receipt",
@@ -256,3 +302,120 @@ def resolve_print_profile(
 			)
 		)
 	return profiles[0]
+
+
+@frappe.whitelist()
+def get_print_profile_manager_context() -> dict[str, Any]:
+	"""Return EdgeSuite profile-manager data for System Manager users.
+
+	Product selection is deliberately not defaulted. The user chooses a Product
+	only when the policy is product-owned; Global/User policies may remain shared.
+	"""
+
+	_require_print_profile_manager()
+	products = [
+		{
+			"key": _normalize_product_key(product.get("key")),
+			"label": _normalize(product.get("label") or product.get("product") or product.get("key")),
+		}
+		for product in get_available_products()
+		if _normalize_product_key(product.get("key"))
+	]
+	profiles = frappe.get_all(
+		"Edge Print Profile",
+		fields=list(MANAGED_PRINT_PROFILE_FIELDS),
+		order_by="enabled desc, priority desc, modified desc",
+	)
+	return {
+		"products": products,
+		"profiles": [_managed_profile(profile) for profile in profiles],
+		"defaults": {
+			"enabled": 1,
+			"purpose": "Receipt",
+			"product_key": "",
+			"scope_type": "Global",
+			"scope_value": "",
+			"priority": 0,
+			"transport": "Serial",
+			"protocol": "ESC/POS",
+			"paper_width": 80,
+			"characters_per_line": 48,
+			"baud_rate": 9600,
+			"text_encoding": "ASCII Safe",
+			"auto_cut": 1,
+			"cut_mode": "Partial",
+			"cash_drawer": 0,
+			"drawer_pin": 0,
+			"feed_lines": 3,
+			"copies": 1,
+			"print_qr": 1,
+			"notes": "",
+		},
+	}
+
+
+@frappe.whitelist()
+def search_print_scope_values(scope_type: str, txt: str | None = None) -> list[dict[str, str]]:
+	_require_print_profile_manager()
+	scope_type = _normalize(scope_type)
+	doctype = _SCOPE_DOCTYPES.get(scope_type)
+	if not doctype:
+		return []
+	filters: dict[str, Any] = {}
+	if txt:
+		filters["name"] = ["like", f"%{_normalize(txt)}%"]
+	if doctype == "User":
+		filters["enabled"] = 1
+	rows = frappe.get_all(doctype, filters=filters, fields=["name"], order_by="name asc", limit=40)
+	return [{"value": row.name, "label": row.name} for row in rows]
+
+
+@frappe.whitelist()
+def save_print_profile(profile: dict[str, Any] | str) -> dict[str, Any]:
+	_require_print_profile_manager()
+	if isinstance(profile, str):
+		profile = frappe.parse_json(profile)
+	if not isinstance(profile, dict):
+		frappe.throw(_("Printer profile data is required."))
+
+	existing_name = _normalize(profile.get("name"))
+	profile_name = _normalize(profile.get("profile_name"))
+	if not profile_name:
+		frappe.throw(_("Profile Name is required."))
+
+	if existing_name:
+		doc = frappe.get_doc("Edge Print Profile", existing_name)
+		if profile_name != doc.profile_name:
+			frappe.throw(_("Profile Name cannot be changed after creation because local device bindings use it as a stable identifier."))
+	else:
+		doc = frappe.new_doc("Edge Print Profile")
+		doc.profile_name = profile_name
+
+	managed_values = {
+		"enabled": int(bool(profile.get("enabled"))),
+		"purpose": "Receipt",
+		"product_key": _normalize_product_key(profile.get("product_key")),
+		"scope_type": _normalize(profile.get("scope_type")) or "Global",
+		"scope_value": _normalize(profile.get("scope_value")),
+		"priority": int(profile.get("priority") or 0),
+		"transport": "Serial",
+		"protocol": "ESC/POS",
+		"paper_width": int(profile.get("paper_width") or 80),
+		"characters_per_line": int(profile.get("characters_per_line") or 48),
+		"baud_rate": int(profile.get("baud_rate") or 9600),
+		"text_encoding": _normalize(profile.get("text_encoding")) or "ASCII Safe",
+		"auto_cut": int(bool(profile.get("auto_cut"))),
+		"cut_mode": _normalize(profile.get("cut_mode")) or "Partial",
+		"cash_drawer": int(bool(profile.get("cash_drawer"))),
+		"drawer_pin": int(profile.get("drawer_pin") or 0),
+		"feed_lines": int(profile.get("feed_lines") if profile.get("feed_lines") is not None else 3),
+		"copies": int(profile.get("copies") or 1),
+		"print_logo": 0,
+		"print_qr": int(bool(profile.get("print_qr"))),
+		"notes": _normalize(profile.get("notes")),
+	}
+	for fieldname, value in managed_values.items():
+		doc.set(fieldname, value)
+
+	doc.save()
+	return _managed_profile(doc.as_dict())
