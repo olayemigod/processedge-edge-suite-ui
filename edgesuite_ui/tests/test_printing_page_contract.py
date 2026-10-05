@@ -19,17 +19,23 @@ def test_devices_and_printing_page_is_a_standard_edgesuite_page():
     assert page["standard"] == "Yes"
 
 
-def test_devices_and_printing_page_mounts_shared_component_only():
+def test_devices_and_printing_page_uses_edgesuite_page_primitives_and_shared_component():
     source = PAGE_JS.read_text()
 
     for expected in (
         'getComponent?.("EdgePrinterSetupCard")',
         'getComponent("EdgePrinterSetupCard")',
         "createEdgeApp",
+        "edge-page-layout",
+        "edge-page-header",
+        "edge-page-header__title",
+        "edge-page-header__subtitle",
+        "edge-status-badge",
+        "edge-button edge-button--secondary",
         "product_key",
         "company",
         "branch",
-        'data-edge-suite-page',
+        "data-edge-suite-page",
         "Manage Print Profiles",
     ):
         assert expected in source
@@ -41,17 +47,34 @@ def test_devices_and_printing_page_mounts_shared_component_only():
         "RetailEdge",
         "VetEdge",
         "EduEdge",
+        "Product: ${context.productKey}",
     ):
         assert forbidden not in source
 
 
-def test_devices_and_printing_page_has_responsive_shared_styles():
+def test_devices_and_printing_does_not_expose_internal_product_key_in_ui():
+    source = PAGE_JS.read_text()
+
+    assert "productKey: context.productKey" in source
+    assert "Product:" not in source
+    assert "Company:" in source
+    assert "Branch:" in source
+
+
+def test_devices_and_printing_page_has_edgesuite_card_and_responsive_styles():
     css = CSS.read_text()
 
     for expected in (
         ".edge-printing-page-root",
-        ".edge-printing-page-intro",
-        ".edge-printing-page-context",
+        ".edge-printing-page-actions",
+        ".edge-printing-page-content",
         ".edge-printing-page-card",
+        ".edge-printer-setup",
+        "var(--edge-color-surface",
+        "var(--edge-color-border",
+        "var(--edge-radius-md",
+        "var(--edge-shadow-sm",
+        "@media (max-width: 48rem)",
+        "@media (max-width: 30rem)",
     ):
         assert expected in css
