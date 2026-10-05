@@ -1,6 +1,5 @@
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[2]
 EDGEUI_BUNDLE = ROOT / "edgesuite_ui" / "public" / "js" / "edgeui.bundle.js"
 SHARED_SHELL = ROOT / "edgesuite_ui" / "public" / "js" / "edgeui" / "shared_page_shell.js"
