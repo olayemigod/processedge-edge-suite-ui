@@ -128,6 +128,7 @@ export * from "./edgeui/printing_profile_runtime";
 export * from "./edgeui/printing_contract";
 export * from "./edgeui/printing_runtime";
 export * from "./edgeui/printing_serial_transport";
+export * from "./edgeui/printing_virtual_transport";
 export * from "./edgeui/product_context";
 export * from "./edgeui/product_context_bridge";
 export * from "./edgeui/product_menu";
