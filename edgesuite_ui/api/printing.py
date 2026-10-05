@@ -81,7 +81,10 @@ def _require_authenticated_user() -> str:
 def _require_print_profile_manager() -> str:
 	user = _require_authenticated_user()
 	if user != "Administrator" and "System Manager" not in frappe.get_roles(user):
-		frappe.throw(_("System Manager permission is required to manage printer profiles."), frappe.PermissionError)
+		frappe.throw(
+			_("System Manager permission is required to manage printer profiles."),
+			frappe.PermissionError,
+		)
 	return user
 
 
@@ -386,7 +389,12 @@ def save_print_profile(profile: dict[str, Any] | str) -> dict[str, Any]:
 	if existing_name:
 		doc = frappe.get_doc("Edge Print Profile", existing_name)
 		if profile_name != doc.profile_name:
-			frappe.throw(_("Profile Name cannot be changed after creation because local device bindings use it as a stable identifier."))
+			frappe.throw(
+				_(
+					"Profile Name cannot be changed after creation because local device bindings "
+					"use it as a stable identifier."
+				)
+			)
 	else:
 		doc = frappe.new_doc("Edge Print Profile")
 		doc.profile_name = profile_name
