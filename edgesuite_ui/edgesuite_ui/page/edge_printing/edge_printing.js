@@ -60,6 +60,15 @@ function appendContextBadge(actions, label) {
   actions.appendChild(badge);
 }
 
+function actionButton(label, onClick, { primary = false, danger = false } = {}) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = `edge-button ${primary ? "edge-button--primary" : "edge-button--secondary"}${danger ? " edge-button--danger" : ""}`;
+  button.textContent = label;
+  button.addEventListener("click", onClick);
+  return button;
+}
+
 function buildEdgeSuitePageChrome(context) {
   const root = document.createElement("section");
   root.className = "edge-page-layout edge-printing-page-root";
@@ -96,11 +105,7 @@ function buildEdgeSuitePageChrome(context) {
   appendContextBadge(actions, context.branch ? `Branch: ${context.branch}` : "");
 
   if (canManageProfiles()) {
-    const manage = document.createElement("button");
-    manage.type = "button";
-    manage.className = "edge-button edge-button--secondary";
-    manage.textContent = __("Manage Print Profiles");
-    manage.addEventListener("click", () => frappe.set_route("edge-print-profiles"));
+    const manage = actionButton("Manage Print Profiles", () => frappe.set_route("edge-print-profiles"));
     actions.appendChild(manage);
   }
 
@@ -114,8 +119,137 @@ function buildEdgeSuitePageChrome(context) {
   host.className = "edge-printing-page-card";
   content.appendChild(host);
 
+  const simulatorHost = document.createElement("div");
+  simulatorHost.className = "edge-printing-simulator-host";
+  content.appendChild(simulatorHost);
+
   root.append(headerWrap, content);
-  return { root, host };
+  return { root, host, simulatorHost };
+}
+
+function virtualJobSummary(job) {
+  if (!job) return null;
+  const commands = job.commands || {};
+  return [
+    `Printed: ${job.printedAt || "—"}`,
+    `Bytes written: ${job.bytesWritten || 0}`,
+    `Cut commands: ${commands.cuts || 0}`,
+    `Drawer pulses: ${commands.drawerPulses || 0}`,
+    `QR commands: ${commands.qrCommands || 0}`,
+    `Barcode commands: ${commands.barcodes || 0}`,
+    `Feed lines: ${commands.feedLines || 0}`,
+  ];
+}
+
+function renderSimulatorPanel(edgeUI, host, rerenderPrinter) {
+  host.replaceChildren();
+  if (!canManageProfiles() || !edgeUI?.print?.simulation) return;
+
+  const simulation = edgeUI.print.simulation;
+  const enabled = simulation.isEnabled();
+  const card = document.createElement("section");
+  card.className = "edge-card edge-printing-simulator";
+
+  const header = document.createElement("div");
+  header.className = "edge-printer-setup__header";
+  const copy = document.createElement("div");
+  const title = document.createElement("h3");
+  title.textContent = __("Virtual Printer (QA)");
+  const note = document.createElement("p");
+  note.textContent = __(
+    "Simulate the real ESC/POS print pipeline without physical hardware. The mode is in-memory only and never creates a printer profile or device binding.",
+  );
+  copy.append(title, note);
+  const badge = document.createElement("span");
+  badge.className = `edge-status-badge ${enabled ? "edge-status-badge--success" : "edge-status-badge--neutral"}`;
+  badge.textContent = enabled ? __("Active") : __("Off");
+  header.append(copy, badge);
+
+  const actions = document.createElement("div");
+  actions.className = "edge-printer-setup__actions";
+  const toggle = actionButton(
+    enabled ? "Return to Physical Printer" : "Enable Virtual Printer",
+    async () => {
+      toggle.disabled = true;
+      try {
+        if (enabled) await simulation.disable();
+        else await simulation.enable();
+        await rerenderPrinter();
+        renderSimulatorPanel(edgeUI, host, rerenderPrinter);
+        frappe.show_alert({
+          message: enabled ? "Physical printer mode restored" : "Virtual printer enabled",
+          indicator: "green",
+        });
+      } catch (error) {
+        frappe.msgprint({
+          title: "Unable to change printer mode",
+          message: error?.message || String(error),
+          indicator: "red",
+        });
+      } finally {
+        toggle.disabled = false;
+      }
+    },
+    { primary: !enabled },
+  );
+  actions.appendChild(toggle);
+
+  if (enabled) {
+    const failureMode = simulation.getFailureMode();
+    actions.append(
+      actionButton("View Last Virtual Print", () => renderSimulatorPanel(edgeUI, host, rerenderPrinter)),
+      actionButton(
+        failureMode === "write" ? "Clear Simulated Failure" : "Fail Next Print",
+        () => {
+          simulation.setFailureMode(failureMode === "write" ? null : "write");
+          renderSimulatorPanel(edgeUI, host, rerenderPrinter);
+        },
+        { danger: failureMode !== "write" },
+      ),
+      actionButton("Clear History", () => {
+        simulation.clearHistory();
+        renderSimulatorPanel(edgeUI, host, rerenderPrinter);
+      }),
+    );
+  }
+
+  card.append(header, actions);
+
+  if (enabled) {
+    const job = simulation.getLastJob();
+    const state = document.createElement("section");
+    state.className = job ? "edge-state" : "edge-state edge-state--empty";
+    if (!job) {
+      const emptyTitle = document.createElement("h4");
+      emptyTitle.className = "edge-state__title";
+      emptyTitle.textContent = __("No simulated print yet");
+      const description = document.createElement("p");
+      description.className = "edge-state__description";
+      description.textContent = __(
+        "Use Test Print above or print a submitted RetailEdge receipt. Then return here and choose View Last Virtual Print.",
+      );
+      state.append(emptyTitle, description);
+    } else {
+      const resultTitle = document.createElement("h4");
+      resultTitle.className = "edge-state__title";
+      resultTitle.textContent = __("Last Virtual Print");
+      const summary = document.createElement("pre");
+      summary.textContent = virtualJobSummary(job).join("\n");
+      const receiptTitle = document.createElement("h4");
+      receiptTitle.textContent = __("Thermal Text Preview");
+      const receipt = document.createElement("pre");
+      receipt.className = "edge-printing-simulator__receipt";
+      receipt.textContent = job.previewText || __("No printable text was detected in this ESC/POS payload.");
+      const hexTitle = document.createElement("h4");
+      hexTitle.textContent = __("ESC/POS Byte Sample");
+      const hex = document.createElement("pre");
+      hex.textContent = job.hexSample || "—";
+      state.append(resultTitle, summary, receiptTitle, receipt, hexTitle, hex);
+    }
+    card.appendChild(state);
+  }
+
+  host.appendChild(card);
 }
 
 async function mountPrintingPage(wrapper, page) {
@@ -134,19 +268,26 @@ async function mountPrintingPage(wrapper, page) {
   }
 
   const context = routeContext(edgeUI);
-  const { root, host } = buildEdgeSuitePageChrome(context);
+  const { root, host, simulatorHost } = buildEdgeSuitePageChrome(context);
   page.body.append(root);
 
   const component = edgeUI.getComponent("EdgePrinterSetupCard");
-  const app = edgeUI.createEdgeApp(component, {
-    title: "Receipt Printer",
-    purpose: context.purpose,
-    productKey: context.productKey,
-    company: context.company,
-    branch: context.branch,
-  });
-  app.mount(host);
-  wrapper._edgePrintingApp = app;
+  async function renderPrinter() {
+    wrapper._edgePrintingApp?.unmount?.();
+    host.replaceChildren();
+    const app = edgeUI.createEdgeApp(component, {
+      title: "Receipt Printer",
+      purpose: context.purpose,
+      productKey: context.productKey,
+      company: context.company,
+      branch: context.branch,
+    });
+    app.mount(host);
+    wrapper._edgePrintingApp = app;
+  }
+
+  await renderPrinter();
+  renderSimulatorPanel(edgeUI, simulatorHost, renderPrinter);
 }
 
 frappe.pages[EDGE_PRINTING_PAGE].on_page_load = async function onEdgePrintingPageLoad(wrapper) {
