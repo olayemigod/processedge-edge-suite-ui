@@ -35,6 +35,7 @@ import { installEdgeSuiteReportRuntime } from "./edgeui/report_runtime";
 import { createEdgeSuiteRuntime, exposeEdgeSuiteRuntime } from "./edgeui/runtime";
 import { createCompatibleRuntimeComponents } from "./edgeui/runtime_component_compat";
 import { installSharedShellEnhancements } from "./edgeui/shell_enhancements";
+import { mountSharedPageShell, suppressNativeDeskPageChrome } from "./edgeui/shared_page_shell";
 import { installSidebarAccordionRuntime } from "./edgeui/sidebar_accordion_runtime";
 import { installSidebarFocusLifecycle } from "./edgeui/sidebar_focus";
 import { installThemeRuntime } from "./edgeui/theme_runtime";
@@ -79,6 +80,8 @@ const runtime = createEdgeSuiteRuntime({
 runtime.registerAdapter("export", edgeExportAdapter);
 runtime.registerAdapter("print", edgePrintAdapter);
 runtime.print = edgePrintAdapter;
+runtime.mountSharedPageShell = (options = {}) => mountSharedPageShell(runtime, options);
+runtime.suppressNativeDeskPageChrome = suppressNativeDeskPageChrome;
 
 if (typeof globalThis !== "undefined") {
   exposeEdgeSuiteRuntime(runtime, globalThis);
@@ -149,6 +152,7 @@ export * from "./edgeui/report_runtime";
 export * from "./edgeui/runtime";
 export * from "./edgeui/runtime_component_compat";
 export * from "./edgeui/shell_enhancements";
+export * from "./edgeui/shared_page_shell";
 export * from "./edgeui/sidebar_accordion_runtime";
 export * from "./edgeui/sidebar_focus";
 export * from "./edgeui/theme_runtime";
