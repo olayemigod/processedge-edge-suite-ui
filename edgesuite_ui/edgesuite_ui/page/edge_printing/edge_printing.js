@@ -63,7 +63,10 @@ function appendContextBadge(actions, label) {
 function actionButton(label, onClick, { primary = false, danger = false } = {}) {
   const button = document.createElement("button");
   button.type = "button";
-  button.className = `edge-button ${primary ? "edge-button--primary" : "edge-button--secondary"}${danger ? " edge-button--danger" : ""}`;
+  button.className = primary
+    ? "edge-button edge-button--primary"
+    : "edge-button edge-button--secondary";
+  if (danger) button.classList.add("edge-button--danger");
   button.textContent = label;
   button.addEventListener("click", onClick);
   return button;
