@@ -284,8 +284,9 @@ export const EdgePrinterSetupCard = defineComponent({
     const connected = Boolean(this.status?.connected);
     const configured = Boolean(profile);
     const serial = profile?.transport === "serial";
+    const virtual = Boolean(this.status?.virtual);
     const unsupported = serial && this.status?.state === "unsupported";
-    const canReconnect = serial && this.bindingPresent && !connected && !unsupported;
+    const canReconnect = serial && !virtual && this.bindingPresent && !connected && !unsupported;
     const disabled = this.loading || this.busy;
 
     return h("section", { class: "edge-printer-setup edge-card" }, [
@@ -321,13 +322,17 @@ export const EdgePrinterSetupCard = defineComponent({
             h("div", {}, [h("dt", {}, "Baud"), h("dd", {}, serial ? String(profile.baudRate) : "—")]),
             h("div", {}, [
               h("dt", {}, "Local binding"),
-              h("dd", {}, this.bindingPresent ? "Saved on this device" : "Not selected"),
+              h(
+                "dd",
+                {},
+                virtual ? "Virtual session" : this.bindingPresent ? "Saved on this device" : "Not selected",
+              ),
             ]),
           ])
         : null,
       h("div", { class: "edge-printer-setup__actions" }, [
         button("Refresh", () => this.refresh().catch(() => {}), { disabled }),
-        serial && !this.bindingPresent && !unsupported
+        serial && !virtual && !this.bindingPresent && !connected && !unsupported
           ? button("Connect Printer", () => this.connect().catch(() => {}), { primary: true, disabled })
           : null,
         canReconnect
@@ -336,10 +341,10 @@ export const EdgePrinterSetupCard = defineComponent({
         connected
           ? button("Test Print", () => this.testPrint().catch(() => {}), { primary: true, disabled })
           : null,
-        connected
+        connected && !virtual
           ? button("Disconnect", () => this.disconnect().catch(() => {}), { disabled })
           : null,
-        this.bindingPresent
+        !virtual && this.bindingPresent
           ? button("Forget Printer", () => this.forget().catch(() => {}), { danger: true, disabled })
           : null,
       ].filter(Boolean)),
