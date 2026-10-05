@@ -5,6 +5,7 @@ import {
 } from "./printing_contract";
 import { detectPrintCapabilities } from "./printing_capabilities";
 import { createWebSerialTransport } from "./printing_serial_transport";
+import { createVirtualPrinterTransport } from "./printing_virtual_transport";
 import { normalizeReceiptDocument } from "./printing_document";
 import { edgeEscPos, encodeEscPosDocument } from "./printing_escpos";
 import { createPrinterBindingStore, createPrinterDeviceManager } from "./printing_device_binding";
@@ -118,19 +119,60 @@ export function createPrintManager({ target = globalThis } = {}) {
 
 export function createEdgePrintAdapter({ target = globalThis } = {}) {
   const manager = createPrintManager({ target });
+  const physicalSerialTransport = manager.getTransport(EDGE_PRINT_TRANSPORTS.SERIAL);
+  const virtualSerialTransport = createVirtualPrinterTransport({ target });
+  let simulationEnabled = false;
+
   const bindingStore = createPrinterBindingStore({ target });
   const devices = createPrinterDeviceManager({ target, printManager: manager, store: bindingStore });
   const profiles = createPrintProfileClient({ target });
+
+  const simulation = Object.freeze({
+    async enable() {
+      if (simulationEnabled) return virtualSerialTransport.getStatus();
+      const physicalStatus = physicalSerialTransport.getStatus();
+      if (physicalStatus?.connected) await physicalSerialTransport.disconnect();
+      manager.registerTransport(EDGE_PRINT_TRANSPORTS.SERIAL, virtualSerialTransport, { replace: true });
+      simulationEnabled = true;
+      return virtualSerialTransport.connect();
+    },
+    async disable() {
+      if (!simulationEnabled) return physicalSerialTransport.getStatus();
+      if (virtualSerialTransport.getStatus()?.connected) await virtualSerialTransport.disconnect();
+      manager.registerTransport(EDGE_PRINT_TRANSPORTS.SERIAL, physicalSerialTransport, { replace: true });
+      simulationEnabled = false;
+      return physicalSerialTransport.getStatus();
+    },
+    isEnabled: () => simulationEnabled,
+    getStatus: () => (simulationEnabled ? virtualSerialTransport.getStatus() : null),
+    getLastJob: () => virtualSerialTransport.getLastJob(),
+    getHistory: () => virtualSerialTransport.getHistory(),
+    clearHistory: () => virtualSerialTransport.clearHistory(),
+    setFailureMode: (mode = null) => virtualSerialTransport.setFailureMode(mode),
+    getFailureMode: () => virtualSerialTransport.getFailureMode(),
+  });
+
+  function currentCapabilities() {
+    if (!simulationEnabled) return detectPrintCapabilities(target);
+    return Object.freeze({
+      ...detectPrintCapabilities(target),
+      webSerial: true,
+      serialReason: "virtual_printer",
+      virtualPrinter: true,
+    });
+  }
 
   return Object.freeze({
     contractVersion: 1,
     states: EDGE_PRINT_STATES,
     transports: EDGE_PRINT_TRANSPORTS,
-    detectCapabilities: () => detectPrintCapabilities(target),
+    detectCapabilities: currentCapabilities,
     createManager: (options = {}) =>
       createPrintManager({ ...options, target: options.target || target }),
     createSerialTransport: (options = {}) =>
       createWebSerialTransport({ ...options, target: options.target || target }),
+    createVirtualPrinterTransport: (options = {}) =>
+      createVirtualPrinterTransport({ ...options, target: options.target || target }),
     createBindingStore: (options = {}) =>
       createPrinterBindingStore({ ...options, target: options.target || target }),
     createDeviceManager: (options = {}) =>
@@ -147,6 +189,7 @@ export function createEdgePrintAdapter({ target = globalThis } = {}) {
     devices,
     profiles,
     manager,
+    simulation,
     connect: (name, options) => manager.connect(name, options),
     disconnect: (name) => manager.disconnect(name),
     writeBytes: (bytes, options) => manager.write(bytes, options),
