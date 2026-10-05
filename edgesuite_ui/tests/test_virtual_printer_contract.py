@@ -37,6 +37,9 @@ def test_virtual_printer_is_a_transport_not_a_persisted_profile_or_device():
 
 def test_adapter_swaps_only_the_serial_transport_and_can_restore_physical_mode():
     source = RUNTIME.read_text()
+    physical_restore = (
+        "manager.registerTransport(EDGE_PRINT_TRANSPORTS.SERIAL, physicalSerialTransport, { replace: true })"
+    )
 
     for expected in (
         'import { createVirtualPrinterTransport } from "./printing_virtual_transport"',
@@ -44,13 +47,15 @@ def test_adapter_swaps_only_the_serial_transport_and_can_restore_physical_mode()
         "virtualSerialTransport",
         "simulationEnabled",
         'manager.registerTransport(EDGE_PRINT_TRANSPORTS.SERIAL, virtualSerialTransport, { replace: true })',
-        'manager.registerTransport(EDGE_PRINT_TRANSPORTS.SERIAL, physicalSerialTransport, { replace: true })',
+        physical_restore,
         "simulation,",
         "createVirtualPrinterTransport:",
         'serialReason: "virtual_printer"',
+        "catch (error)",
     ):
         assert expected in source
 
+    assert source.count(physical_restore) >= 2
     assert "profiles = createPrintProfileClient" in source
     assert "encodeEscPosDocument" in source
     assert "manager.printReceipt(document, options)" in source
