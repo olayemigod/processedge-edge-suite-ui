@@ -71,7 +71,7 @@ def test_devices_and_printing_exposes_system_manager_virtual_printer_qa_controls
         "Fail Next Print",
         "Clear Simulated Failure",
         "Thermal Text Preview",
-        "ESC/POS Byte Sample",
+        "Encoded Byte Sample",
         "simulation.enable()",
         "simulation.disable()",
         'simulation.setFailureMode(failureMode === "write" ? null : "write")',
@@ -82,7 +82,14 @@ def test_devices_and_printing_exposes_system_manager_virtual_printer_qa_controls
     ):
         assert expected in source
 
-    assert 'frappe.set_route("List", "Edge Print Profile")' not in source
+    for forbidden in (
+        'frappe.set_route("List", "Edge Print Profile")',
+        "ESC/POS",
+        "RetailEdge",
+        "VetEdge",
+        "EduEdge",
+    ):
+        assert forbidden not in source
 
 
 def test_virtual_print_inspection_tracks_receipt_hardware_commands_without_executing_them():
