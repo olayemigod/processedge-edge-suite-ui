@@ -48,25 +48,17 @@ function routeContext(edgeUI) {
   };
 }
 
-function contextSummary(context) {
-  return [
-    context.productKey ? `Product: ${context.productKey}` : "",
-    context.company ? `Company: ${context.company}` : "",
-    context.branch ? `Branch: ${context.branch}` : "",
-  ].filter(Boolean);
-}
-
 function canManageProfiles() {
   return (frappe.user_roles || []).includes("System Manager");
 }
 
 async function mountPrintingPage(wrapper, page) {
-  if (!globalThis.EdgeSuiteUI?.getComponent?.("EdgePrinterSetupCard")) {
+  if (!globalThis.EdgeSuiteUI?.getComponent?.("EdgePrintingSetupPage")) {
     await edgePrintingRequire(EDGE_SUITE_ASSET);
   }
   const edgeUI = globalThis.EdgeSuiteUI;
-  if (!edgeUI?.getComponent?.("EdgePrinterSetupCard")) {
-    throw new Error("EdgeSuite shared printing runtime is unavailable.");
+  if (!edgeUI?.getComponent?.("EdgePrintingSetupPage")) {
+    throw new Error("EdgeSuite shared printing page is unavailable.");
   }
 
   try {
@@ -76,43 +68,19 @@ async function mountPrintingPage(wrapper, page) {
   }
 
   const context = routeContext(edgeUI);
-  const root = document.createElement("div");
-  root.className = "edge-printing-page-root";
-  root.setAttribute("data-edge-suite-page", "true");
-
-  const intro = document.createElement("section");
-  intro.className = "edge-printing-page-intro";
-  const heading = document.createElement("div");
-  heading.innerHTML = [
-    "<h2>Devices & Printing</h2>",
-    "<p>Connect this browser to an authorised local printer and test the resolved EdgeSuite print profile.</p>",
-  ].join("");
-  intro.appendChild(heading);
-
-  const summary = contextSummary(context);
-  if (summary.length) {
-    const chips = document.createElement("div");
-    chips.className = "edge-printing-page-context";
-    summary.forEach((label) => {
-      const chip = document.createElement("span");
-      chip.textContent = label;
-      chips.appendChild(chip);
-    });
-    intro.appendChild(chips);
-  }
-
   const host = document.createElement("div");
-  host.className = "edge-printing-page-card";
-  root.append(intro, host);
-  page.body.append(root);
+  host.className = "edge-printing-page-root";
+  host.setAttribute("data-edge-suite-page", "true");
+  page.body.append(host);
 
-  const component = edgeUI.getComponent("EdgePrinterSetupCard");
+  const component = edgeUI.getComponent("EdgePrintingSetupPage");
   const app = edgeUI.createEdgeApp(component, {
-    title: "Receipt Printer",
     purpose: context.purpose,
     productKey: context.productKey,
     company: context.company,
     branch: context.branch,
+    canManageProfiles: canManageProfiles(),
+    onManageProfiles: () => frappe.set_route("List", "Edge Print Profile"),
   });
   app.mount(host);
   wrapper._edgePrintingApp = app;
@@ -130,15 +98,13 @@ frappe.pages[EDGE_PRINTING_PAGE].on_page_load = async function onEdgePrintingPag
   wrapper.page = page;
   page.body?.setAttribute?.("data-edge-suite-page", "true");
 
-  if (canManageProfiles()) {
-    page.add_menu_item(__("Manage Print Profiles"), () => {
-      frappe.set_route("List", "Edge Print Profile");
-    });
-  }
-
-  const loading = document.createElement("div");
-  loading.className = "edge-boot-loading p-6 text-center text-muted";
-  loading.textContent = __("Loading printing devices...");
+  const loading = document.createElement("section");
+  loading.className = "edge-state edge-state--loading edge-loading-state";
+  loading.setAttribute("role", "status");
+  loading.innerHTML = [
+    '<span class="edge-spinner edge-loading-spinner" aria-hidden="true"></span>',
+    '<p class="edge-state__description">Loading printing devices...</p>',
+  ].join("");
   page.body.append(loading);
 
   try {
@@ -146,9 +112,16 @@ frappe.pages[EDGE_PRINTING_PAGE].on_page_load = async function onEdgePrintingPag
     loading.remove();
   } catch (error) {
     loading.remove();
-    const node = document.createElement("div");
-    node.className = "alert alert-danger p-6 text-center";
-    node.textContent = error?.message || __("Devices & Printing failed to load.");
+    const node = document.createElement("section");
+    node.className = "edge-state edge-state--error edge-error-state";
+    node.setAttribute("role", "alert");
+    const title = document.createElement("h2");
+    title.className = "edge-state__title";
+    title.textContent = __("Devices & Printing failed to load");
+    const message = document.createElement("p");
+    message.className = "edge-state__description";
+    message.textContent = error?.message || __("Please refresh and try again.");
+    node.append(title, message);
     page.body.append(node);
   }
 };
