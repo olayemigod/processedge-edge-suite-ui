@@ -116,6 +116,16 @@ Generated downloads are validated before saving so empty responses, HTML error p
 
 See [`docs/reporting-standard-v1.md`](docs/reporting-standard-v1.md) for the reporting, presentation, performance and export contract.
 
+## Post-MVP UI modernization
+
+A broader **EdgeSuite UI Modernization V2** programme is deliberately deferred until the RetailEdge, VetEdge, and EduEdge MVPs are release-ready and the current shared-UI QA has stabilized.
+
+The future programme may modernize native Frappe/ERPNext surfaces such as workspaces, sidebars, icons, lists, forms, child tables, dialogs, reports, controls, and overlays, and may later add accessible theme generation, Theme Studio, shared login/tenant branding, and administration tooling. These capabilities must remain native to EdgeSuite; ProcessEdge product sites should not run a second global theme/navigation/density runtime alongside EdgeSuite.
+
+Until that post-MVP boundary, broad Theme Studio or native-Desk redesign work is out of scope. MVP-critical visual, compatibility, accessibility, navigation, printing, mobile, and workflow fixes remain in scope.
+
+See [`docs/ui-modernization-v2-post-mvp.md`](docs/ui-modernization-v2-post-mvp.md) for the decision, activation criteria, architectural boundaries, and intended implementation order.
+
 ## Continuous integration
 
 Pull requests and pushes to `main` run Python/Ruff contract checks and reproducible frontend syntax and bundle validation. Reporting provider, export, print and presentation-shell contracts are part of Fast Validation. The manual `workflow_dispatch` trigger additionally provisions a clean Frappe v16 bench containing only Frappe and EdgeSuite UI, then builds, migrates, and tests the app.
@@ -127,3 +137,4 @@ Pull requests and pushes to `main` run Python/Ruff contract checks and reproduci
 3. Migrate product menu definitions and icon names in VetEdge, EduEdge, and RetailEdge.
 4. Validate each product on desktop, tablet, and mobile.
 5. Remove legacy product-local menu and styling fallbacks after all consumers are stable.
+6. After RetailEdge, VetEdge, and EduEdge MVP stabilization, evaluate and activate **EdgeSuite UI Modernization V2** under the documented post-MVP boundary.
