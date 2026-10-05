@@ -160,7 +160,7 @@ function renderSimulatorPanel(edgeUI, host, rerenderPrinter) {
   title.textContent = __("Virtual Printer (QA)");
   const note = document.createElement("p");
   note.textContent = __(
-    "Simulate the real ESC/POS print pipeline without physical hardware. The mode is in-memory only and never creates a printer profile or device binding.",
+    "Simulate the real encoded receipt print pipeline without physical hardware. The mode is in-memory only and never creates a printer profile or device binding.",
   );
   copy.append(title, note);
   const badge = document.createElement("span");
@@ -229,7 +229,7 @@ function renderSimulatorPanel(edgeUI, host, rerenderPrinter) {
       const description = document.createElement("p");
       description.className = "edge-state__description";
       description.textContent = __(
-        "Use Test Print above or print a submitted RetailEdge receipt. Then return here and choose View Last Virtual Print.",
+        "Use Test Print above or print a submitted product receipt. Then return here and choose View Last Virtual Print.",
       );
       state.append(emptyTitle, description);
     } else {
@@ -242,9 +242,9 @@ function renderSimulatorPanel(edgeUI, host, rerenderPrinter) {
       receiptTitle.textContent = __("Thermal Text Preview");
       const receipt = document.createElement("pre");
       receipt.className = "edge-printing-simulator__receipt";
-      receipt.textContent = job.previewText || __("No printable text was detected in this ESC/POS payload.");
+      receipt.textContent = job.previewText || __("No printable text was detected in this encoded payload.");
       const hexTitle = document.createElement("h4");
-      hexTitle.textContent = __("ESC/POS Byte Sample");
+      hexTitle.textContent = __("Encoded Byte Sample");
       const hex = document.createElement("pre");
       hex.textContent = job.hexSample || "—";
       state.append(resultTitle, summary, receiptTitle, receipt, hexTitle, hex);
