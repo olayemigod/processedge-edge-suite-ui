@@ -52,13 +52,79 @@ function canManageProfiles() {
   return (frappe.user_roles || []).includes("System Manager");
 }
 
+function appendContextBadge(actions, label) {
+  if (!label) return;
+  const badge = document.createElement("span");
+  badge.className = "edge-status-badge edge-status-badge--neutral";
+  badge.textContent = label;
+  actions.appendChild(badge);
+}
+
+function buildEdgeSuitePageChrome(context) {
+  const root = document.createElement("section");
+  root.className = "edge-page-layout edge-printing-page-root";
+  root.setAttribute("data-edge-suite-page", "true");
+
+  const headerWrap = document.createElement("div");
+  headerWrap.className = "edge-page-layout__header edge-page-layout-header";
+
+  const header = document.createElement("header");
+  header.className = "edge-page-header";
+
+  const copy = document.createElement("div");
+  copy.className = "edge-page-header__copy";
+
+  const eyebrow = document.createElement("p");
+  eyebrow.className = "edge-eyebrow";
+  eyebrow.textContent = __("Printing");
+
+  const title = document.createElement("h1");
+  title.className = "edge-page-header__title edge-page-title";
+  title.textContent = __("Devices & Printing");
+
+  const subtitle = document.createElement("p");
+  subtitle.className = "edge-page-header__subtitle edge-page-subtitle";
+  subtitle.textContent = __(
+    "Connect this device to an authorised receipt printer and test the active printer configuration.",
+  );
+
+  copy.append(eyebrow, title, subtitle);
+
+  const actions = document.createElement("div");
+  actions.className = "edge-page-header__actions edge-printing-page-actions";
+  appendContextBadge(actions, context.company ? `Company: ${context.company}` : "");
+  appendContextBadge(actions, context.branch ? `Branch: ${context.branch}` : "");
+
+  if (canManageProfiles()) {
+    const manage = document.createElement("button");
+    manage.type = "button";
+    manage.className = "edge-button edge-button--secondary";
+    manage.textContent = __("Manage Print Profiles");
+    manage.addEventListener("click", () => frappe.set_route("List", "Edge Print Profile"));
+    actions.appendChild(manage);
+  }
+
+  header.append(copy, actions);
+  headerWrap.appendChild(header);
+
+  const content = document.createElement("main");
+  content.className = "edge-page-layout__content edge-page-layout-body edge-printing-page-content";
+
+  const host = document.createElement("div");
+  host.className = "edge-printing-page-card";
+  content.appendChild(host);
+
+  root.append(headerWrap, content);
+  return { root, host };
+}
+
 async function mountPrintingPage(wrapper, page) {
-  if (!globalThis.EdgeSuiteUI?.getComponent?.("EdgePrintingSetupPage")) {
+  if (!globalThis.EdgeSuiteUI?.getComponent?.("EdgePrinterSetupCard")) {
     await edgePrintingRequire(EDGE_SUITE_ASSET);
   }
   const edgeUI = globalThis.EdgeSuiteUI;
-  if (!edgeUI?.getComponent?.("EdgePrintingSetupPage")) {
-    throw new Error("EdgeSuite shared printing page is unavailable.");
+  if (!edgeUI?.getComponent?.("EdgePrinterSetupCard")) {
+    throw new Error("EdgeSuite shared printing runtime is unavailable.");
   }
 
   try {
@@ -68,19 +134,16 @@ async function mountPrintingPage(wrapper, page) {
   }
 
   const context = routeContext(edgeUI);
-  const host = document.createElement("div");
-  host.className = "edge-printing-page-root";
-  host.setAttribute("data-edge-suite-page", "true");
-  page.body.append(host);
+  const { root, host } = buildEdgeSuitePageChrome(context);
+  page.body.append(root);
 
-  const component = edgeUI.getComponent("EdgePrintingSetupPage");
+  const component = edgeUI.getComponent("EdgePrinterSetupCard");
   const app = edgeUI.createEdgeApp(component, {
+    title: "Receipt Printer",
     purpose: context.purpose,
     productKey: context.productKey,
     company: context.company,
     branch: context.branch,
-    canManageProfiles: canManageProfiles(),
-    onManageProfiles: () => frappe.set_route("List", "Edge Print Profile"),
   });
   app.mount(host);
   wrapper._edgePrintingApp = app;
