@@ -60,8 +60,8 @@ def test_printer_setup_treats_virtual_transport_as_session_not_physical_binding(
     ):
         assert expected in source
 
-    assert "connected\n          ? button(\"Disconnect\"" not in source
-    assert "this.bindingPresent\n          ? button(\"Forget Printer\"" not in source
+    assert '\n        connected\n          ? button("Disconnect"' not in source
+    assert '\n        this.bindingPresent\n          ? button("Forget Printer"' not in source
 
 
 def test_print_profile_runtime_bridges_frappe_policy_without_device_access():
