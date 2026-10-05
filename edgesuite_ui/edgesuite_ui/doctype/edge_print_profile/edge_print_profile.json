@@ -58,10 +58,10 @@
    "reqd": 1
   },
   {
-   "description": "Optional product. Leave blank only for a genuinely shared receipt-printer policy.",
+   "description": "Optional owning product. Required for Company or Branch profiles; leave blank only for a shared Global or User profile.",
    "fieldname": "product_key",
    "fieldtype": "Autocomplete",
-   "label": "Product Key"
+   "label": "Product"
   },
   {
    "fieldname": "scope_section",
