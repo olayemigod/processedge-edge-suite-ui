@@ -100,7 +100,7 @@ function buildEdgeSuitePageChrome(context) {
     manage.type = "button";
     manage.className = "edge-button edge-button--secondary";
     manage.textContent = __("Manage Print Profiles");
-    manage.addEventListener("click", () => frappe.set_route("List", "Edge Print Profile"));
+    manage.addEventListener("click", () => frappe.set_route("edge-print-profiles"));
     actions.appendChild(manage);
   }
 
