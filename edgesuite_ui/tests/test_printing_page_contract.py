@@ -51,7 +51,8 @@ def test_devices_and_printing_page_uses_edgesuite_page_primitives_and_shared_com
         "branch",
         "data-edge-suite-page",
         "Manage Print Profiles",
-        'frappe.set_route("edge-print-profiles")',
+        "edgeUI.mountSharedPageShell",
+        'globalThis.location.assign(pageUrl("edge-print-profiles", context))',
     ):
         assert expected in source
 
@@ -127,12 +128,14 @@ def test_print_profile_manager_uses_edgesuite_ui_and_hides_technical_product_key
         "search_print_scope_values",
         "save_print_profile",
         'product_key: ""',
+        "edgeUI.mountSharedPageShell",
     ):
         assert expected in source
 
     assert "Product Key" not in source
     assert "retailedge" not in source.lower()
     assert 'frappe.set_route("List", "Edge Print Profile")' not in source
+    assert "page.body.appendChild(chrome.root)" not in source
 
 
 def test_print_profile_manager_backend_defaults_product_blank_and_requires_system_manager():
