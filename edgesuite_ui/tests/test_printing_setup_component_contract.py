@@ -47,6 +47,23 @@ def test_printer_setup_component_uses_shared_profile_binding_and_transport_layer
     assert "frappe.call" not in source
 
 
+def test_printer_setup_treats_virtual_transport_as_session_not_physical_binding():
+    source = COMPONENT.read_text()
+
+    for expected in (
+        "const virtual = Boolean(this.status?.virtual);",
+        'virtual ? "Virtual session"',
+        "serial && !virtual && !this.bindingPresent && !connected && !unsupported",
+        "serial && !virtual && this.bindingPresent && !connected && !unsupported",
+        "connected && !virtual",
+        "!virtual && this.bindingPresent",
+    ):
+        assert expected in source
+
+    assert "connected\n          ? button(\"Disconnect\"" not in source
+    assert "this.bindingPresent\n          ? button(\"Forget Printer\"" not in source
+
+
 def test_print_profile_runtime_bridges_frappe_policy_without_device_access():
     source = PROFILE_RUNTIME.read_text()
 
