@@ -133,8 +133,15 @@ export function createEdgePrintAdapter({ target = globalThis } = {}) {
       const physicalStatus = physicalSerialTransport.getStatus();
       if (physicalStatus?.connected) await physicalSerialTransport.disconnect();
       manager.registerTransport(EDGE_PRINT_TRANSPORTS.SERIAL, virtualSerialTransport, { replace: true });
-      simulationEnabled = true;
-      return virtualSerialTransport.connect();
+      try {
+        const status = await virtualSerialTransport.connect();
+        simulationEnabled = true;
+        return status;
+      } catch (error) {
+        manager.registerTransport(EDGE_PRINT_TRANSPORTS.SERIAL, physicalSerialTransport, { replace: true });
+        simulationEnabled = false;
+        throw error;
+      }
     },
     async disable() {
       if (!simulationEnabled) return physicalSerialTransport.getStatus();
