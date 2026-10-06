@@ -79,6 +79,11 @@ def test_devices_and_printing_resolves_context_without_query_string_navigation()
         'return `/app/${page}`;',
         'activeRoute: pageUrl("edge-printing")',
         "fallbackMenuItems: printingFallbackMenu()",
+        "function hydratePrintingContext(context = {}, shell = {})",
+        "shell?.context || {}",
+        "shellContext.tenantName",
+        "shellContext.branchName",
+        "syncContextBadges(actions, context)",
     ):
         assert expected in source
 
