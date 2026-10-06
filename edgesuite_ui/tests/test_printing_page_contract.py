@@ -52,7 +52,7 @@ def test_devices_and_printing_page_uses_edgesuite_page_primitives_and_shared_com
         "data-edge-suite-page",
         "Manage Print Profiles",
         "edgeUI.mountSharedPageShell",
-        'globalThis.location.assign(pageUrl("edge-print-profiles", context))',
+        'globalThis.location.assign(pageUrl("edge-print-profiles"))',
     ):
         assert expected in source
 
@@ -67,6 +67,24 @@ def test_devices_and_printing_page_uses_edgesuite_page_primitives_and_shared_com
         'frappe.set_route("List", "Edge Print Profile")',
     ):
         assert forbidden not in source
+
+
+def test_devices_and_printing_resolves_context_without_query_string_navigation():
+    source = PAGE_JS.read_text()
+
+    for expected in (
+        "boot.edgesuite_ui_identity?.[key]",
+        "identity.active_company",
+        "identity.active_branch",
+        'return `/app/${page}`;',
+        'activeRoute: pageUrl("edge-printing")',
+        "fallbackMenuItems: printingFallbackMenu()",
+    ):
+        assert expected in source
+
+    assert 'params.set("company"' not in source
+    assert 'params.set("branch"' not in source
+    assert 'return `/app/${page}${query ? `?${query}` : ""}`;' not in source
 
 
 def test_devices_and_printing_does_not_expose_internal_product_key_in_ui():
