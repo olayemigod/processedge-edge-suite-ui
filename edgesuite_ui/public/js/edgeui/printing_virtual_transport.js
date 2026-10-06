@@ -45,6 +45,14 @@ function printablePreview(bytes) {
     .trim();
 }
 
+function restoreVirtualJob(job) {
+  if (!job || typeof job !== "object") return null;
+  return Object.freeze({
+    ...job,
+    commands: Object.freeze({ ...(job.commands || {}) }),
+  });
+}
+
 export function inspectVirtualPrintJob(bytes) {
   const payload = normalizePrintBytes(bytes);
   const commands = commandSummary(payload);
@@ -58,12 +66,39 @@ export function inspectVirtualPrintJob(bytes) {
   });
 }
 
-export function createVirtualPrinterTransport({ target = globalThis } = {}) {
-  let state = EDGE_PRINT_STATES.DISCONNECTED;
-  let connected = false;
-  let failureMode = null;
-  let lastJob = null;
-  const history = [];
+export function createVirtualPrinterTransport({
+  target = globalThis,
+  initialState = {},
+  onStateChange = null,
+} = {}) {
+  const restoredHistory = Array.isArray(initialState?.history)
+    ? initialState.history.slice(-20).map(restoreVirtualJob).filter(Boolean)
+    : [];
+  let connected = Boolean(initialState?.connected);
+  let state = connected ? EDGE_PRINT_STATES.CONNECTED : EDGE_PRINT_STATES.DISCONNECTED;
+  let failureMode = ["connect", "write"].includes(initialState?.failureMode)
+    ? initialState.failureMode
+    : null;
+  let lastJob = restoreVirtualJob(initialState?.lastJob) || restoredHistory.at(-1) || null;
+  const history = [...restoredHistory];
+
+  function sessionState() {
+    return Object.freeze({
+      connected,
+      failureMode,
+      lastJob,
+      history: [...history],
+    });
+  }
+
+  function notifyStateChange() {
+    if (typeof onStateChange !== "function") return;
+    try {
+      onStateChange(sessionState());
+    } catch (_error) {
+      // Session persistence is best-effort and must never block printing.
+    }
+  }
 
   function getStatus() {
     return Object.freeze({
@@ -82,6 +117,7 @@ export function createVirtualPrinterTransport({ target = globalThis } = {}) {
     state = EDGE_PRINT_STATES.CONNECTING;
     if (failureMode === "connect") {
       state = EDGE_PRINT_STATES.FAILED;
+      notifyStateChange();
       throw new EdgePrintError(
         "VIRTUAL_PRINTER_CONNECT_FAILED",
         "The virtual printer simulated a connection failure.",
@@ -89,18 +125,21 @@ export function createVirtualPrinterTransport({ target = globalThis } = {}) {
     }
     connected = true;
     state = EDGE_PRINT_STATES.CONNECTED;
+    notifyStateChange();
     return getStatus();
   }
 
   async function disconnect() {
     connected = false;
     state = EDGE_PRINT_STATES.DISCONNECTED;
+    notifyStateChange();
     return getStatus();
   }
 
   async function write(bytes) {
     if (!connected) {
       state = EDGE_PRINT_STATES.DISCONNECTED;
+      notifyStateChange();
       throw new EdgePrintError(
         "VIRTUAL_PRINTER_NOT_CONNECTED",
         "Connect the virtual printer before printing.",
@@ -110,6 +149,7 @@ export function createVirtualPrinterTransport({ target = globalThis } = {}) {
     if (failureMode === "write") {
       state = EDGE_PRINT_STATES.FAILED;
       failureMode = null;
+      notifyStateChange();
       throw new EdgePrintError(
         "VIRTUAL_PRINTER_WRITE_FAILED",
         "The virtual printer simulated a write failure.",
@@ -126,6 +166,7 @@ export function createVirtualPrinterTransport({ target = globalThis } = {}) {
     history.push(lastJob);
     if (history.length > 20) history.shift();
     state = EDGE_PRINT_STATES.CONNECTED;
+    notifyStateChange();
     return {
       bytesWritten: payload.byteLength,
       chunksWritten: 1,
@@ -142,12 +183,14 @@ export function createVirtualPrinterTransport({ target = globalThis } = {}) {
       throw new TypeError("Virtual printer failure mode must be connect, write, or null.");
     }
     failureMode = mode;
+    notifyStateChange();
     return failureMode;
   }
 
   function clearHistory() {
     lastJob = null;
     history.splice(0, history.length);
+    notifyStateChange();
   }
 
   return Object.freeze({
@@ -166,6 +209,7 @@ export function createVirtualPrinterTransport({ target = globalThis } = {}) {
     getFailureMode: () => failureMode,
     getLastJob: () => lastJob,
     getHistory: () => [...history],
+    getSessionState: sessionState,
     clearHistory,
     target,
   });
