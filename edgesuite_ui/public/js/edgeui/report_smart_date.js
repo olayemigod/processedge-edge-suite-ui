@@ -44,6 +44,16 @@ function addDays(date, count) {
   return next;
 }
 
+function addMonthsClamped(date, count) {
+  const target = new Date(date.getFullYear(), date.getMonth() + count, 1);
+  const day = Math.min(date.getDate(), endOfMonth(target).getDate());
+  return new Date(target.getFullYear(), target.getMonth(), day);
+}
+
+function addYearsClamped(date, count) {
+  return addMonthsClamped(date, count * 12);
+}
+
 function startOfWeek(date) {
   const day = date.getDay();
   return addDays(date, -(day === 0 ? 6 : day - 1));
@@ -95,9 +105,52 @@ function displayDate(value, dateOrder = "DMY") {
     : `${day}-${month}-${year}`;
 }
 
+function normalizeExpression(expression) {
+  return String(expression || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[–—]/g, "-")
+    .replace(/\s*-\s*/g, " - ")
+    .replace(/\s+/g, " ");
+}
+
+function resolveMonthSpan(raw, text, today) {
+  const match = text.match(
+    /^(?:between )?([a-z]+)(?:\s+(\d{4}))?\s*(?:to|through|until|till|and|-)\s*([a-z]+)(?:\s+(\d{4}))?$/,
+  );
+  if (!match) return null;
+
+  const [, startName, startYearText, endName, endYearText] = match;
+  if (
+    !Object.prototype.hasOwnProperty.call(MONTHS, startName) ||
+    !Object.prototype.hasOwnProperty.call(MONTHS, endName)
+  ) {
+    return null;
+  }
+
+  const startMonth = MONTHS[startName];
+  const endMonth = MONTHS[endName];
+  let startYear = startYearText ? Number(startYearText) : null;
+  let endYear = endYearText ? Number(endYearText) : null;
+
+  if (startYear === null && endYear === null) {
+    startYear = today.getFullYear();
+    endYear = endMonth < startMonth ? startYear + 1 : startYear;
+  } else if (startYear === null) {
+    startYear = startMonth > endMonth ? endYear - 1 : endYear;
+  } else if (endYear === null) {
+    endYear = endMonth < startMonth ? startYear + 1 : startYear;
+  }
+
+  const start = new Date(startYear, startMonth, 1);
+  const endStart = new Date(endYear, endMonth, 1);
+  if (endStart < start) return invalid(raw, "The end month cannot be before the start month.");
+  return makeResult(raw, start, endOfMonth(endStart));
+}
+
 export function interpretSmartDate(expression, { referenceDate = null, dateOrder = "DMY" } = {}) {
   const raw = String(expression || "").trim();
-  const text = raw.toLowerCase().replace(/\s+/g, " ");
+  const text = normalizeExpression(raw);
   const today = localDate(referenceDate);
   if (!text) return invalid(raw, "Enter a date or date range.");
 
@@ -133,13 +186,64 @@ export function interpretSmartDate(expression, { referenceDate = null, dateOrder
     return makeResult(raw, new Date(today.getFullYear(), today.getMonth(), 1), today);
   }
   if (["qtd", "quarter to date"].includes(text)) return makeResult(raw, quarterStart(today), today);
+  if (["wtd", "week to date"].includes(text)) return makeResult(raw, startOfWeek(today), today);
 
-  const rolling = text.match(/^(?:last|past|next) (\d{1,4}) (day|days|week|weeks)$/);
+  const rolling = text.match(/^(last|past|next) (\d{1,4}) (day|days|week|weeks)$/);
   if (rolling) {
-    const count = Math.max(1, Number(rolling[1]));
-    const days = count * (rolling[2].startsWith("week") ? 7 : 1);
-    if (text.startsWith("next ")) return makeResult(raw, today, addDays(today, days - 1));
+    const [, direction, countText, unit] = rolling;
+    const count = Math.max(1, Number(countText));
+    const days = count * (unit.startsWith("week") ? 7 : 1);
+    if (direction === "next") return makeResult(raw, today, addDays(today, days - 1));
     return makeResult(raw, addDays(today, -(days - 1)), today);
+  }
+
+  const rollingLong = text.match(/^(last|past|next) (\d{1,3}) (month|months|year|years)$/);
+  if (rollingLong) {
+    const [, direction, countText, unit] = rollingLong;
+    const count = Math.max(1, Number(countText));
+    const shift = unit.startsWith("year")
+      ? (date, amount) => addYearsClamped(date, amount)
+      : (date, amount) => addMonthsClamped(date, amount);
+    if (direction === "next") return makeResult(raw, today, shift(today, count));
+    return makeResult(raw, shift(today, -count), today);
+  }
+
+  const previousComplete = text.match(
+    /^(?:previous (\d{1,3})|last (\d{1,3}) complete) (month|months|year|years)$/,
+  );
+  if (previousComplete) {
+    const count = Math.max(1, Number(previousComplete[1] || previousComplete[2]));
+    const unit = previousComplete[3];
+    if (unit.startsWith("month")) {
+      const start = new Date(today.getFullYear(), today.getMonth() - count, 1);
+      const end = new Date(today.getFullYear(), today.getMonth(), 0);
+      return makeResult(raw, start, end);
+    }
+    return makeResult(
+      raw,
+      new Date(today.getFullYear() - count, 0, 1),
+      new Date(today.getFullYear() - 1, 11, 31),
+    );
+  }
+
+  const compact = text.match(/^(\d{1,4})(d|w|m|y)$/);
+  if (compact) {
+    const count = Math.max(1, Number(compact[1]));
+    const unit = compact[2];
+    if (unit === "d") return makeResult(raw, addDays(today, -(count - 1)), today);
+    if (unit === "w") return makeResult(raw, addDays(today, -(count * 7 - 1)), today);
+    if (unit === "m") return makeResult(raw, addMonthsClamped(today, -count), today);
+    return makeResult(raw, addYearsClamped(today, -count), today);
+  }
+
+  const quarterSpan = text.match(/^q([1-4])\s*(?:to|-)\s*q([1-4])\s+(\d{4})$/);
+  if (quarterSpan) {
+    const startQuarter = Number(quarterSpan[1]);
+    const endQuarter = Number(quarterSpan[2]);
+    const year = Number(quarterSpan[3]);
+    if (endQuarter < startQuarter) return invalid(raw, "The end quarter cannot be before the start quarter.");
+    const start = new Date(year, (startQuarter - 1) * 3, 1);
+    return makeResult(raw, start, new Date(year, endQuarter * 3, 0));
   }
 
   const quarter = text.match(/^q([1-4])\s+(\d{4})$/);
@@ -148,15 +252,32 @@ export function interpretSmartDate(expression, { referenceDate = null, dateOrder
     return makeResult(raw, start, new Date(start.getFullYear(), start.getMonth() + 3, 0));
   }
 
+  const half = text.match(/^h([12])\s+(\d{4})$/);
+  if (half) {
+    const year = Number(half[2]);
+    const startMonth = half[1] === "1" ? 0 : 6;
+    const start = new Date(year, startMonth, 1);
+    return makeResult(raw, start, new Date(year, startMonth + 6, 0));
+  }
+
+  const monthSpan = resolveMonthSpan(raw, text, today);
+  if (monthSpan) return monthSpan;
+
   const monthYear = text.match(/^([a-z]+)\s+(\d{4})$/);
   if (monthYear && Object.prototype.hasOwnProperty.call(MONTHS, monthYear[1])) {
     return monthRange(MONTHS[monthYear[1]], Number(monthYear[2]), raw);
   }
 
+  const wholeYear = text.match(/^(\d{4})$/);
+  if (wholeYear) {
+    const year = Number(wholeYear[1]);
+    return makeResult(raw, new Date(year, 0, 1), new Date(year, 11, 31));
+  }
+
   const isoDate = text.match(/^(\d{4})-(\d{2})-(\d{2})$/);
   if (isoDate) {
-    const date = localDate(text);
-    if (iso(date) !== text) return invalid(raw, "That date is not valid.");
+    const date = localDate(text.replace(/\s/g, ""));
+    if (iso(date) !== text.replace(/\s/g, "")) return invalid(raw, "That date is not valid.");
     return makeResult(raw, date, date, { kind: "date" });
   }
 
@@ -177,7 +298,10 @@ export function interpretSmartDate(expression, { referenceDate = null, dateOrder
     return makeResult(raw, date, date, { kind: "date", ambiguous });
   }
 
-  return invalid(raw, "Date phrase not recognized. Try today, last month, Q2 2026, last 30 days, or YYYY-MM-DD.");
+  return invalid(
+    raw,
+    "Date phrase not recognized. Try May to June 2026, last 2 months, previous 2 months, Q2 2026, YTD, or YYYY-MM-DD.",
+  );
 }
 
 export const EdgeSmartDateRange = defineComponent({
@@ -185,7 +309,7 @@ export const EdgeSmartDateRange = defineComponent({
   props: {
     modelValue: { type: Object, default: () => ({}) },
     label: { type: String, default: "Date range" },
-    placeholder: { type: String, default: "e.g. last month, Q2 2026, last 30 days" },
+    placeholder: { type: String, default: "e.g. May to June 2026, last 2 months, YTD" },
     referenceDate: { type: [String, Date], default: null },
     dateOrder: { type: String, default: "DMY" },
     disabled: { type: Boolean, default: false },
@@ -358,14 +482,7 @@ export const EdgeSmartDateRange = defineComponent({
     },
     renderPicker() {
       if (!this.pickerOpen) return null;
-      return h("div", {
-        class: "edge-smart-date__picker",
-        role: "dialog",
-        "aria-label": "Choose date range",
-        onKeydown: (event) => {
-          if (event.key === "Escape") this.pickerOpen = false;
-        },
-      }, [
+      const sections = [
         h("div", { class: "edge-smart-date__smart-section" }, [
           h("span", { class: "edge-smart-date__section-label" }, "Smart date"),
           h("div", { class: "edge-smart-date__smart-row" }, [
@@ -392,19 +509,27 @@ export const EdgeSmartDateRange = defineComponent({
           ]),
           this.renderInterpretationPreview(),
         ]),
-        h("div", { class: "edge-smart-date__preset-section" }, [
-          h("span", { class: "edge-smart-date__section-label" }, "Quick periods"),
-          h("div", { class: "edge-smart-date__presets" }, (this.presets || []).map((preset) =>
-            h("button", {
-              type: "button",
-              class: ["edge-smart-date__preset", {
-                "is-active": String(this.selectedValue?.expression || "").toLowerCase() === String(preset.expression || "").toLowerCase(),
-              }],
-              disabled: this.disabled,
-              onClick: () => this.applyPreset(preset.expression),
-            }, preset.label || preset.expression),
-          )),
-        ]),
+      ];
+
+      if ((this.presets || []).length) {
+        sections.push(
+          h("div", { class: "edge-smart-date__preset-section" }, [
+            h("span", { class: "edge-smart-date__section-label" }, "Quick periods"),
+            h("div", { class: "edge-smart-date__presets" }, (this.presets || []).map((preset) =>
+              h("button", {
+                type: "button",
+                class: ["edge-smart-date__preset", {
+                  "is-active": String(this.selectedValue?.expression || "").toLowerCase() === String(preset.expression || "").toLowerCase(),
+                }],
+                disabled: this.disabled,
+                onClick: () => this.applyPreset(preset.expression),
+              }, preset.label || preset.expression),
+            )),
+          ]),
+        );
+      }
+
+      sections.push(
         h("div", { class: "edge-smart-date__custom" }, [
           h("span", { class: "edge-smart-date__section-label" }, "Custom range"),
           h("div", { class: "edge-smart-date__custom-fields" }, [
@@ -443,7 +568,16 @@ export const EdgeSmartDateRange = defineComponent({
             }, "Apply custom range"),
           ]),
         ]),
-      ]);
+      );
+
+      return h("div", {
+        class: "edge-smart-date__picker",
+        role: "dialog",
+        "aria-label": "Choose date range",
+        onKeydown: (event) => {
+          if (event.key === "Escape") this.pickerOpen = false;
+        },
+      }, sections);
     },
   },
   render() {
