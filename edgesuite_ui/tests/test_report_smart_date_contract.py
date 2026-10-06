@@ -112,6 +112,11 @@ def test_smart_date_picker_is_viewport_aware_and_collision_aware():
 		"SMART_DATE_MIN_USABLE_HEIGHT_PX",
 	):
 		assert marker in runtime
+	assert 'horizontal: "start"' in runtime
+	assert 'horizontal: "end"' in runtime
+	assert 'direction: "down"' in runtime
+	assert 'direction: "up"' in runtime
+	assert 'picker.style.position = "fixed"' in runtime
 	assert 'globalObject.addEventListener?.("resize", schedule)' in runtime
 	assert 'globalObject.addEventListener?.("scroll", schedule, true)' in runtime
 	assert "overflow-y: auto" in css
