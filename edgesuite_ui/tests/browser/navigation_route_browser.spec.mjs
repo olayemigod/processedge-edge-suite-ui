@@ -192,13 +192,19 @@ test("resource query focuses matching submenu and keeps one section open", async
   await expect(clinical).toHaveClass(/is-collapsed/);
   await expect(reports).toHaveClass(/is-collapsed/);
 
-  // The active item and its parent section must expose theme focus state.
-  const activeColor = await appointments.evaluate((element) => getComputedStyle(element).color);
-  const sectionColor = await operations
-    .locator(".edge-sidebar__section-toggle")
-    .evaluate((element) => getComputedStyle(element).color);
-  expect(activeColor).not.toBe("rgb(65, 84, 105)");
-  expect(sectionColor).not.toBe("rgb(65, 84, 105)");
+  // The active item and its parent section must expose theme focus state once
+  // the CSS color transition has settled. Polling avoids sampling the neutral
+  // transition start immediately after the active classes are applied.
+  await expect
+    .poll(() => appointments.evaluate((element) => getComputedStyle(element).color))
+    .not.toBe("rgb(65, 84, 105)");
+  await expect
+    .poll(() =>
+      operations
+        .locator(".edge-sidebar__section-toggle")
+        .evaluate((element) => getComputedStyle(element).color),
+    )
+    .not.toBe("rgb(65, 84, 105)");
 });
 
 test("operational resources outrank similarly named reports", async ({ page }) => {
