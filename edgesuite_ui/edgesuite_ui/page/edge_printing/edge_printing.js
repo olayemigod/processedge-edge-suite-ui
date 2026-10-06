@@ -47,36 +47,43 @@ function suppressNativePageChrome(wrapper) {
   }
 }
 
+function productIdentity(productKey = "") {
+  const key = String(productKey || "").trim();
+  if (!key) return {};
+  const boot = globalThis.frappe?.boot || {};
+  return (
+    boot.edgesuite_ui_identity?.[key]
+    || boot[`${key}_ui_identity`]
+    || {}
+  );
+}
+
 function routeContext(edgeUI) {
   const params = new URLSearchParams(globalThis.location?.search || "");
   const activeProduct = edgeUI?.getActiveProduct?.();
+  const productKey = params.get("product_key") || params.get("product") || activeProduct?.key || "";
+  const identity = productIdentity(productKey);
   return {
     purpose: params.get("purpose") || "Receipt",
-    productKey: params.get("product_key") || params.get("product") || activeProduct?.key || "",
-    company: params.get("company") || "",
-    branch: params.get("branch") || "",
+    productKey,
+    company: params.get("company") || identity.active_company || identity.company || "",
+    branch: params.get("branch") || identity.active_branch || identity.branch || "",
   };
 }
 
-function pageUrl(page, context = {}) {
-  const params = new URLSearchParams();
-  if (context.purpose) params.set("purpose", context.purpose);
-  if (context.productKey) params.set("product_key", context.productKey);
-  if (context.company) params.set("company", context.company);
-  if (context.branch) params.set("branch", context.branch);
-  const query = params.toString();
-  return `/app/${page}${query ? `?${query}` : ""}`;
+function pageUrl(page) {
+  return `/app/${page}`;
 }
 
 function canManageProfiles() {
   return (frappe.user_roles || []).includes("System Manager");
 }
 
-function printingFallbackMenu(context = {}) {
+function printingFallbackMenu() {
   const items = [
     {
       label: "Devices & Printing",
-      route: pageUrl("edge-printing", context),
+      route: pageUrl("edge-printing"),
       icon: "settings",
       link_type: "Page",
       link_to: "edge-printing",
@@ -85,7 +92,7 @@ function printingFallbackMenu(context = {}) {
   if (canManageProfiles()) {
     items.push({
       label: "Print Profiles",
-      route: pageUrl("edge-print-profiles", context),
+      route: pageUrl("edge-print-profiles"),
       icon: "list",
       link_type: "Page",
       link_to: "edge-print-profiles",
@@ -151,7 +158,7 @@ function buildEdgeSuitePageChrome(context) {
 
   if (canManageProfiles()) {
     const manage = actionButton("Manage Print Profiles", () => {
-      globalThis.location.assign(pageUrl("edge-print-profiles", context));
+      globalThis.location.assign(pageUrl("edge-print-profiles"));
     });
     actions.appendChild(manage);
   }
@@ -322,8 +329,8 @@ async function mountPrintingPage(wrapper, page) {
     target: page.body,
     content: root,
     productKey: context.productKey,
-    activeRoute: pageUrl("edge-printing", context),
-    fallbackMenuItems: printingFallbackMenu(context),
+    activeRoute: pageUrl("edge-printing"),
+    fallbackMenuItems: printingFallbackMenu(),
     tenantName: context.company,
     branchName: context.branch,
   });
