@@ -37,6 +37,7 @@ def test_devices_and_printing_page_uses_edgesuite_page_primitives_and_shared_com
     source = PAGE_JS.read_text()
 
     for expected in (
+        'const EDGE_SUITE_ASSET = "edgeui.bundle.js";',
         'getComponent?.("EdgePrinterSetupCard")',
         'getComponent("EdgePrinterSetupCard")',
         "createEdgeApp",
