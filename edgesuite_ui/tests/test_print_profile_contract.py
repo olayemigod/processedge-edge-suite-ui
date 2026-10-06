@@ -124,6 +124,15 @@ def test_profile_controller_validates_physical_print_settings():
         assert expected in source
 
 
+def test_profile_manager_sets_dynamic_link_controller_before_save():
+    source = API.read_text()
+
+    assert '"Global": ""' in source
+    assert 'scope_type = _normalize(profile.get("scope_type")) or "Global"' in source
+    assert '"scope_type": scope_type' in source
+    assert '"scope_doctype": _SCOPE_DOCTYPES.get(scope_type, "")' in source
+    assert source.index('"scope_doctype": _SCOPE_DOCTYPES.get(scope_type, "")') < source.index("doc.save()")
+
 
 def test_print_profile_form_uses_smart_context_and_width_defaults():
     source = PROFILE_CLIENT.read_text()
