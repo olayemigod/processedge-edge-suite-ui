@@ -64,6 +64,7 @@ _SCOPE_SPECIFICITY = {
 	"User": 400,
 }
 _SCOPE_DOCTYPES = {
+	"Global": "",
 	"Company": "Company",
 	"Branch": "Branch",
 	"User": "User",
@@ -399,11 +400,13 @@ def save_print_profile(profile: dict[str, Any] | str) -> dict[str, Any]:
 		doc = frappe.new_doc("Edge Print Profile")
 		doc.profile_name = profile_name
 
+	scope_type = _normalize(profile.get("scope_type")) or "Global"
 	managed_values = {
 		"enabled": int(bool(profile.get("enabled"))),
 		"purpose": "Receipt",
 		"product_key": _normalize_product_key(profile.get("product_key")),
-		"scope_type": _normalize(profile.get("scope_type")) or "Global",
+		"scope_type": scope_type,
+		"scope_doctype": _SCOPE_DOCTYPES.get(scope_type, ""),
 		"scope_value": _normalize(profile.get("scope_value")),
 		"priority": int(profile.get("priority") or 0),
 		"transport": "Serial",
