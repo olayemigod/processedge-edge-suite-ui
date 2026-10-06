@@ -19,6 +19,7 @@ def test_virtual_printer_is_a_transport_not_a_persisted_profile_or_device():
         "getLastJob",
         "getHistory",
         "setFailureMode",
+        "getSessionState",
         'virtual: true',
     ):
         assert expected in source
@@ -58,6 +59,44 @@ def test_adapter_swaps_only_the_serial_transport_and_can_restore_physical_mode()
     assert "profiles = createPrintProfileClient" in source
     assert "encodeEscPosDocument" in source
     assert "manager.printReceipt(document, options)" in source
+
+
+def test_virtual_printer_state_survives_same_tab_navigation_without_server_persistence():
+    source = RUNTIME.read_text()
+
+    for expected in (
+        'VIRTUAL_PRINTER_SESSION_KEY = "edgesuite.printing.virtual_printer.v1"',
+        "sessionStorage",
+        "readVirtualPrinterSession",
+        "writeVirtualPrinterSession",
+        "clearVirtualPrinterSession",
+        "restoredSession",
+        "transportState",
+        "currentSessionUser",
+        "getSessionState()",
+    ):
+        assert expected in source
+
+    assert "localStorage" not in source
+    assert "frappe.call" not in source
+    assert "simulationEnabled = Boolean(restoredSession?.enabled)" in source
+    assert "clearVirtualPrinterSession(target)" in source
+
+
+def test_virtual_transport_restores_and_persists_history_and_failure_mode():
+    source = VIRTUAL_TRANSPORT.read_text()
+
+    for expected in (
+        "initialState = {}",
+        "onStateChange = null",
+        "restoredHistory",
+        "initialState?.failureMode",
+        "initialState?.lastJob",
+        "notifyStateChange",
+        "history: [...history]",
+        "getSessionState: sessionState",
+    ):
+        assert expected in source
 
 
 def test_devices_and_printing_exposes_system_manager_virtual_printer_qa_controls():
