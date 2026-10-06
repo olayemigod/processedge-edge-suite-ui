@@ -36,6 +36,25 @@ def test_shared_runtime_exposes_real_edgesuite_page_shell_host():
     assert 'sideSection.hidden = true' in shell
 
 
+def test_full_shared_shell_suppresses_and_restores_native_frappe_sidebar():
+    shell = SHARED_SHELL.read_text()
+
+    for expected in (
+        'querySelector?.(".body-sidebar-container")',
+        'sidebar.style.setProperty("display", "none", "important")',
+        'sidebar.setAttribute("aria-hidden", "true")',
+        'body?.classList?.add("edge-shared-shell-active")',
+        'body?.classList?.remove("edge-shared-shell-active")',
+        'router.on("change"',
+        "syncNativeDeskSidebarSuppression",
+        "sharedShellPageIsVisible",
+    ):
+        assert expected in shell
+
+    assert "nativeDeskSidebarState" in shell
+    assert "sidebar.style.removeProperty(\"display\")" in shell
+
+
 def test_devices_and_printing_mounts_inside_shared_shell_and_preserves_context():
     source = DEVICES_PAGE.read_text()
 
