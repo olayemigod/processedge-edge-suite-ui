@@ -6,6 +6,78 @@ function resolveElement(value) {
   return null;
 }
 
+const nativeDeskSidebarState = new WeakMap();
+let nativeDeskSidebarRouteGuardBound = false;
+
+function nativeDeskSidebar() {
+  return globalThis.document?.querySelector?.(".body-sidebar-container") || null;
+}
+
+function setNativeDeskSidebarSuppressed(suppressed) {
+  const sidebar = nativeDeskSidebar();
+  const body = globalThis.document?.body;
+  if (!sidebar) {
+    if (!suppressed) body?.classList?.remove("edge-shared-shell-active");
+    return;
+  }
+
+  if (suppressed) {
+    if (!nativeDeskSidebarState.has(sidebar)) {
+      nativeDeskSidebarState.set(sidebar, {
+        hidden: Boolean(sidebar.hidden),
+        ariaHidden: sidebar.getAttribute("aria-hidden"),
+        display: sidebar.style.getPropertyValue("display"),
+        displayPriority: sidebar.style.getPropertyPriority("display"),
+      });
+    }
+    sidebar.hidden = true;
+    sidebar.setAttribute("aria-hidden", "true");
+    sidebar.style.setProperty("display", "none", "important");
+    body?.classList?.add("edge-shared-shell-active");
+    return;
+  }
+
+  const previous = nativeDeskSidebarState.get(sidebar);
+  if (!previous) {
+    body?.classList?.remove("edge-shared-shell-active");
+    return;
+  }
+  sidebar.hidden = previous.hidden;
+  if (previous.ariaHidden === null) sidebar.removeAttribute("aria-hidden");
+  else sidebar.setAttribute("aria-hidden", previous.ariaHidden);
+  if (previous.display) {
+    sidebar.style.setProperty("display", previous.display, previous.displayPriority || "");
+  } else {
+    sidebar.style.removeProperty("display");
+  }
+  nativeDeskSidebarState.delete(sidebar);
+  body?.classList?.remove("edge-shared-shell-active");
+}
+
+function sharedShellPageIsVisible() {
+  const roots = globalThis.document?.querySelectorAll?.(".edge-shared-shell-page") || [];
+  return Array.from(roots).some((root) => {
+    const container = root.closest?.(".page-container") || root;
+    if (container.hidden || container.classList?.contains("hide")) return false;
+    const style = globalThis.getComputedStyle?.(container);
+    return !style || style.display !== "none";
+  });
+}
+
+function syncNativeDeskSidebarSuppression() {
+  setNativeDeskSidebarSuppressed(sharedShellPageIsVisible());
+}
+
+function bindNativeDeskSidebarRouteGuard() {
+  if (nativeDeskSidebarRouteGuardBound) return;
+  const router = globalThis.frappe?.router;
+  if (!router || typeof router.on !== "function") return;
+  nativeDeskSidebarRouteGuardBound = true;
+  router.on("change", () => {
+    globalThis.setTimeout?.(syncNativeDeskSidebarSuppression, 0);
+  });
+}
+
 function canonicalRoute(value) {
   const text = String(value || "").trim();
   if (!text) return "";
@@ -127,6 +199,9 @@ export function suppressNativeDeskPageChrome(wrapper) {
     mainWrapper.style.width = "100%";
     mainWrapper.style.maxWidth = "100%";
   }
+
+  setNativeDeskSidebarSuppressed(true);
+  bindNativeDeskSidebarRouteGuard();
 }
 
 export async function mountSharedPageShell(
