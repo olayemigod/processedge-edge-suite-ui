@@ -71,6 +71,16 @@ function routeContext(edgeUI) {
   };
 }
 
+function hydratePrintingContext(context = {}, shell = {}) {
+  const shellContext = shell?.context || {};
+  return {
+    ...context,
+    productKey: context.productKey || shell?.productKey || "",
+    company: context.company || shellContext.tenantName || "",
+    branch: context.branch || shellContext.branchName || "",
+  };
+}
+
 function pageUrl(page) {
   return `/app/${page}`;
 }
@@ -101,12 +111,20 @@ function printingFallbackMenu() {
   return [{ key: "printing", label: "Printing", icon: "settings", defaultCollapsed: false, items }];
 }
 
-function appendContextBadge(actions, label) {
+function appendContextBadge(actions, label, before = null) {
   if (!label) return;
   const badge = document.createElement("span");
-  badge.className = "edge-status-badge edge-status-badge--neutral";
+  badge.className = "edge-status-badge edge-status-badge--neutral edge-printing-context-badge";
   badge.textContent = label;
-  actions.appendChild(badge);
+  if (before) actions.insertBefore(badge, before);
+  else actions.appendChild(badge);
+}
+
+function syncContextBadges(actions, context = {}) {
+  actions.querySelectorAll(".edge-printing-context-badge").forEach((badge) => badge.remove());
+  const before = actions.querySelector("button");
+  appendContextBadge(actions, context.company ? `Company: ${context.company}` : "", before);
+  appendContextBadge(actions, context.branch ? `Branch: ${context.branch}` : "", before);
 }
 
 function actionButton(label, onClick, { primary = false, danger = false } = {}) {
@@ -178,7 +196,7 @@ function buildEdgeSuitePageChrome(context) {
   content.appendChild(simulatorHost);
 
   root.append(headerWrap, content);
-  return { root, host, simulatorHost };
+  return { root, host, simulatorHost, actions };
 }
 
 function virtualJobSummary(job) {
@@ -323,7 +341,7 @@ async function mountPrintingPage(wrapper, page) {
 
   suppressNativePageChrome(wrapper);
   const context = routeContext(edgeUI);
-  const { root, host, simulatorHost } = buildEdgeSuitePageChrome(context);
+  const { root, host, simulatorHost, actions } = buildEdgeSuitePageChrome(context);
   wrapper._edgePrintingShell?.app?.unmount?.();
   wrapper._edgePrintingShell = await edgeUI.mountSharedPageShell({
     target: page.body,
@@ -334,6 +352,9 @@ async function mountPrintingPage(wrapper, page) {
     tenantName: context.company,
     branchName: context.branch,
   });
+
+  Object.assign(context, hydratePrintingContext(context, wrapper._edgePrintingShell));
+  syncContextBadges(actions, context);
 
   const component = edgeUI.getComponent("EdgePrinterSetupCard");
   async function renderPrinter() {
