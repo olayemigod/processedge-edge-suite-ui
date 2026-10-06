@@ -11,6 +11,8 @@ import { edgeEscPos, encodeEscPosDocument } from "./printing_escpos";
 import { createPrinterBindingStore, createPrinterDeviceManager } from "./printing_device_binding";
 import { createPrintProfileClient } from "./printing_profile_runtime";
 
+const VIRTUAL_PRINTER_SESSION_KEY = "edgesuite.printing.virtual_printer.v1";
+
 function normalizeTransportName(name) {
   const normalized = String(name || "").trim().toLowerCase();
   if (!normalized) throw new TypeError("Printer transport name is required.");
@@ -24,6 +26,69 @@ function assertTransportContract(name, transport) {
     }
   }
   return transport;
+}
+
+function sessionStorageFor(target) {
+  try {
+    return target?.sessionStorage || null;
+  } catch (_error) {
+    return null;
+  }
+}
+
+function currentSessionUser(target) {
+  return String(
+    target?.frappe?.session?.user
+      || target?.frappe?.boot?.user?.name
+      || "",
+  ).trim();
+}
+
+function readVirtualPrinterSession(target) {
+  const storage = sessionStorageFor(target);
+  if (!storage) return null;
+  try {
+    const raw = storage.getItem(VIRTUAL_PRINTER_SESSION_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed || parsed.version !== 1 || parsed.enabled !== true) return null;
+    const currentUser = currentSessionUser(target);
+    if (parsed.user && currentUser && parsed.user !== currentUser) {
+      storage.removeItem(VIRTUAL_PRINTER_SESSION_KEY);
+      return null;
+    }
+    return parsed;
+  } catch (_error) {
+    return null;
+  }
+}
+
+function writeVirtualPrinterSession(target, transportState) {
+  const storage = sessionStorageFor(target);
+  if (!storage) return;
+  try {
+    storage.setItem(
+      VIRTUAL_PRINTER_SESSION_KEY,
+      JSON.stringify({
+        version: 1,
+        enabled: true,
+        user: currentSessionUser(target),
+        transportState,
+      }),
+    );
+  } catch (_error) {
+    // QA session persistence is best-effort and must never block printing.
+  }
+}
+
+function clearVirtualPrinterSession(target) {
+  const storage = sessionStorageFor(target);
+  if (!storage) return;
+  try {
+    storage.removeItem(VIRTUAL_PRINTER_SESSION_KEY);
+  } catch (_error) {
+    // A blocked storage API must not prevent returning to physical mode.
+  }
 }
 
 export function createPrintManager({ target = globalThis } = {}) {
@@ -120,8 +185,23 @@ export function createPrintManager({ target = globalThis } = {}) {
 export function createEdgePrintAdapter({ target = globalThis } = {}) {
   const manager = createPrintManager({ target });
   const physicalSerialTransport = manager.getTransport(EDGE_PRINT_TRANSPORTS.SERIAL);
-  const virtualSerialTransport = createVirtualPrinterTransport({ target });
-  let simulationEnabled = false;
+  const restoredSession = readVirtualPrinterSession(target);
+  let simulationEnabled = Boolean(restoredSession?.enabled);
+  const virtualSerialTransport = createVirtualPrinterTransport({
+    target,
+    initialState: {
+      ...(restoredSession?.transportState || {}),
+      connected: simulationEnabled,
+    },
+    onStateChange: (transportState) => {
+      if (simulationEnabled) writeVirtualPrinterSession(target, transportState);
+    },
+  });
+
+  if (simulationEnabled) {
+    manager.registerTransport(EDGE_PRINT_TRANSPORTS.SERIAL, virtualSerialTransport, { replace: true });
+    writeVirtualPrinterSession(target, virtualSerialTransport.getSessionState());
+  }
 
   const bindingStore = createPrinterBindingStore({ target });
   const devices = createPrinterDeviceManager({ target, printManager: manager, store: bindingStore });
@@ -136,18 +216,24 @@ export function createEdgePrintAdapter({ target = globalThis } = {}) {
       try {
         const status = await virtualSerialTransport.connect();
         simulationEnabled = true;
+        writeVirtualPrinterSession(target, virtualSerialTransport.getSessionState());
         return status;
       } catch (error) {
         manager.registerTransport(EDGE_PRINT_TRANSPORTS.SERIAL, physicalSerialTransport, { replace: true });
         simulationEnabled = false;
+        clearVirtualPrinterSession(target);
         throw error;
       }
     },
     async disable() {
-      if (!simulationEnabled) return physicalSerialTransport.getStatus();
+      if (!simulationEnabled) {
+        clearVirtualPrinterSession(target);
+        return physicalSerialTransport.getStatus();
+      }
       if (virtualSerialTransport.getStatus()?.connected) await virtualSerialTransport.disconnect();
       manager.registerTransport(EDGE_PRINT_TRANSPORTS.SERIAL, physicalSerialTransport, { replace: true });
       simulationEnabled = false;
+      clearVirtualPrinterSession(target);
       return physicalSerialTransport.getStatus();
     },
     isEnabled: () => simulationEnabled,
