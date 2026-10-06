@@ -109,8 +109,7 @@ function normalizeExpression(expression) {
   return String(expression || "")
     .trim()
     .toLowerCase()
-    .replace(/[–—]/g, "-")
-    .replace(/\s*-\s*/g, " - ")
+    .replace(/\s*[–—]\s*/g, " - ")
     .replace(/\s+/g, " ");
 }
 
