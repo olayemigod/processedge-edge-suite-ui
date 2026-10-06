@@ -1,5 +1,5 @@
 const EDGE_PRINTING_PAGE = "edge-printing";
-const EDGE_SUITE_ASSET = "edgesuite_ui.bundle.js";
+const EDGE_SUITE_ASSET = "edgeui.bundle.js";
 
 function edgePrintingRequire(assetName) {
   return new Promise((resolve, reject) => {
