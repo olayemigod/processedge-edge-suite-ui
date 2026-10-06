@@ -27,16 +27,72 @@ function commandSummary(bytes) {
   return Object.freeze({ cuts, drawerPulses, qrCommands, barcodes, feedLines });
 }
 
-function printablePreview(bytes) {
-  const payload = normalizePrintBytes(bytes);
-  let preview = "";
-  for (const byte of payload) {
-    if (byte === 0x0a || byte === 0x0d) {
-      preview += "\n";
-    } else if (byte >= 0x20 && byte <= 0x7e) {
-      preview += String.fromCharCode(byte);
-    }
+function skipEscCommand(payload, index, output) {
+  const command = payload[index + 1];
+  if (command === 0x40) return index + 2; // ESC @ initialize
+  if (command === 0x61 || command === 0x45) return index + 3; // ESC a / E
+  if (command === 0x70) return index + 5; // ESC p drawer pulse
+  if (command === 0x64) {
+    const lines = Number(payload[index + 2] || 0);
+    for (let offset = 0; offset < lines; offset += 1) output.push(0x0a);
+    return index + 3; // ESC d feed
   }
+  return index + 2;
+}
+
+function skipGsCommand(payload, index) {
+  const command = payload[index + 1];
+  if ([0x21, 0x56, 0x68, 0x77, 0x48].includes(command)) return index + 3;
+
+  if (command === 0x28 && payload[index + 2] === 0x6b) {
+    const low = Number(payload[index + 3] || 0);
+    const high = Number(payload[index + 4] || 0);
+    return Math.min(payload.length, index + 5 + low + (high << 8));
+  }
+
+  if (command === 0x6b) {
+    const dataLength = Number(payload[index + 3] || 0);
+    return Math.min(payload.length, index + 4 + dataLength);
+  }
+
+  if (command === 0x76 && payload[index + 2] === 0x30) {
+    const widthBytes = Number(payload[index + 4] || 0) | (Number(payload[index + 5] || 0) << 8);
+    const height = Number(payload[index + 6] || 0) | (Number(payload[index + 7] || 0) << 8);
+    return Math.min(payload.length, index + 8 + widthBytes * height);
+  }
+
+  return index + 2;
+}
+
+export function stripEscPosControlBytes(bytes) {
+  const payload = normalizePrintBytes(bytes);
+  const output = [];
+
+  for (let index = 0; index < payload.length;) {
+    const byte = payload[index];
+    if (byte === 0x1b) {
+      index = skipEscCommand(payload, index, output);
+      continue;
+    }
+    if (byte === 0x1d) {
+      index = skipGsCommand(payload, index);
+      continue;
+    }
+    if (byte === 0x0a || byte === 0x0d) {
+      output.push(0x0a);
+      index += 1;
+      continue;
+    }
+    if (byte >= 0x20) output.push(byte);
+    index += 1;
+  }
+
+  return Uint8Array.from(output);
+}
+
+function printablePreview(bytes) {
+  const printable = stripEscPosControlBytes(bytes);
+  const preview = new TextDecoder("utf-8", { fatal: false }).decode(printable);
   return preview
     .split("\n")
     .map((line) => line.trimEnd())
