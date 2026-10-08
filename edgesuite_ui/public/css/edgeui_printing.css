@@ -1,0 +1,170 @@
+.edge-printer-setup {
+  display: grid;
+  gap: var(--edge-space-4, 1rem);
+  padding: var(--edge-space-5, 1.25rem);
+  background: var(--edge-color-surface, #fff);
+  border: 1px solid var(--edge-color-border, #dfe6ec);
+  border-radius: var(--edge-radius-md, 0.75rem);
+  box-shadow: var(--edge-shadow-sm, 0 1px 2px rgb(16 34 53 / 8%));
+}
+
+.edge-printer-setup__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--edge-space-4, 1rem);
+}
+
+.edge-printer-setup__header h3 {
+  margin: 0;
+  color: var(--edge-color-ink-950, #102235);
+  font-size: 1rem;
+}
+
+.edge-printer-setup__header p {
+  margin: 0.25rem 0 0;
+  color: var(--edge-color-ink-500, #617589);
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+.edge-printer-setup__status {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.75rem;
+  padding: 0.35rem 0.65rem;
+  border: 1px solid var(--edge-color-border, #dfe6ec);
+  border-radius: 999px;
+  background: var(--edge-color-surface-muted, #f6f8fa);
+  color: var(--edge-color-ink-700, #334b61);
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.edge-printer-setup__status.is-connected {
+  color: var(--edge-color-success, #138a58);
+}
+
+.edge-printer-setup__status.is-configured {
+  color: var(--edge-color-brand-600, #0f64ab);
+}
+
+.edge-printer-setup__error {
+  padding: 0.75rem 0.85rem;
+  border: 1px solid color-mix(in srgb, var(--edge-color-danger, #c53a3a) 35%, var(--edge-color-border, #dfe6ec));
+  border-radius: var(--edge-radius-sm, 0.5rem);
+  background: color-mix(in srgb, var(--edge-color-danger, #c53a3a) 6%, var(--edge-color-surface, #fff));
+  color: var(--edge-color-danger, #c53a3a);
+  font-size: 0.8rem;
+}
+
+.edge-printer-setup__meta {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--edge-space-4, 1rem);
+  margin: 0;
+  padding: var(--edge-space-4, 1rem);
+  background: var(--edge-color-surface-muted, #f6f8fa);
+  border-radius: var(--edge-radius-sm, 0.5rem);
+}
+
+.edge-printer-setup__meta div {
+  min-width: 0;
+}
+
+.edge-printer-setup__meta dt {
+  color: var(--edge-color-ink-500, #617589);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.edge-printer-setup__meta dd {
+  overflow: hidden;
+  margin: 0.25rem 0 0;
+  color: var(--edge-color-ink-950, #102235);
+  font-size: 0.82rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.edge-printer-setup__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--edge-space-2, 0.5rem);
+}
+
+.edge-printer-setup__danger {
+  color: var(--edge-color-danger, #c53a3a);
+}
+
+.edge-printer-setup__note {
+  margin: 0;
+  color: var(--edge-color-ink-500, #617589);
+  font-size: 0.78rem;
+}
+
+.edge-printing-page-root {
+  width: min(100%, 72rem);
+  margin: 0 auto;
+}
+
+.edge-printing-page-actions {
+  justify-content: flex-end;
+}
+
+.edge-printing-page-actions .edge-status-badge {
+  background: var(--edge-color-surface, #fff);
+}
+
+.edge-printing-page-content,
+.edge-printing-page-card {
+  min-width: 0;
+}
+
+.edge-printing-page-card {
+  display: grid;
+  gap: var(--edge-space-4, 1rem);
+}
+
+.edge-button--secondary {
+  background: var(--edge-color-surface, #fff);
+  border-color: var(--edge-color-border, #dfe6ec);
+  color: var(--edge-color-ink-950, #102235);
+}
+
+.edge-button--secondary:hover {
+  background: var(--edge-color-surface-muted, #f6f8fa);
+}
+
+@media (max-width: 48rem) {
+  .edge-printer-setup__header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .edge-printer-setup__status {
+    align-self: flex-start;
+  }
+
+  .edge-printer-setup__meta {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .edge-printing-page-actions {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 30rem) {
+  .edge-printer-setup__meta {
+    grid-template-columns: 1fr;
+  }
+
+  .edge-printer-setup__actions > .edge-button,
+  .edge-printing-page-actions > .edge-button {
+    flex: 1 1 100%;
+  }
+}
