@@ -330,16 +330,32 @@
   function startObserver() {
     if (observer || !document.body || !window.MutationObserver) return;
     observer = new MutationObserver((records) => {
+      const shellsNeedingRepair = new Set();
       for (const record of records) {
         for (const node of record.addedNodes || []) {
           if (node.nodeType !== 1) continue;
           if (node.matches?.(SHELL_SELECTOR) || node.querySelector?.(SHELL_SELECTOR)) scan(node);
         }
+
+        // Vue can reconcile the sidebar brand after initial mount and remove
+        // the DOM-injected collapse control. Recover only when an already-
+        // enhanced shell still has a brand but no collapse toggle. The toggle's
+        // own SVG mutations therefore never retrigger installation.
+        const ownerShell = record.target?.closest?.(SHELL_SELECTOR);
+        const brand = ownerShell?.querySelector?.(BRAND_SELECTOR);
+        if (
+          ownerShell?.classList?.contains(ENHANCED_CLASS) &&
+          brand &&
+          !brand.querySelector(`.${TOGGLE_CLASS}`)
+        ) {
+          shellsNeedingRepair.add(ownerShell);
+        }
       }
+      shellsNeedingRepair.forEach(installShell);
     });
-    // Observe shell mounts/replacements only. Route changes are covered by
-    // Frappe events and patched history methods. Internal sidebar DOM updates
-    // (including the collapse SVG) must never retrigger shell installation.
+    // Observe shell mounts/replacements plus narrowly recover the collapse
+    // control when a product-shell rerender removes it. Internal mutations are
+    // ignored while the control is present, preventing observer feedback loops.
     observer.observe(document.body, { childList: true, subtree: true });
   }
 
