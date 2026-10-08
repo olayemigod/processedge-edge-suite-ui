@@ -2,6 +2,10 @@
 
 This validation is local-only. Do not use it on client cloud sites until the compatibility gates below pass.
 
+## Repository validation
+
+Keep the compatibility pull request in draft until local validation is complete. Standard pull-request CI must pass before the branch is used for product compatibility work. The full clean-bench Frappe integration check remains an additional gate and does not replace the local v16.50 validation below.
+
 ## Create an isolated bench
 
 ```bash
