@@ -6,6 +6,7 @@ import { installDropdownViewportRuntime } from "./edgeui/dropdown_viewport_runti
 import { emptyStateComponents } from "./edgeui/empty_state_components";
 import { exportComponents } from "./edgeui/export_components";
 import { edgeExportAdapter } from "./edgeui/export_runtime";
+import { createFrappeDeskUIAdapter } from "./edgeui/frappe_desk_ui";
 import { edgePrintAdapter } from "./edgeui/printing_runtime";
 import { applyFrappeCompatibility } from "./edgeui/frappe_compat";
 import { formComponents } from "./edgeui/form_components";
@@ -77,9 +78,13 @@ const runtime = createEdgeSuiteRuntime({
   components,
 });
 
+const frappeDeskUIAdapter = createFrappeDeskUIAdapter();
+
 runtime.registerAdapter("export", edgeExportAdapter);
 runtime.registerAdapter("print", edgePrintAdapter);
+runtime.registerAdapter("frappe-desk-ui", frappeDeskUIAdapter);
 runtime.print = edgePrintAdapter;
+runtime.frappeDeskUI = frappeDeskUIAdapter;
 runtime.mountSharedPageShell = (options = {}) => mountSharedPageShell(runtime, options);
 runtime.suppressNativeDeskPageChrome = suppressNativeDeskPageChrome;
 
@@ -116,6 +121,7 @@ export * from "./edgeui/form_components";
 export * from "./edgeui/form_primitives";
 export * from "./edgeui/financial_dashboard";
 export * from "./edgeui/frappe_compat";
+export * from "./edgeui/frappe_desk_ui";
 export * from "./edgeui/icons";
 export * from "./edgeui/interaction_runtime";
 export * from "./edgeui/modal_components";
