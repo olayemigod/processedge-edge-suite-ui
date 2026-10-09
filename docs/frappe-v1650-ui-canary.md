@@ -100,6 +100,8 @@ The build must resolve all of the following from one host dependency graph:
 - Tailwind 3.4
 - Vite 7
 
+Frappe v16.50.0 has a known root-barrel compatibility edge: the `@framework/ui` root reaches `ActivityTimeline/CommentItem.vue`, which still imports the removed `frappe-ui/editor-style.css` subpath. Frappe later fixed this upstream by dropping that redundant stylesheet import because `frappe-ui/editor` already loads the editor styles. Do not patch the pinned Framework release or downgrade Frappe UI for this canary. Consume explicit published Framework UI subpaths such as `@framework/ui/FormLayout` until the upstream fix is present in the tested Framework release.
+
 For a visual primitive check:
 
 ```bash
@@ -108,7 +110,7 @@ yarn dev
 
 Open the URL printed by Vite. Confirm the page renders the Frappe UI button and form control with semantic styling and without Vue duplication, unresolved-package, router-injection or Tailwind token errors in the console.
 
-The Framework `Link` component is included in the compiled graph but intentionally not mounted in this standalone visual check because it requires a live Frappe backend contract.
+The canary includes `FormLayout` from the explicit `@framework/ui/FormLayout` export in the compiled graph but intentionally does not mount it in the standalone visual check because full form rendering requires a live Frappe document/meta contract.
 
 ## Promotion gates
 
@@ -128,5 +130,7 @@ Do not upgrade any client cloud site until all of these pass:
 ## Consumption rule
 
 Product apps continue to consume EdgeSuite components and adapters. They must not call new Frappe Desk UI APIs or import `frappe-ui` / `@framework/ui` directly unless a product-specific requirement is explicitly approved.
+
+Within EdgeSuite, prefer explicit published `@framework/ui` subpath exports over the package root while validating Frappe v16.50.0. Do not rely on the v16.50.0 root barrel until the upstream editor-style fix is included in the selected Framework release.
 
 EdgeSuite may progressively delegate its internal primitives to Framework-native implementations after local compatibility is proven. Product workflow, permissions, navigation policy, branch context, reporting, printing and smart date behaviour remain owned by EdgeSuite or the product app as appropriate.
