@@ -5,7 +5,7 @@
   "description": "Independent EdgeSuite UI runtime for ProcessEdge Frappe applications.",
   "license": "MIT",
   "scripts": {
-    "check": "node scripts/check-frontend.mjs && node scripts/check-print-preview.mjs && node --check edgesuite_ui/edgesuite_ui/page/edge_printing/edge_printing.js && node --check edgesuite_ui/edgesuite_ui/page/edge_print_profiles/edge_print_profiles.js",
+    "check": "node scripts/check-frontend.mjs && node scripts/check-frappe-desk-ui.mjs && node scripts/check-product-menu-global-action-recovery.mjs && node scripts/check-print-preview.mjs && node --check edgesuite_ui/edgesuite_ui/page/edge_printing/edge_printing.js && node --check edgesuite_ui/edgesuite_ui/page/edge_print_profiles/edge_print_profiles.js",
     "test": "npm run check"
   },
   "dependencies": {

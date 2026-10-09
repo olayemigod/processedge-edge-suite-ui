@@ -6,6 +6,7 @@ import { installDropdownViewportRuntime } from "./edgeui/dropdown_viewport_runti
 import { emptyStateComponents } from "./edgeui/empty_state_components";
 import { exportComponents } from "./edgeui/export_components";
 import { edgeExportAdapter } from "./edgeui/export_runtime";
+import { createFrappeDeskUIAdapter } from "./edgeui/frappe_desk_ui";
 import { edgePrintAdapter } from "./edgeui/printing_runtime";
 import { applyFrappeCompatibility } from "./edgeui/frappe_compat";
 import { formComponents } from "./edgeui/form_components";
@@ -18,6 +19,7 @@ import { applyMultiSelectCompatibility } from "./edgeui/multiselect_compat";
 import { suppressNativeNotificationRuntime } from "./edgeui/notification_runtime";
 import { installProductContextBridge } from "./edgeui/product_context_bridge";
 import { installProductMenuExtras } from "./edgeui/product_menu_extras";
+import { installProductMenuGlobalActionRecovery } from "./edgeui/product_menu_global_action_recovery";
 import { installProductMenuMountEnhancements } from "./edgeui/product_menu_mount";
 import { installProductMenuReliability } from "./edgeui/product_menu_reliability";
 import { professionalComponents } from "./edgeui/professional_components";
@@ -77,9 +79,13 @@ const runtime = createEdgeSuiteRuntime({
   components,
 });
 
+const frappeDeskUIAdapter = createFrappeDeskUIAdapter();
+
 runtime.registerAdapter("export", edgeExportAdapter);
 runtime.registerAdapter("print", edgePrintAdapter);
+runtime.registerAdapter("frappe-desk-ui", frappeDeskUIAdapter);
 runtime.print = edgePrintAdapter;
+runtime.frappeDeskUI = frappeDeskUIAdapter;
 runtime.mountSharedPageShell = (options = {}) => mountSharedPageShell(runtime, options);
 runtime.suppressNativeDeskPageChrome = suppressNativeDeskPageChrome;
 
@@ -101,6 +107,7 @@ if (typeof globalThis !== "undefined") {
   installWorkflowSaveBridge(globalThis);
   installProductMenuExtras(runtime, globalThis);
   installProductMenuReliability(runtime, globalThis);
+  installProductMenuGlobalActionRecovery(runtime, globalThis);
 }
 
 export * from "./edgeui/components";
@@ -116,6 +123,7 @@ export * from "./edgeui/form_components";
 export * from "./edgeui/form_primitives";
 export * from "./edgeui/financial_dashboard";
 export * from "./edgeui/frappe_compat";
+export * from "./edgeui/frappe_desk_ui";
 export * from "./edgeui/icons";
 export * from "./edgeui/interaction_runtime";
 export * from "./edgeui/modal_components";
@@ -136,6 +144,7 @@ export * from "./edgeui/product_context";
 export * from "./edgeui/product_context_bridge";
 export * from "./edgeui/product_menu";
 export * from "./edgeui/product_menu_extras";
+export * from "./edgeui/product_menu_global_action_recovery";
 export * from "./edgeui/product_menu_mount";
 export * from "./edgeui/product_menu_reliability";
 export * from "./edgeui/professional_components";
