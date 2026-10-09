@@ -363,7 +363,7 @@ export const EdgeDashboardShell = defineComponent({
             () => {
               this.exportOpen = true;
             },
-            this.printBusy || this.exportBusy,
+            this.exportBusy || this.printBusy,
             true,
           ),
         );
