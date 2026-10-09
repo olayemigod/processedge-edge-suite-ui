@@ -8,7 +8,6 @@
     "build": "vite build"
   },
   "dependencies": {
-    "@framework/ui": "link:../../frappe/ui",
     "@vueuse/core": "^14.1.0",
     "frappe-ui": "1.0.0",
     "vue": "^3.5.0",
