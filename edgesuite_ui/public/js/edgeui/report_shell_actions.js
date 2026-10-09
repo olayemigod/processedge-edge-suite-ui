@@ -109,6 +109,7 @@ export const EdgeReportShell = defineComponent({
       exportOpen: false,
       columnsOpen: false,
       visibleColumnKeys: null,
+      availableColumnKeys: [],
       appliedViewStateSignature: "",
     };
   },
@@ -130,25 +131,46 @@ export const EdgeReportShell = defineComponent({
       const available = normalizedColumnKeys(columns);
       const signature = this.viewStateSignature();
       const current = Array.isArray(this.visibleColumnKeys) ? this.visibleColumnKeys : [];
+      const previousAvailable = Array.isArray(this.availableColumnKeys) ? this.availableColumnKeys : [];
+      const previousAvailableSet = new Set(previousAvailable.map(String));
+      const newlyAvailable = available.filter((key) => !previousAvailableSet.has(String(key)));
       const availableSet = new Set(available);
       const currentValid = current.filter((key) => availableSet.has(String(key)));
       const externalChanged = signature !== this.appliedViewStateSignature;
+      const explicitVisibleColumns =
+        Array.isArray(this.viewState?.visible_columns) && this.viewState.visible_columns.length > 0;
       const columnsChanged =
         currentValid.length !== current.length ||
         currentValid.some((key, index) => key !== current[index]);
       const columnsArrived = available.length > 0 && current.length === 0;
+      const columnsExpanded = newlyAvailable.length > 0 && previousAvailable.length > 0;
 
       if (
         this.visibleColumnKeys === null ||
         externalChanged ||
         columnsChanged ||
-        columnsArrived
+        columnsArrived ||
+        columnsExpanded
       ) {
-        const requested = externalChanged || this.visibleColumnKeys === null
-          ? this.viewState?.visible_columns
-          : currentValid;
+        let requested;
+        if (externalChanged || this.visibleColumnKeys === null) {
+          requested = this.viewState?.visible_columns;
+        } else if (columnsExpanded) {
+          requested = explicitVisibleColumns
+            ? this.viewState?.visible_columns
+            : available.filter((key) => currentValid.includes(key) || newlyAvailable.includes(key));
+        } else {
+          requested = currentValid;
+        }
         this.visibleColumnKeys = normalizedVisibleKeys(columns, requested);
         this.appliedViewStateSignature = signature;
+      }
+
+      if (
+        available.length !== previousAvailable.length ||
+        available.some((key, index) => key !== previousAvailable[index])
+      ) {
+        this.availableColumnKeys = [...available];
       }
       return this.visibleColumnKeys;
     },
@@ -355,7 +377,7 @@ export const EdgeDashboardShell = defineComponent({
         ? h(EdgeReportExportDialog, {
             open: this.exportOpen,
             busy: this.exportBusy,
-            reportTitle: String(title || "Dashboard"),
+            reportTitle: String(title || "Report"),
             columns: [],
             initialOptions: this.exportInitialOptions,
             onClose: () => {
