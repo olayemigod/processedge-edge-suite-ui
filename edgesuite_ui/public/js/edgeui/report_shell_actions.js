@@ -363,7 +363,7 @@ export const EdgeDashboardShell = defineComponent({
             () => {
               this.exportOpen = true;
             },
-            this.exportBusy || this.printBusy,
+            this.printBusy || this.exportBusy,
             true,
           ),
         );
@@ -377,7 +377,7 @@ export const EdgeDashboardShell = defineComponent({
         ? h(EdgeReportExportDialog, {
             open: this.exportOpen,
             busy: this.exportBusy,
-            reportTitle: String(title || "Report"),
+            reportTitle: String(title || "Dashboard"),
             columns: [],
             initialOptions: this.exportInitialOptions,
             onClose: () => {
