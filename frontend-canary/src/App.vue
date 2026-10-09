@@ -1,11 +1,10 @@
 <script setup>
-import { Link } from "@framework/ui";
+import { FormLayout } from "@framework/ui/FormLayout";
 import { Button, FormControl, FrappeUIProvider } from "frappe-ui";
 import { ref } from "vue";
 
 const search = ref("");
-const selectedUser = ref("");
-const showFrameworkLink = ref(false);
+const showFrameworkForm = ref(false);
 </script>
 
 <template>
@@ -28,12 +27,7 @@ const showFrameworkLink = ref(false);
 
         <Button icon-left="lucide-plus" label="New" variant="solid" />
 
-        <Link
-          v-if="showFrameworkLink"
-          v-model="selectedUser"
-          doctype="User"
-          label="User"
-        />
+        <FormLayout v-if="showFrameworkForm" />
       </section>
     </main>
   </FrappeUIProvider>
