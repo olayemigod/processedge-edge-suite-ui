@@ -1,6 +1,5 @@
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE = ROOT / "edgesuite_ui" / "public" / "js" / "edgeui" / "report_shell_actions.js"
 
