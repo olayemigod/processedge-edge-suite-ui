@@ -19,6 +19,7 @@ import { applyMultiSelectCompatibility } from "./edgeui/multiselect_compat";
 import { suppressNativeNotificationRuntime } from "./edgeui/notification_runtime";
 import { installProductContextBridge } from "./edgeui/product_context_bridge";
 import { installProductMenuExtras } from "./edgeui/product_menu_extras";
+import { installProductMenuGlobalActionRecovery } from "./edgeui/product_menu_global_action_recovery";
 import { installProductMenuMountEnhancements } from "./edgeui/product_menu_mount";
 import { installProductMenuReliability } from "./edgeui/product_menu_reliability";
 import { professionalComponents } from "./edgeui/professional_components";
@@ -106,6 +107,7 @@ if (typeof globalThis !== "undefined") {
   installWorkflowSaveBridge(globalThis);
   installProductMenuExtras(runtime, globalThis);
   installProductMenuReliability(runtime, globalThis);
+  installProductMenuGlobalActionRecovery(runtime, globalThis);
 }
 
 export * from "./edgeui/components";
@@ -142,6 +144,7 @@ export * from "./edgeui/product_context";
 export * from "./edgeui/product_context_bridge";
 export * from "./edgeui/product_menu";
 export * from "./edgeui/product_menu_extras";
+export * from "./edgeui/product_menu_global_action_recovery";
 export * from "./edgeui/product_menu_mount";
 export * from "./edgeui/product_menu_reliability";
 export * from "./edgeui/professional_components";
