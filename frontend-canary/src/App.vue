@@ -1,10 +1,8 @@
 <script setup>
-import { FormLayout } from "@framework/ui/FormLayout";
 import { Button, FormControl, FrappeUIProvider } from "frappe-ui";
 import { ref } from "vue";
 
 const search = ref("");
-const showFrameworkForm = ref(false);
 </script>
 
 <template>
@@ -14,7 +12,7 @@ const showFrameworkForm = ref(false);
         <div class="space-y-1">
           <h1 class="text-xl font-semibold">EdgeSuite UI compatibility check</h1>
           <p class="text-sm text-ink-gray-6">
-            Frappe UI 1.0 and Framework UI are compiling in an isolated EdgeSuite surface.
+            Frappe UI 1.0 is compiling in an isolated EdgeSuite surface.
           </p>
         </div>
 
@@ -26,8 +24,6 @@ const showFrameworkForm = ref(false);
         />
 
         <Button icon-left="lucide-plus" label="New" variant="solid" />
-
-        <FormLayout v-if="showFrameworkForm" />
       </section>
     </main>
   </FrappeUIProvider>
