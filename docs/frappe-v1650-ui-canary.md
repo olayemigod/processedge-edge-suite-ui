@@ -83,7 +83,7 @@ The adapter must remain safe on older v16 builds. If a native component does not
 
 ## Build the isolated Frappe UI 1.0 canary
 
-The canary is not included in the normal EdgeSuite bundle and is not loaded by product apps.
+The visual canary is a pure `frappe-ui@1.0.0` compatibility gate. It is not included in the normal EdgeSuite bundle and is not loaded by product apps.
 
 ```bash
 cd ~/frappe-bench-v1650/apps/edgesuite_ui/frontend-canary
@@ -91,16 +91,13 @@ yarn install
 yarn build
 ```
 
-The build must resolve all of the following from one host dependency graph:
+The build must resolve all of the following from one dependency graph:
 
 - Vue 3.5+
-- Frappe UI 1.0
-- `@framework/ui` linked from `apps/frappe/ui`
+- Frappe UI 1.0.0
 - Vue Router 4
 - Tailwind 3.4
 - Vite 7
-
-Frappe v16.50.0 has a known root-barrel compatibility edge: the `@framework/ui` root reaches `ActivityTimeline/CommentItem.vue`, which still imports the removed `frappe-ui/editor-style.css` subpath. Frappe later fixed this upstream by dropping that redundant stylesheet import because `frappe-ui/editor` already loads the editor styles. Do not patch the pinned Framework release or downgrade Frappe UI for this canary. Consume explicit published Framework UI subpaths such as `@framework/ui/FormLayout` until the upstream fix is present in the tested Framework release.
 
 For a visual primitive check:
 
@@ -110,7 +107,18 @@ yarn dev
 
 Open the URL printed by Vite. Confirm the page renders the Frappe UI button and form control with semantic styling and without Vue duplication, unresolved-package, router-injection or Tailwind token errors in the console.
 
-The canary includes `FormLayout` from the explicit `@framework/ui/FormLayout` export in the compiled graph but intentionally does not mount it in the standalone visual check because full form rendering requires a live Frappe document/meta contract.
+## `@framework/ui` status on exact Frappe v16.50.0
+
+Treat Framework UI as a separate compatibility gate from Frappe UI 1.0.
+
+The exact Frappe v16.50.0 source has two confirmed incompatibilities with stable `frappe-ui@1.0.0`:
+
+1. The `@framework/ui` root barrel reaches `ActivityTimeline/CommentItem.vue`, which imports the removed `frappe-ui/editor-style.css` subpath. Frappe later fixed that upstream by removing the redundant import because `frappe-ui/editor` loads its own styles.
+2. The published `@framework/ui/FormLayout` subpath reaches `Fields/CodeEditorField.vue`, which imports `CodePreview` from `frappe-ui/code-editor`. Stable Frappe UI 1.0 no longer exports `CodePreview`. Frappe later rewrote this field while updating Framework UI against the Frappe UI 1.0 release-candidate API.
+
+The `@framework/ui` package in v16.50 declares only a lower Frappe UI peer floor, so stable 1.0 satisfies dependency resolution even though these source-level API changes make the component graph fail to build.
+
+Do not patch the pinned Framework release, add Rollup externals, restore removed Frappe UI exports, or downgrade Frappe UI to hide this mismatch. On exact Frappe v16.50.0, `@framework/ui` component adoption is blocked. Re-test it on a later Frappe v16 patch release that contains the upstream compatibility fixes, or on a separate disposable patched-Framework experiment without changing the baseline canary.
 
 ## Promotion gates
 
@@ -118,7 +126,7 @@ Do not upgrade any client cloud site until all of these pass:
 
 1. EdgeSuite root checks pass on the isolated v16.50 bench.
 2. Native Desk UI capabilities are detected without changing existing EdgeSuite behaviour.
-3. The Frappe UI 1.0 canary builds with a single Vue runtime.
+3. The pure Frappe UI 1.0 canary builds with a single Vue runtime.
 4. Light and dark mode render correctly.
 5. RetailEdge installs on a separate local v16.50 site and passes its automated tests.
 6. RetailEdge role/persona permission checks pass for read-only, write, create, submit and denied access cases.
@@ -127,10 +135,12 @@ Do not upgrade any client cloud site until all of these pass:
 9. EduEdge and VetEdge local smoke tests pass on the same Framework baseline.
 10. Upgrade and rollback are proven on disposable local site copies before any staging or client deployment.
 
+`@framework/ui` component adoption is not a promotion requirement for Frappe v16.50.0 because it is blocked by the upstream version skew described above. Keep that work deferred until the tested Frappe patch release is compatible with the selected stable Frappe UI version.
+
 ## Consumption rule
 
 Product apps continue to consume EdgeSuite components and adapters. They must not call new Frappe Desk UI APIs or import `frappe-ui` / `@framework/ui` directly unless a product-specific requirement is explicitly approved.
 
-Within EdgeSuite, prefer explicit published `@framework/ui` subpath exports over the package root while validating Frappe v16.50.0. Do not rely on the v16.50.0 root barrel until the upstream editor-style fix is included in the selected Framework release.
+On Frappe v16.50.0, EdgeSuite may delegate suitable primitives to confirmed native Desk APIs and may evaluate `frappe-ui@1.0.0` only through an isolated Vue/Vite surface after the pure canary passes. Do not consume `@framework/ui` components on this exact Framework tag.
 
-EdgeSuite may progressively delegate its internal primitives to Framework-native implementations after local compatibility is proven. Product workflow, permissions, navigation policy, branch context, reporting, printing and smart date behaviour remain owned by EdgeSuite or the product app as appropriate.
+Product workflow, permissions, navigation policy, branch context, reporting, printing and smart date behaviour remain owned by EdgeSuite or the product app as appropriate.
