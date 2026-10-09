@@ -6,7 +6,12 @@ import frappeui from "frappe-ui/vite";
 export default defineConfig({
   plugins: [
     frameworkUI(),
-    frappeui({ frappeProxy: false, jinjaBootData: false, buildConfig: false }),
+    frappeui({
+      frappeProxy: false,
+      jinjaBootData: false,
+      buildConfig: false,
+      lucideIcons: true,
+    }),
     vue(),
   ],
 });
