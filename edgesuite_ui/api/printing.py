@@ -69,6 +69,7 @@ _SCOPE_DOCTYPES = {
 	"Branch": "Branch",
 	"User": "User",
 }
+SUPPORTED_PRINT_TRANSPORTS = {"Serial", "USB"}
 PRINT_CONTEXT_VALIDATOR_HOOK = "edgesuite_print_context_validators"
 
 
@@ -209,9 +210,6 @@ def _safe_profile(profile: dict[str, Any]) -> dict[str, Any]:
 	result = {field: profile.get(field) for field in PRINT_PROFILE_FIELDS}
 	result["product_key"] = _normalize_product_key(profile.get("product_key"))
 	result["text_encoding"] = _normalize(profile.get("text_encoding")) or "ASCII Safe"
-	# Logo raster preprocessing is deliberately outside V1. Existing rows created
-	# before this hardening may still contain print_logo=1, so never expose that
-	# stale flag as an active runtime capability.
 	result["print_logo"] = 0
 	return result
 
@@ -240,7 +238,7 @@ def get_active_print_profiles(
 	user = _require_authenticated_user()
 	purpose = _normalize(purpose) or "Receipt"
 	if purpose != "Receipt":
-		frappe.throw(_("Printing V1 currently supports Receipt profiles only."))
+		frappe.throw(_("Printing currently supports Receipt profiles only."))
 	product_key = _require_product_available(_normalize(product_key))
 	company = _normalize(company)
 	branch = _normalize(branch)
@@ -257,7 +255,7 @@ def get_active_print_profiles(
 		filters={
 			"enabled": 1,
 			"purpose": purpose,
-			"transport": "Serial",
+			"transport": ["in", sorted(SUPPORTED_PRINT_TRANSPORTS)],
 			"protocol": "ESC/POS",
 		},
 		fields=list(PRINT_PROFILE_FIELDS),
@@ -400,6 +398,10 @@ def save_print_profile(profile: dict[str, Any] | str) -> dict[str, Any]:
 		doc = frappe.new_doc("Edge Print Profile")
 		doc.profile_name = profile_name
 
+	transport = _normalize(profile.get("transport")) or "Serial"
+	if transport not in SUPPORTED_PRINT_TRANSPORTS:
+		frappe.throw(_("Printer Transport must be Serial or USB."))
+
 	scope_type = _normalize(profile.get("scope_type")) or "Global"
 	managed_values = {
 		"enabled": int(bool(profile.get("enabled"))),
@@ -409,7 +411,7 @@ def save_print_profile(profile: dict[str, Any] | str) -> dict[str, Any]:
 		"scope_doctype": _SCOPE_DOCTYPES.get(scope_type, ""),
 		"scope_value": _normalize(profile.get("scope_value")),
 		"priority": int(profile.get("priority") or 0),
-		"transport": "Serial",
+		"transport": transport,
 		"protocol": "ESC/POS",
 		"paper_width": int(profile.get("paper_width") or 80),
 		"characters_per_line": int(profile.get("characters_per_line") or 48),
