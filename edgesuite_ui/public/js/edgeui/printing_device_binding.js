@@ -203,6 +203,20 @@ export function createPrinterDeviceManager({
     });
   }
 
+  function bindingMatchesStatus(key, status = {}) {
+    const binding = store.get(key);
+    if (!binding) return false;
+    const statusTransport = String(status?.transport || "").trim().toLowerCase();
+    if (statusTransport && statusTransport !== binding.transport) return false;
+    if (binding.transport === EDGE_PRINT_TRANSPORTS.SERIAL) {
+      return samePortInfo(status?.portInfo || {}, binding.portInfo || {});
+    }
+    if (binding.transport === EDGE_PRINT_TRANSPORTS.USB) {
+      return sameUsbDeviceInfo(status?.deviceInfo || {}, binding.deviceInfo || {});
+    }
+    return false;
+  }
+
   async function requestAndBindSerial(key, requestOptions = {}) {
     const transport = serialTransport();
     const port = await transport.requestDevice(requestOptions);
@@ -301,6 +315,7 @@ export function createPrinterDeviceManager({
     store,
     bindSerial,
     bindUsb,
+    bindingMatchesStatus,
     requestAndBindSerial,
     requestAndBindUsb,
     restoreSerial,
