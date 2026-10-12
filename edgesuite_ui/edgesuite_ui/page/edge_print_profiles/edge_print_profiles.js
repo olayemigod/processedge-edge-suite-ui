@@ -248,11 +248,11 @@ function editorCapabilitySummary() {
   const box = node("div", "edge-print-profile-capability");
   box.append(
     node("strong", "edge-print-profile-capability__title", "Receipt printer"),
-    node("span", "edge-print-profile-capability__value", "Serial / Bluetooth · ESC/POS"),
+    node("span", "edge-print-profile-capability__value", "ESC/POS · Serial or USB"),
     node(
       "p",
       "edge-print-profile-capability__note",
-      "These are the supported V1 capabilities, so they are fixed rather than configurable fields.",
+      "Choose the physical connection under Printer. USB direct access depends on browser and device support; normal system printing remains available as a fallback.",
     ),
   );
   return box;
@@ -396,9 +396,11 @@ frappe.pages[EDGE_PRINT_PROFILES_PAGE].on_page_load = async function onPrintProf
         node("span", "edge-print-profile-row__meta", `${productLabel(state.context, profile.product_key)} · ${scopeLabel(profile)}`),
       );
       const printer = node("div", "edge-print-profile-row__printer");
+      const transport = profile.transport || "Serial";
+      const connectionDetail = transport === "Serial" ? ` · ${profile.baud_rate} baud` : "";
       printer.append(
-        node("span", "edge-print-profile-row__printer-title", `${profile.paper_width}mm · ${profile.text_encoding || "ASCII Safe"}`),
-        node("span", "edge-print-profile-row__printer-meta", `${profile.characters_per_line} chars/line · ${profile.baud_rate} baud`),
+        node("span", "edge-print-profile-row__printer-title", `${transport} · ${profile.paper_width}mm · ${profile.text_encoding || "ASCII Safe"}`),
+        node("span", "edge-print-profile-row__printer-meta", `${profile.characters_per_line} chars/line${connectionDetail}`),
       );
       const status = node(
         "span",
@@ -550,6 +552,22 @@ frappe.pages[EDGE_PRINT_PROFILES_PAGE].on_page_load = async function onPrintProf
     const printerGrid = node("div", "edge-print-profile-grid edge-print-profile-grid--3");
     printer.body.appendChild(printerGrid);
 
+    const transportField = selectField(
+      "Transport",
+      form.transport || "Serial",
+      [
+        { value: "Serial", label: "Serial / Bluetooth" },
+        { value: "USB", label: "USB (direct browser connection)" },
+      ],
+      (value) => {
+        form.transport = value;
+        renderEditor();
+      },
+      {
+        required: true,
+        helper: "Use Serial for COM/USB-serial/Bluetooth serial printers. Use USB only when the browser can claim the printer directly; normal system printing remains the fallback.",
+      },
+    );
     const paper = selectField(
       "Paper Width",
       String(form.paper_width || 80),
@@ -572,12 +590,6 @@ frappe.pages[EDGE_PRINT_PROFILES_PAGE].on_page_load = async function onPrintProf
       (value) => { form.characters_per_line = Number(value || 0); },
       { type: "number", min: 16, max: 80, required: true, helper: "Controls wrapping and column widths on text receipts." },
     );
-    const baud = textField(
-      "Baud Rate",
-      form.baud_rate ?? 9600,
-      (value) => { form.baud_rate = Number(value || 0); },
-      { type: "number", min: 300, max: 1000000, helper: "Serial communication speed. 9600 is a safe starting point for many receipt printers." },
-    );
     const encoding = selectField(
       "Text Encoding",
       form.text_encoding || "ASCII Safe",
@@ -585,7 +597,17 @@ frappe.pages[EDGE_PRINT_PROFILES_PAGE].on_page_load = async function onPrintProf
       (value) => { form.text_encoding = value; },
       { helper: "ASCII Safe is the most portable option and prints the naira sign as NGN. Use UTF-8 only if the printer supports it." },
     );
-    printerGrid.append(paper.shell, chars.shell, baud.shell, encoding.shell);
+    printerGrid.append(transportField.shell, paper.shell, chars.shell);
+    if ((form.transport || "Serial") === "Serial") {
+      const baud = textField(
+        "Baud Rate",
+        form.baud_rate ?? 9600,
+        (value) => { form.baud_rate = Number(value || 0); },
+        { type: "number", min: 300, max: 1000000, helper: "Serial communication speed. 9600 is a safe starting point for many receipt printers." },
+      );
+      printerGrid.appendChild(baud.shell);
+    }
+    printerGrid.appendChild(encoding.shell);
 
     const behaviour = section(
       "Receipt behaviour",
