@@ -1,10 +1,13 @@
 export const EDGE_PRINT_STATES = Object.freeze({
   UNSUPPORTED: "unsupported",
   NOT_CONFIGURED: "not_configured",
+  PERMISSION_REQUIRED: "permission_required",
   DISCONNECTED: "disconnected",
   CONNECTING: "connecting",
   CONNECTED: "connected",
   PRINTING: "printing",
+  PRINTED: "printed",
+  FAILED: "failed",
   ERROR: "error",
 });
 
