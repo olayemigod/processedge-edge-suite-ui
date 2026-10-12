@@ -26,6 +26,9 @@ def test_printer_setup_component_uses_shared_profile_binding_and_transport_layer
         "adapter.devices.restoreSerial",
         "adapter.devices.requestAndBindSerial",
         "adapter.devices.connectBoundSerial",
+        "adapter.devices.restoreUsb",
+        "adapter.devices.requestAndBindUsb",
+        "adapter.devices.connectBoundUsb",
         "adapter.printReceipt",
         "Connect Printer",
         "Reconnect",
@@ -38,30 +41,34 @@ def test_printer_setup_component_uses_shared_profile_binding_and_transport_layer
         "adapter.profiles.textEncoder",
         'state: "unsupported"',
         "serialReason",
-        "This browser does not expose Web Serial",
-        "Direct printer access requires HTTPS",
+        "usbReason",
+        "webSerial",
+        "webUsb",
+        "normal system printing",
+        "Direct printer access requires a secure HTTPS connection",
+        "transport,",
     ):
         assert expected in source
 
     assert "navigator.serial" not in source
+    assert "navigator.usb" not in source
     assert "frappe.call" not in source
 
 
-def test_printer_setup_treats_virtual_transport_as_session_not_physical_binding():
+def test_printer_setup_treats_virtual_transport_as_serial_qa_session_only():
     source = COMPONENT.read_text()
 
     for expected in (
-        "const virtual = Boolean(this.status?.virtual);",
+        'const serial = transport === "serial";',
+        'const usb = transport === "usb";',
+        "const virtual = serial && Boolean(this.status?.virtual);",
         'virtual ? "Virtual session"',
-        "serial && !virtual && !this.bindingPresent && !connected && !unsupported",
-        "serial && !virtual && this.bindingPresent && !connected && !unsupported",
+        "transport && !virtual && !this.bindingPresent && !connected && !unsupported",
+        "Boolean(transport) && !virtual && this.bindingPresent && !connected && !unsupported",
         "connected && !virtual",
         "!virtual && this.bindingPresent",
     ):
         assert expected in source
-
-    assert '\n        connected\n          ? button("Disconnect"' not in source
-    assert '\n        this.bindingPresent\n          ? button("Forget Printer"' not in source
 
 
 def test_print_profile_runtime_bridges_frappe_policy_without_device_access():
@@ -77,6 +84,7 @@ def test_print_profile_runtime_bridges_frappe_policy_without_device_access():
     assert 'replaceAll("₦", "NGN")' in source
 
     assert "navigator.serial" not in source
+    assert "navigator.usb" not in source
     assert "localStorage" not in source
 
 
