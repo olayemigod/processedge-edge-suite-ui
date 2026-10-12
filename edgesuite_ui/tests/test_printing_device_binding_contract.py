@@ -10,6 +10,7 @@ def test_device_binding_is_local_and_does_not_persist_browser_device_objects():
     for expected in (
         "createPrinterBindingStore",
         "createPrinterDeviceManager",
+        "bindingMatchesStatus",
         "requestAndBindSerial",
         "restoreSerial",
         "connectBoundSerial",
@@ -55,3 +56,11 @@ def test_ambiguous_authorized_usb_devices_fail_closed():
     assert "safeUsbDeviceInfo" in source
     assert "sameUsbDeviceInfo" in source
     assert "transport.useDevice(matches[0])" in source
+
+
+def test_bound_device_status_matching_stays_transport_aware():
+    source = BINDING.read_text()
+
+    assert "statusTransport && statusTransport !== binding.transport" in source
+    assert "samePortInfo(status?.portInfo || {}, binding.portInfo || {})" in source
+    assert "sameUsbDeviceInfo(status?.deviceInfo || {}, binding.deviceInfo || {})" in source
