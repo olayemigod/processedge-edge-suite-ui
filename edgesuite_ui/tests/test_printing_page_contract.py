@@ -59,7 +59,9 @@ def test_devices_and_printing_page_uses_edgesuite_page_primitives_and_shared_com
 
     for forbidden in (
         "navigator.serial",
+        "navigator.usb",
         "requestPort(",
+        "requestDevice(",
         "ESC/POS",
         "RetailEdge",
         "VetEdge",
@@ -147,7 +149,11 @@ def test_print_profile_manager_uses_edgesuite_ui_and_hides_technical_product_key
         "Create Print Profile",
         '"Product"',
         "No product selected (shared policy)",
-        "Serial / Bluetooth · ESC/POS",
+        "ESC/POS · Serial or USB",
+        '"Transport"',
+        "Serial / Bluetooth",
+        "USB (direct browser connection)",
+        "normal system printing remains the fallback",
         "get_print_profile_manager_context",
         "search_print_scope_values",
         "save_print_profile",
@@ -162,7 +168,7 @@ def test_print_profile_manager_uses_edgesuite_ui_and_hides_technical_product_key
     assert "page.body.appendChild(chrome.root)" not in source
 
 
-def test_print_profile_manager_backend_defaults_product_blank_and_requires_system_manager():
+def test_print_profile_manager_backend_defaults_product_blank_and_serial_but_accepts_usb():
     source = PRINTING_API.read_text()
 
     for expected in (
@@ -174,6 +180,7 @@ def test_print_profile_manager_backend_defaults_product_blank_and_requires_syste
         '"product_key": ""',
         '"purpose": "Receipt"',
         '"transport": "Serial"',
+        'SUPPORTED_PRINT_TRANSPORTS = {"Serial", "USB"}',
         '"protocol": "ESC/POS"',
     ):
         assert expected in source
