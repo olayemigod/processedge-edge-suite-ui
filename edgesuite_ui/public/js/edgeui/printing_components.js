@@ -30,6 +30,21 @@ function button(label, onClick, { primary = false, disabled = false, danger = fa
   );
 }
 
+function directTransport(profile) {
+  const transport = String(profile?.transport || "").toLowerCase();
+  return ["serial", "usb"].includes(transport) ? transport : "";
+}
+
+function capabilityFor(capabilities, transport) {
+  if (transport === "serial") {
+    return { supported: Boolean(capabilities.webSerial), reason: capabilities.serialReason };
+  }
+  if (transport === "usb") {
+    return { supported: Boolean(capabilities.webUsb), reason: capabilities.usbReason };
+  }
+  return { supported: false, reason: "unsupported_transport" };
+}
+
 export const EdgePrinterSetupCard = defineComponent({
   name: "EdgePrinterSetupCard",
   props: {
@@ -94,7 +109,8 @@ export const EdgePrinterSetupCard = defineComponent({
           return null;
         }
 
-        if (this.profile.transport !== "serial") {
+        const transport = directTransport(this.profile);
+        if (!transport) {
           this.status = {
             state: "not_configured",
             connected: false,
@@ -107,23 +123,26 @@ export const EdgePrinterSetupCard = defineComponent({
         }
 
         const capabilities = adapter.detectCapabilities?.() || {};
-        if (!capabilities.webSerial) {
+        const capability = capabilityFor(capabilities, transport);
+        if (!capability.supported) {
           this.bindingPresent = false;
           this.status = {
             state: "unsupported",
             connected: false,
             configured: true,
             supported: false,
-            transport: "serial",
-            reason: capabilities.serialReason || "api_unavailable",
+            transport,
+            reason: capability.reason || "api_unavailable",
           };
           this.emitStatus();
           return this.profile;
         }
 
-        const restored = await adapter.devices.restoreSerial(this.profile.name);
+        const restored = transport === "usb"
+          ? await adapter.devices.restoreUsb(this.profile.name)
+          : await adapter.devices.restoreSerial(this.profile.name);
         this.bindingPresent = Boolean(restored);
-        this.status = adapter.getStatus("serial");
+        this.status = adapter.getStatus(transport);
         this.emitStatus();
         return this.profile;
       } catch (error) {
@@ -137,14 +156,19 @@ export const EdgePrinterSetupCard = defineComponent({
       const adapter = this.getAdapter();
       if (!this.profile) await this.refresh();
       if (!this.profile) throw new Error("No active print profile is configured for this context.");
-      if (this.profile.transport !== "serial") {
-        throw new Error("This print profile does not use a directly connected serial printer.");
+      const transport = directTransport(this.profile);
+      if (!transport) {
+        throw new Error("This print profile does not use a directly connected printer.");
       }
       const capabilities = adapter.detectCapabilities?.() || {};
-      if (!capabilities.webSerial) {
+      const capability = capabilityFor(capabilities, transport);
+      if (!capability.supported) {
+        if (capability.reason === "insecure_context") {
+          throw new Error("Direct printer access requires a secure HTTPS connection.");
+        }
         throw new Error(
-          capabilities.serialReason === "insecure_context"
-            ? "Direct printer access requires a secure HTTPS connection."
+          transport === "usb"
+            ? "This browser cannot connect directly to USB printers. Use normal system printing or a supported browser."
             : "This browser cannot access serial or Bluetooth receipt printers from the web.",
         );
       }
@@ -152,10 +176,14 @@ export const EdgePrinterSetupCard = defineComponent({
       this.busy = true;
       this.error = "";
       try {
-        await adapter.devices.requestAndBindSerial(this.profile.name);
+        if (transport === "usb") {
+          await adapter.devices.requestAndBindUsb(this.profile.name);
+        } else {
+          await adapter.devices.requestAndBindSerial(this.profile.name);
+        }
         this.bindingPresent = true;
         this.status = await adapter.connect(
-          "serial",
+          transport,
           adapter.profiles.connectionOptions(this.profile),
         );
         this.emitStatus();
@@ -171,14 +199,21 @@ export const EdgePrinterSetupCard = defineComponent({
       const adapter = this.getAdapter();
       if (!this.profile) await this.refresh();
       if (!this.profile) throw new Error("No active print profile is configured for this context.");
+      const transport = directTransport(this.profile);
+      if (!transport) throw new Error("This print profile does not use a directly connected printer.");
 
       this.busy = true;
       this.error = "";
       try {
-        const restored = await adapter.devices.connectBoundSerial(
-          this.profile.name,
-          adapter.profiles.connectionOptions(this.profile),
-        );
+        const restored = transport === "usb"
+          ? await adapter.devices.connectBoundUsb(
+              this.profile.name,
+              adapter.profiles.connectionOptions(this.profile),
+            )
+          : await adapter.devices.connectBoundSerial(
+              this.profile.name,
+              adapter.profiles.connectionOptions(this.profile),
+            );
         this.bindingPresent = true;
         this.status = restored.status;
         this.emitStatus();
@@ -192,10 +227,11 @@ export const EdgePrinterSetupCard = defineComponent({
     },
     async disconnect() {
       const adapter = this.getAdapter();
+      const transport = directTransport(this.profile) || "serial";
       this.busy = true;
       this.error = "";
       try {
-        this.status = await adapter.disconnect("serial");
+        this.status = await adapter.disconnect(transport);
         this.emitStatus();
         return this.status;
       } catch (error) {
@@ -208,13 +244,14 @@ export const EdgePrinterSetupCard = defineComponent({
     async forget() {
       const adapter = this.getAdapter();
       if (!this.profile) return false;
+      const transport = directTransport(this.profile) || "serial";
       this.busy = true;
       this.error = "";
       try {
-        if (this.status.connected) await adapter.disconnect("serial");
+        if (this.status.connected) await adapter.disconnect(transport);
         const removed = adapter.devices.forget(this.profile.name);
         this.bindingPresent = false;
-        this.status = adapter.getStatus("serial");
+        this.status = adapter.getStatus(transport);
         this.emitStatus();
         return removed;
       } catch (error) {
@@ -228,6 +265,8 @@ export const EdgePrinterSetupCard = defineComponent({
       const adapter = this.getAdapter();
       if (!this.profile) await this.refresh();
       if (!this.profile) throw new Error("No active print profile is configured for this context.");
+      const transport = directTransport(this.profile);
+      if (!transport) throw new Error("This print profile does not use a directly connected printer.");
       if (!this.status.connected) await this.reconnect();
 
       this.busy = true;
@@ -243,7 +282,7 @@ export const EdgePrinterSetupCard = defineComponent({
             text: `${this.profile.paperWidth}mm · ${this.profile.charactersPerLine} chars/line`,
             align: "center",
           },
-          { type: "text", text: "Connection: OK", align: "center", bold: true },
+          { type: "text", text: `Connection: ${transport.toUpperCase()} OK`, align: "center", bold: true },
           {
             type: "text",
             text: `Encoding: ${this.profile.textEncoding || "ascii-safe"}`,
@@ -265,9 +304,12 @@ export const EdgePrinterSetupCard = defineComponent({
             blocks,
             metadata: { purpose: "diagnostic" },
           },
-          { encodeText: adapter.profiles.textEncoder(this.profile) },
+          {
+            transport,
+            encodeText: adapter.profiles.textEncoder(this.profile),
+          },
         );
-        this.status = adapter.getStatus("serial");
+        this.status = adapter.getStatus(transport);
         this.emitStatus();
         this.$emit("printed", result);
         return result;
@@ -283,10 +325,12 @@ export const EdgePrinterSetupCard = defineComponent({
     const profile = this.profile;
     const connected = Boolean(this.status?.connected);
     const configured = Boolean(profile);
-    const serial = profile?.transport === "serial";
-    const virtual = Boolean(this.status?.virtual);
-    const unsupported = serial && this.status?.state === "unsupported";
-    const canReconnect = serial && !virtual && this.bindingPresent && !connected && !unsupported;
+    const transport = directTransport(profile);
+    const serial = transport === "serial";
+    const usb = transport === "usb";
+    const virtual = serial && Boolean(this.status?.virtual);
+    const unsupported = Boolean(transport) && this.status?.state === "unsupported";
+    const canReconnect = Boolean(transport) && !virtual && this.bindingPresent && !connected && !unsupported;
     const disabled = this.loading || this.busy;
 
     return h("section", { class: "edge-printer-setup edge-card" }, [
@@ -332,7 +376,7 @@ export const EdgePrinterSetupCard = defineComponent({
         : null,
       h("div", { class: "edge-printer-setup__actions" }, [
         button("Refresh", () => this.refresh().catch(() => {}), { disabled }),
-        serial && !virtual && !this.bindingPresent && !connected && !unsupported
+        transport && !virtual && !this.bindingPresent && !connected && !unsupported
           ? button("Connect Printer", () => this.connect().catch(() => {}), { primary: true, disabled })
           : null,
         canReconnect
@@ -354,15 +398,23 @@ export const EdgePrinterSetupCard = defineComponent({
             { class: "edge-printer-setup__note", role: "status" },
             this.status?.reason === "insecure_context"
               ? "Direct printer access requires HTTPS. Open this site through its secure address and try again."
-              : "This browser does not expose Web Serial. Use a supported browser or a native printing bridge.",
+              : usb
+                ? "This browser cannot connect directly to USB printers. Use normal system printing or a supported browser."
+                : "This browser cannot access serial or Bluetooth receipt printers from the web.",
           )
-        : profile && !serial
+        : profile && !transport
           ? h(
               "p",
               { class: "edge-printer-setup__note" },
               "This profile uses system/browser printing and does not require a direct device binding.",
             )
-          : null,
+          : usb
+            ? h(
+                "p",
+                { class: "edge-printer-setup__note" },
+                "USB access depends on the browser and device driver. If direct USB access is unavailable, use normal system printing.",
+              )
+            : null,
     ]);
   },
 });

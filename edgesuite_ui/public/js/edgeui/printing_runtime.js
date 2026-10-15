@@ -5,6 +5,7 @@ import {
 } from "./printing_contract";
 import { detectPrintCapabilities } from "./printing_capabilities";
 import { createWebSerialTransport } from "./printing_serial_transport";
+import { createWebUsbTransport } from "./printing_usb_transport";
 import { createVirtualPrinterTransport } from "./printing_virtual_transport";
 import { normalizeReceiptDocument } from "./printing_document";
 import { edgeEscPos, encodeEscPosDocument } from "./printing_escpos";
@@ -97,6 +98,10 @@ export function createPrintManager({ target = globalThis } = {}) {
   transports.set(
     EDGE_PRINT_TRANSPORTS.SERIAL,
     createWebSerialTransport({ target }),
+  );
+  transports.set(
+    EDGE_PRINT_TRANSPORTS.USB,
+    createWebUsbTransport({ target }),
   );
 
   function registerTransport(name, transport, { replace = false } = {}) {
@@ -264,6 +269,8 @@ export function createEdgePrintAdapter({ target = globalThis } = {}) {
       createPrintManager({ ...options, target: options.target || target }),
     createSerialTransport: (options = {}) =>
       createWebSerialTransport({ ...options, target: options.target || target }),
+    createUsbTransport: (options = {}) =>
+      createWebUsbTransport({ ...options, target: options.target || target }),
     createVirtualPrinterTransport: (options = {}) =>
       createVirtualPrinterTransport({ ...options, target: options.target || target }),
     createBindingStore: (options = {}) =>

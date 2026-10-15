@@ -107,11 +107,12 @@
   },
   {
    "default": "Serial",
+   "description": "Serial covers USB-serial and Bluetooth serial printers. USB uses direct browser USB access where the browser and device permit it.",
    "fieldname": "transport",
    "fieldtype": "Select",
    "in_list_view": 1,
    "label": "Transport",
-   "options": "Serial",
+   "options": "Serial\nUSB",
    "reqd": 1
   },
   {

@@ -31,6 +31,38 @@ function samePortInfo(left = {}, right = {}) {
   return compared.every((key) => left[key] === right[key]);
 }
 
+function safeUsbDeviceInfo(device) {
+  if (!device || typeof device !== "object") return Object.freeze({});
+  const normalized = {};
+  if (device.vendorId !== undefined && device.vendorId !== null) {
+    normalized.vendorId = Number(device.vendorId);
+  }
+  if (device.productId !== undefined && device.productId !== null) {
+    normalized.productId = Number(device.productId);
+  }
+  if (device.serialNumber) normalized.serialNumber = String(device.serialNumber);
+  if (device.manufacturerName) normalized.manufacturerName = String(device.manufacturerName);
+  if (device.productName) normalized.productName = String(device.productName);
+  return Object.freeze(normalized);
+}
+
+function sameUsbDeviceInfo(left = {}, right = {}) {
+  if (
+    left.vendorId === undefined ||
+    left.productId === undefined ||
+    right.vendorId === undefined ||
+    right.productId === undefined
+  ) {
+    return false;
+  }
+  if (Number(left.vendorId) !== Number(right.vendorId)) return false;
+  if (Number(left.productId) !== Number(right.productId)) return false;
+  if (left.serialNumber || right.serialNumber) {
+    return Boolean(left.serialNumber && right.serialNumber && left.serialNumber === right.serialNumber);
+  }
+  return true;
+}
+
 function profileKey(value) {
   const normalized = String(value || "").trim();
   if (!normalized) throw new TypeError("Printer binding profile key is required.");
@@ -74,10 +106,20 @@ export function createPrinterBindingStore({
     const normalizedKey = profileKey(key);
     const transport = String(binding.transport || EDGE_PRINT_TRANSPORTS.SERIAL).toLowerCase();
     const portInfo = Object.freeze({ ...(binding.portInfo || {}) });
+    const deviceInfo = Object.freeze({ ...(binding.deviceInfo || {}) });
     if (transport === EDGE_PRINT_TRANSPORTS.SERIAL && !Object.keys(portInfo).length) {
       throw new EdgePrintError(
         "SERIAL_BINDING_UNIDENTIFIABLE",
         "This browser did not expose enough printer identity information for automatic reconnection.",
+      );
+    }
+    if (
+      transport === EDGE_PRINT_TRANSPORTS.USB &&
+      (deviceInfo.vendorId === undefined || deviceInfo.productId === undefined)
+    ) {
+      throw new EdgePrintError(
+        "USB_BINDING_UNIDENTIFIABLE",
+        "This browser did not expose enough USB printer identity information for automatic reconnection.",
       );
     }
     const payload = storage.readAll();
@@ -86,6 +128,7 @@ export function createPrinterBindingStore({
       profileKey: normalizedKey,
       transport,
       portInfo,
+      deviceInfo,
       updatedAt: new Date().toISOString(),
     });
     payload[normalizedKey] = saved;
@@ -96,7 +139,13 @@ export function createPrinterBindingStore({
   function get(key) {
     const normalizedKey = profileKey(key);
     const value = storage.readAll()[normalizedKey];
-    return value ? Object.freeze({ ...value, portInfo: Object.freeze({ ...(value.portInfo || {}) }) }) : null;
+    return value
+      ? Object.freeze({
+          ...value,
+          portInfo: Object.freeze({ ...(value.portInfo || {}) }),
+          deviceInfo: Object.freeze({ ...(value.deviceInfo || {}) }),
+        })
+      : null;
   }
 
   function remove(key) {
@@ -110,7 +159,11 @@ export function createPrinterBindingStore({
 
   function list() {
     return Object.values(storage.readAll()).map((value) =>
-      Object.freeze({ ...value, portInfo: Object.freeze({ ...(value.portInfo || {}) }) }),
+      Object.freeze({
+        ...value,
+        portInfo: Object.freeze({ ...(value.portInfo || {}) }),
+        deviceInfo: Object.freeze({ ...(value.deviceInfo || {}) }),
+      }),
     );
   }
 
@@ -130,6 +183,10 @@ export function createPrinterDeviceManager({
     return printManager.getTransport(EDGE_PRINT_TRANSPORTS.SERIAL);
   }
 
+  function usbTransport() {
+    return printManager.getTransport(EDGE_PRINT_TRANSPORTS.USB);
+  }
+
   function bindSerial(key, port) {
     const info = safePortInfo(port);
     return store.save(key, {
@@ -138,11 +195,40 @@ export function createPrinterDeviceManager({
     });
   }
 
+  function bindUsb(key, device) {
+    const info = safeUsbDeviceInfo(device);
+    return store.save(key, {
+      transport: EDGE_PRINT_TRANSPORTS.USB,
+      deviceInfo: info,
+    });
+  }
+
+  function bindingMatchesStatus(key, status = {}) {
+    const binding = store.get(key);
+    if (!binding) return false;
+    const statusTransport = String(status?.transport || "").trim().toLowerCase();
+    if (statusTransport && statusTransport !== binding.transport) return false;
+    if (binding.transport === EDGE_PRINT_TRANSPORTS.SERIAL) {
+      return samePortInfo(status?.portInfo || {}, binding.portInfo || {});
+    }
+    if (binding.transport === EDGE_PRINT_TRANSPORTS.USB) {
+      return sameUsbDeviceInfo(status?.deviceInfo || {}, binding.deviceInfo || {});
+    }
+    return false;
+  }
+
   async function requestAndBindSerial(key, requestOptions = {}) {
     const transport = serialTransport();
     const port = await transport.requestDevice(requestOptions);
     const binding = bindSerial(key, port);
     return Object.freeze({ port, binding });
+  }
+
+  async function requestAndBindUsb(key, requestOptions = {}) {
+    const transport = usbTransport();
+    const device = await transport.requestDevice(requestOptions);
+    const binding = bindUsb(key, device);
+    return Object.freeze({ device, binding });
   }
 
   async function restoreSerial(key) {
@@ -170,6 +256,33 @@ export function createPrinterDeviceManager({
     return Object.freeze({ port: matches[0], binding });
   }
 
+  async function restoreUsb(key) {
+    const binding = store.get(key);
+    if (!binding) return null;
+    if (binding.transport !== EDGE_PRINT_TRANSPORTS.USB) {
+      throw new EdgePrintError(
+        "PRINT_BINDING_TRANSPORT_MISMATCH",
+        `Printer binding ${binding.profileKey} is not a USB binding.`,
+      );
+    }
+
+    const transport = usbTransport();
+    const devices = await transport.authorizedDevices();
+    const matches = devices.filter((device) =>
+      sameUsbDeviceInfo(safeUsbDeviceInfo(device), binding.deviceInfo),
+    );
+    if (matches.length > 1) {
+      throw new EdgePrintError(
+        "USB_BINDING_AMBIGUOUS",
+        "More than one authorized USB printer matches this device binding. Select the printer again.",
+        { details: { matchCount: matches.length } },
+      );
+    }
+    if (!matches.length) return null;
+    transport.useDevice(matches[0]);
+    return Object.freeze({ device: matches[0], binding });
+  }
+
   async function connectBoundSerial(key, options = {}) {
     const restored = await restoreSerial(key);
     if (!restored) {
@@ -182,6 +295,18 @@ export function createPrinterDeviceManager({
     return Object.freeze({ ...restored, status });
   }
 
+  async function connectBoundUsb(key, options = {}) {
+    const restored = await restoreUsb(key);
+    if (!restored) {
+      throw new EdgePrintError(
+        "USB_BOUND_DEVICE_UNAVAILABLE",
+        "The saved USB printer is not currently authorized or available on this device.",
+      );
+    }
+    const status = await printManager.connect(EDGE_PRINT_TRANSPORTS.USB, options);
+    return Object.freeze({ ...restored, status });
+  }
+
   function forget(key) {
     return store.remove(key);
   }
@@ -189,12 +314,19 @@ export function createPrinterDeviceManager({
   return Object.freeze({
     store,
     bindSerial,
+    bindUsb,
+    bindingMatchesStatus,
     requestAndBindSerial,
+    requestAndBindUsb,
     restoreSerial,
+    restoreUsb,
     connectBoundSerial,
+    connectBoundUsb,
     forget,
   });
 }
 
 export const printerPortInfo = safePortInfo;
 export const printerPortInfoMatches = samePortInfo;
+export const printerUsbDeviceInfo = safeUsbDeviceInfo;
+export const printerUsbDeviceInfoMatches = sameUsbDeviceInfo;

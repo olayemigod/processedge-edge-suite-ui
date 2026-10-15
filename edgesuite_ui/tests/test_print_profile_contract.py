@@ -50,7 +50,9 @@ def test_edge_print_profile_is_shared_policy_not_device_permission_storage():
 
     assert fields["purpose"]["options"] == "Receipt"
     assert fields["product_key"]["fieldtype"] == "Autocomplete"
-    assert fields["transport"]["options"] == "Serial"
+    assert fields["transport"]["options"] == "Serial\nUSB"
+    assert fields["transport"]["default"] == "Serial"
+    assert fields["baud_rate"]["depends_on"] == "eval:doc.transport == 'Serial'"
     assert fields["protocol"]["options"] == "ESC/POS"
     assert fields["scope_value"]["fieldtype"] == "Dynamic Link"
     assert fields["scope_value"]["options"] == "scope_doctype"
@@ -91,6 +93,8 @@ def test_profile_resolution_is_authenticated_product_and_scope_aware():
         '"User": 400',
         "get_active_print_profiles",
         "resolve_print_profile",
+        'SUPPORTED_PRINT_TRANSPORTS = {"Serial", "USB"}',
+        '"transport": ["in", sorted(SUPPORTED_PRINT_TRANSPORTS)]',
     ):
         assert expected in source
 
@@ -109,7 +113,7 @@ def test_profile_controller_validates_physical_print_settings():
 
     for expected in (
         'SUPPORTED_PURPOSE = "Receipt"',
-        'SUPPORTED_TRANSPORT = "Serial"',
+        'SUPPORTED_TRANSPORTS = {"Serial", "USB"}',
         'SUPPORTED_PROTOCOL = "ESC/POS"',
         "_normalize_product_key",
         "_validate_effective_rank_is_unique",
@@ -117,6 +121,7 @@ def test_profile_controller_validates_physical_print_settings():
         "must belong to a product",
         "Paper Width must be 58 or 80 mm.",
         "Characters per Line must be between 16 and 80.",
+        'if self.transport == "Serial":',
         "Baud Rate must be between 300 and 1000000.",
         "Feed Lines must be between 0 and 20.",
         "Copies must be between 1 and 10.",
@@ -132,6 +137,15 @@ def test_profile_manager_sets_dynamic_link_controller_before_save():
     assert '"scope_type": scope_type' in source
     assert '"scope_doctype": _SCOPE_DOCTYPES.get(scope_type, "")' in source
     assert source.index('"scope_doctype": _SCOPE_DOCTYPES.get(scope_type, "")') < source.index("doc.save()")
+
+
+def test_profile_manager_accepts_only_governed_transports_and_defaults_to_serial():
+    source = API.read_text()
+
+    assert 'transport = _normalize(profile.get("transport")) or "Serial"' in source
+    assert "if transport not in SUPPORTED_PRINT_TRANSPORTS" in source
+    assert '"transport": transport' in source
+    assert '"transport": "Serial"' in source
 
 
 def test_print_profile_form_uses_smart_context_and_width_defaults():

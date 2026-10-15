@@ -1,22 +1,22 @@
 export function detectPrintCapabilities(target = globalThis) {
-  const serial = target?.navigator?.serial || null;
-  const secureContext = target?.isSecureContext === true;
-  const serialRequest = typeof serial?.requestPort === "function";
-  const serialAuthorizedPorts = typeof serial?.getPorts === "function";
-
-  const webSerial = secureContext && serialRequest && serialAuthorizedPorts;
-  const serialReason = !secureContext
-    ? "insecure_context"
-    : !serialRequest || !serialAuthorizedPorts
-      ? "api_unavailable"
-      : "available";
+  const secure = Boolean(target?.isSecureContext);
+  const serial = target?.navigator?.serial;
+  const usb = target?.navigator?.usb;
+  const hasSerial = Boolean(serial);
+  const hasUsb = Boolean(usb);
+  const webSerial = secure && hasSerial;
+  const webUsb = secure && hasUsb;
 
   return Object.freeze({
-    secureContext,
+    secureContext: secure,
     webSerial,
-    serialReason,
-    serialRequest,
-    serialAuthorizedPorts,
+    webUsb,
+    serialRequest: webSerial && typeof serial.requestPort === "function",
+    serialAuthorizedPorts: webSerial && typeof serial.getPorts === "function",
+    usbRequest: webUsb && typeof usb.requestDevice === "function",
+    usbAuthorizedDevices: webUsb && typeof usb.getDevices === "function",
     systemPrint: typeof target?.print === "function",
+    serialReason: webSerial ? null : secure ? "api_unavailable" : "insecure_context",
+    usbReason: webUsb ? null : secure ? "api_unavailable" : "insecure_context",
   });
 }
