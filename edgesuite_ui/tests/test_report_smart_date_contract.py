@@ -124,6 +124,13 @@ def test_smart_date_picker_is_viewport_aware_and_collision_aware():
 	assert "max-width: calc(100vw - 1rem)" in css
 
 
+def test_smart_date_scroll_repositioning_cannot_progressively_shrink_picker_width():
+	runtime = DROPDOWN_RUNTIME.read_text()
+	assert "const desiredWidth = Math.min(SMART_DATE_MAX_WIDTH_PX, availableViewportWidth);" in runtime
+	assert "picker.scrollWidth" not in runtime
+	assert 'globalObject.addEventListener?.("scroll", schedule, true)' in runtime
+
+
 def test_smart_date_field_cannot_force_filter_grid_overflow():
 	css = SMART_DATE_CSS.read_text()
 	assert ".edge-smart-date {" in css
