@@ -7,6 +7,7 @@ const FLIP_THRESHOLD_PX = 160;
 
 const SMART_DATE_GAP_PX = 7;
 const SMART_DATE_MAX_WIDTH_PX = 560;
+const SMART_DATE_RESPONSIVE_BREAKPOINT_PX = 760;
 const SMART_DATE_MAX_HEIGHT_PX = 672;
 const SMART_DATE_MIN_USABLE_HEIGHT_PX = 120;
 const SMART_DATE_MIN_USABLE_WIDTH_PX = 280;
@@ -137,11 +138,11 @@ function positionSmartDate(root, globalObject) {
   const rootRect = root.getBoundingClientRect();
   const triggerRect = trigger.getBoundingClientRect();
   const availableViewportWidth = Math.max(0, width - VIEWPORT_MARGIN_PX * 2);
-  // Keep the picker width independent of its current rendered width. Scroll-driven
-  // repositioning can add/remove a vertical scrollbar; measuring scrollWidth or
-  // offsetWidth after the previous inline width creates a feedback loop that
-  // progressively narrows the picker on every scroll event.
-  const desiredWidth = Math.min(SMART_DATE_MAX_WIDTH_PX, availableViewportWidth);
+  const responsiveWidth = triggerRect.width || rootRect.width || availableViewportWidth;
+  const desiredWidth =
+    width <= SMART_DATE_RESPONSIVE_BREAKPOINT_PX
+      ? Math.min(availableViewportWidth, responsiveWidth)
+      : Math.min(SMART_DATE_MAX_WIDTH_PX, availableViewportWidth);
   const desiredHeight = Math.min(
     SMART_DATE_MAX_HEIGHT_PX,
     picker.scrollHeight || picker.offsetHeight || SMART_DATE_MAX_HEIGHT_PX,
