@@ -128,6 +128,7 @@ def test_smart_date_scroll_repositioning_keeps_width_stable_and_responsive():
 	runtime = DROPDOWN_RUNTIME.read_text()
 	css = SMART_DATE_CSS.read_text()
 	assert "const SMART_DATE_RESPONSIVE_BREAKPOINT_PX = 760;" in runtime
+	assert "globalObject.matchMedia(responsiveQuery).matches" in runtime
 	assert "width <= SMART_DATE_RESPONSIVE_BREAKPOINT_PX" in runtime
 	assert "Math.min(availableViewportWidth, responsiveWidth)" in runtime
 	assert "Math.min(SMART_DATE_MAX_WIDTH_PX, availableViewportWidth)" in runtime
