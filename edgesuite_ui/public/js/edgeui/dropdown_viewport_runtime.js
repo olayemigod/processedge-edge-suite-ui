@@ -139,10 +139,14 @@ function positionSmartDate(root, globalObject) {
   const triggerRect = trigger.getBoundingClientRect();
   const availableViewportWidth = Math.max(0, width - VIEWPORT_MARGIN_PX * 2);
   const responsiveWidth = triggerRect.width || rootRect.width || availableViewportWidth;
-  const desiredWidth =
-    width <= SMART_DATE_RESPONSIVE_BREAKPOINT_PX
-      ? Math.min(availableViewportWidth, responsiveWidth)
-      : Math.min(SMART_DATE_MAX_WIDTH_PX, availableViewportWidth);
+  const responsiveQuery = `(max-width: ${SMART_DATE_RESPONSIVE_BREAKPOINT_PX}px)`;
+  const responsiveMode =
+    typeof globalObject?.matchMedia === "function"
+      ? globalObject.matchMedia(responsiveQuery).matches
+      : width <= SMART_DATE_RESPONSIVE_BREAKPOINT_PX;
+  const desiredWidth = responsiveMode
+    ? Math.min(availableViewportWidth, responsiveWidth)
+    : Math.min(SMART_DATE_MAX_WIDTH_PX, availableViewportWidth);
   const desiredHeight = Math.min(
     SMART_DATE_MAX_HEIGHT_PX,
     picker.scrollHeight || picker.offsetHeight || SMART_DATE_MAX_HEIGHT_PX,
