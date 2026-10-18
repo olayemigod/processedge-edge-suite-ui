@@ -21,6 +21,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
         with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
       - uses: actions/setup-python@v6
         with:
@@ -111,6 +112,8 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - uses: actions/setup-node@v5
         with:
           node-version: "24"
@@ -126,6 +129,8 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - uses: actions/setup-node@v5
         with:
           node-version: "24"
@@ -141,7 +146,7 @@ jobs:
 
   frappe-v16:
     name: Frappe v16 integration
-    if: github.event_name == 'workflow_dispatch' || github.head_ref == 'qa/edgesuite-ui-full-implementation-2026-08-29'
+    if: github.event_name == 'workflow_dispatch' || github.head_ref == 'qa/edgesuite-ui-full-implementation-2026-08-29' || github.head_ref == 'agent/frappe-v1650-ui-canary'
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     services:
@@ -167,6 +172,8 @@ jobs:
           --health-retries=10
     steps:
       - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - uses: actions/setup-python@v6
         with:
           python-version: "3.14"
@@ -184,17 +191,19 @@ jobs:
       - name: Create clean Frappe v16 bench
         run: |
           bench init \
-            --frappe-branch version-16 \
+            --frappe-branch v16.52.0 \
             --python "$(command -v python)" \
             --skip-assets \
             --skip-redis-config-generation \
             frappe-bench
           cd frappe-bench
+          test "$(git -C apps/frappe rev-parse HEAD)" = "4515014c87ece6cb20ee91d2cfb121c5cbd1ff4a"
           bench set-config -g db_host 127.0.0.1
           bench set-config -g redis_cache redis://127.0.0.1:6379
           bench set-config -g redis_queue redis://127.0.0.1:6379
           bench set-config -g redis_socketio redis://127.0.0.1:6379
           bench get-app --skip-assets "file://$GITHUB_WORKSPACE"
+          test "$(git -C apps/edgesuite_ui rev-parse HEAD)" = "${{ github.event.pull_request.head.sha || github.sha }}"
       - name: Create site and install EdgeSuite UI only
         working-directory: frappe-bench
         run: |
