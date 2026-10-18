@@ -168,3 +168,5 @@ export * from "./edgeui/theme_runtime";
 export * from "./edgeui/workflow_save_bridge";
 
 export default runtime;
+
+export * from "./edgeui/shell_information_bar";
