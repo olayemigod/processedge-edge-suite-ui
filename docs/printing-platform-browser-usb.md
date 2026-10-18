@@ -36,3 +36,7 @@ Browser USB support does not guarantee that every Windows USB printer queue can 
 - **Serial / Bluetooth** — Web Serial, including USB-serial and Bluetooth serial devices.
 - **USB (direct browser connection)** — WebUSB with explicit user selection and ESC/POS transfer to a writable OUT endpoint.
 - **Normal system printing** — browser/operating-system print dialog; separate from direct device transport and retained as fallback.
+
+## Reconciled v16 candidate
+
+This feature is stacked on EdgeSuite PR #43 at `749b74ce974f7983a79ba33f8943184c6376869a`, preserving its Frappe 16.52.0 / ERPNext 16.51.1 compatibility, native Desk adapters/dock boundaries, responsive SmartDate and shared information bar. The existing serial/WebUSB transport tests, browser suite, production build and Frappe integration gates must pass again on the reconciled head. RetailEdge PR #213 consumes that exact shared head on top of PR #226. Existing physical Bluetooth/Serial success does not accept direct USB access, driver-claim fallback or 80mm readability; those checks remain required before promotion. No merchant runtime is switched by this branch reconciliation.

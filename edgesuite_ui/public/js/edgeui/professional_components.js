@@ -1,4 +1,5 @@
 import { defineComponent, h } from "vue";
+import { EdgeShellInformationBar } from "./shell_information_bar";
 
 import { EdgeNotificationBell } from "./components";
 import { edgeIconMarkup, productInitials } from "./icons";
@@ -109,6 +110,7 @@ export const EdgeAppShell = defineComponent({
   name: "EdgeAppShell",
   props: {
     product: { type: String, default: "" },
+    communication: { type: Object, default: null },
     compact: { type: Boolean, default: false },
     menuItems: { type: Array, default: () => [] },
     activeRoute: { type: String, default: "" },
@@ -867,6 +869,7 @@ export const EdgeAppShell = defineComponent({
         "data-edge-product": this.product || undefined,
       },
       [
+        h(EdgeShellInformationBar, { communication: this.communication }),
         topbar,
         h("div", { class: "edge-shell-body" }, [
           slots.sidebar
