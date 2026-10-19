@@ -84,6 +84,7 @@ test.beforeEach(async ({ page }) => {
 test("quick-period buttons resolve and emit exact date ranges", async ({ page }) => {
   await openPicker(page);
   await expect(page.getByText("Quick periods", { exact: true })).toBeVisible();
+  await expect(page.locator(".edge-smart-date__preset")).toHaveCount(10);
   await page.getByRole("button", { name: "Last 30 Days", exact: true }).click();
 
   await expectResolved(page, {
