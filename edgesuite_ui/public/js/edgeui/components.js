@@ -1,4 +1,5 @@
 import { defineComponent, h } from "vue";
+import { EdgeShellInformationBar } from "./shell_information_bar";
 
 function slotOrText(slots, name, fallback = null) {
   return slots[name] ? slots[name]() : fallback;
@@ -295,6 +296,7 @@ export const EdgeAppShell = defineComponent({
   name: "EdgeAppShell",
   props: {
     product: { type: String, default: "" },
+    communication: { type: Object, default: null },
     compact: { type: Boolean, default: false },
     menuItems: { type: Array, default: () => [] },
     activeRoute: { type: String, default: "" },
@@ -351,6 +353,7 @@ export const EdgeAppShell = defineComponent({
           "data-edge-product": props.product || undefined,
         },
         [
+          h(EdgeShellInformationBar, { communication: props.communication }),
           slots.topbar
             ? h("div", { class: "edge-app-shell__topbar" }, slots.topbar())
             : builtInTopbar,
@@ -525,6 +528,7 @@ export const EdgeNotificationDrawer = defineComponent({
 });
 
 export const baseComponents = {
+  EdgeShellInformationBar,
   EdgePageHeader,
   EdgeStatCard,
   EdgeStatusBadge,
