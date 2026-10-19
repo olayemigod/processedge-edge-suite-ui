@@ -18,6 +18,63 @@ function labelNode(baseClass, id, label, required) {
   ]);
 }
 
+export const EdgeButton = defineComponent({
+  name: "EdgeButton",
+  inheritAttrs: false,
+  props: {
+    label: { type: String, default: "" },
+    variant: {
+      type: String,
+      default: "secondary",
+      validator: (value) => ["primary", "secondary"].includes(value),
+    },
+    type: {
+      type: String,
+      default: "button",
+      validator: (value) => ["button", "submit", "reset"].includes(value),
+    },
+    disabled: { type: Boolean, default: false },
+    loading: { type: Boolean, default: false },
+    loadingLabel: { type: String, default: "Loading…" },
+    ariaLabel: { type: String, default: "" },
+    title: { type: String, default: "" },
+  },
+  emits: ["click"],
+  setup(props, { attrs, emit, slots }) {
+    return () => {
+      const unavailable = props.disabled || props.loading;
+      const content = props.loading
+        ? (slots.loading ? slots.loading() : props.loadingLabel)
+        : (slots.default ? slots.default() : props.label);
+      const ariaLabel = props.ariaLabel || (typeof props.label === "string" ? props.label : "") || undefined;
+
+      return h(
+        "button",
+        {
+          ...attrs,
+          type: props.type,
+          disabled: unavailable,
+          "aria-disabled": unavailable ? "true" : undefined,
+          "aria-busy": props.loading ? "true" : undefined,
+          "aria-label": ariaLabel,
+          title: props.title || undefined,
+          class: [
+            "edge-button",
+            props.variant === "primary" ? "edge-button--primary" : null,
+            { "is-loading": props.loading },
+            attrs.class,
+          ],
+          onClick: (event) => {
+            if (unavailable) return;
+            emit("click", event);
+          },
+        },
+        content,
+      );
+    };
+  },
+});
+
 export const EdgeInput = defineComponent({
   name: "EdgeInput",
   inheritAttrs: false,
@@ -166,6 +223,7 @@ export const EdgeCheckbox = defineComponent({
 });
 
 export const formPrimitiveComponents = Object.freeze({
+  EdgeButton,
   EdgeInput,
   EdgeTextarea,
   EdgeCheckbox,
