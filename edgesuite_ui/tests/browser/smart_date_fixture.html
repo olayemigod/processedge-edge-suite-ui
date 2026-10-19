@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>EdgeSuite Smart Date Browser QA</title>
+  <link rel="stylesheet" href="/edgesuite_ui/public/css/edgeui.bundle.css">
+  <link rel="stylesheet" href="/edgesuite_ui/public/css/edgeui_report_smart_date.bundle.css">
+  <style>
+    html, body { margin: 0; min-height: 2600px; }
+    body { padding: 0 32px; }
+    .qa-spacer { height: 560px; }
+    .qa-field-row {
+      display: grid;
+      grid-template-columns: minmax(0, 420px) minmax(0, 340px);
+      gap: 24px;
+      align-items: start;
+      width: min(900px, calc(100vw - 64px));
+    }
+    .qa-sibling {
+      min-height: 88px;
+      border: 1px solid var(--edge-border, #d0d5dd);
+      border-radius: 8px;
+      padding: 12px;
+      box-sizing: border-box;
+    }
+    @media (max-width: 760px) {
+      body { padding: 0 16px; }
+      .qa-field-row { grid-template-columns: minmax(0, 1fr); width: calc(100vw - 32px); }
+    }
+  </style>
+  <script type="importmap">
+    {
+      "imports": {
+        "vue": "/node_modules/vue/dist/vue.esm-browser.js"
+      }
+    }
+  </script>
+</head>
+<body>
+  <div class="qa-spacer" aria-hidden="true"></div>
+  <div id="app"></div>
+  <div class="qa-spacer" aria-hidden="true"></div>
+  <script type="module">
+    import * as Vue from "vue";
+    import { EdgeSmartDateRange } from "/edgesuite_ui/public/js/edgeui/report_smart_date.js";
+    import { installDropdownViewportRuntime } from "/edgesuite_ui/public/js/edgeui/dropdown_viewport_runtime.js";
+
+    const selected = Vue.ref({});
+    globalThis.__edgeSmartDateEvents = [];
+    globalThis.__edgeSmartDateResolved = null;
+    globalThis.__edgeSmartDateModel = null;
+
+    const App = {
+      setup() {
+        return () => Vue.h("div", { class: "qa-field-row" }, [
+          Vue.h(EdgeSmartDateRange, {
+            modelValue: selected.value,
+            label: "Date Range",
+            referenceDate: "2026-10-19",
+            dateOrder: "DMY",
+            "onUpdate:modelValue": (value) => {
+              selected.value = { ...value };
+              globalThis.__edgeSmartDateModel = { ...value };
+            },
+            onResolved: (value) => {
+              selected.value = { ...value };
+              globalThis.__edgeSmartDateResolved = { ...value };
+              globalThis.__edgeSmartDateEvents.push({ ...value });
+            },
+          }),
+          Vue.h("div", { class: "qa-sibling" }, "Neighbouring filter"),
+        ]);
+      },
+    };
+
+    Vue.createApp(App).mount("#app");
+    installDropdownViewportRuntime(globalThis);
+    globalThis.__edgeSmartDateReady = true;
+  </script>
+</body>
+</html>
