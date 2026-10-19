@@ -6,7 +6,7 @@ from frappe.model.document import Document
 from edgesuite_ui.api.product_context import get_available_products
 
 SUPPORTED_PURPOSE = "Receipt"
-SUPPORTED_TRANSPORT = "Serial"
+SUPPORTED_TRANSPORTS = {"Serial", "USB"}
 SUPPORTED_PROTOCOL = "ESC/POS"
 _SCOPE_DOCTYPES = {
 	"Global": "",
@@ -45,13 +45,13 @@ class EdgePrintProfile(Document):
 
 	def _validate_v1_capabilities(self) -> None:
 		if self.purpose != SUPPORTED_PURPOSE:
-			frappe.throw("Printing V1 currently supports Receipt profiles only.")
-		if self.transport != SUPPORTED_TRANSPORT:
-			frappe.throw("Printing V1 currently supports Serial / Bluetooth receipt printers only.")
+			frappe.throw("Printing currently supports Receipt profiles only.")
+		if self.transport not in SUPPORTED_TRANSPORTS:
+			frappe.throw("Receipt printer Transport must be Serial or USB.")
 		if self.protocol != SUPPORTED_PROTOCOL:
-			frappe.throw("Serial printer profiles must use the ESC/POS protocol.")
+			frappe.throw("Receipt printer profiles must use the ESC/POS protocol.")
 
-		# Logo raster preprocessing is not part of V1 yet. Keep the stored field
+		# Logo raster preprocessing is not part of this printing slice yet. Keep the stored field
 		# fail-closed so configuration never promises an output the runtime ignores.
 		self.print_logo = 0
 
@@ -97,9 +97,10 @@ class EdgePrintProfile(Document):
 		if not 16 <= characters_per_line <= 80:
 			frappe.throw("Characters per Line must be between 16 and 80.")
 
-		baud_rate = int(self.baud_rate or 0)
-		if not 300 <= baud_rate <= 1_000_000:
-			frappe.throw("Baud Rate must be between 300 and 1000000.")
+		if self.transport == "Serial":
+			baud_rate = int(self.baud_rate or 0)
+			if not 300 <= baud_rate <= 1_000_000:
+				frappe.throw("Baud Rate must be between 300 and 1000000.")
 
 		feed_lines = int(self.feed_lines or 0)
 		if not 0 <= feed_lines <= 20:
