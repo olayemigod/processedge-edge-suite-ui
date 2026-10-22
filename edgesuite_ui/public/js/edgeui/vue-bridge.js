@@ -12,7 +12,7 @@ const Vue = globalThis.EdgeSuiteUI?.Vue || globalThis.EdgeUI?.Vue;
 
 if (!Vue) {
   throw new Error(
-    "EdgeSuite UI Vue runtime is unavailable. Load edgeui.bundle.js before the product bundle.",
+    "EdgeSuite UI Vue runtime is unavailable. Load edgesuite_ui.bundle.js before the product bundle.",
   );
 }
 

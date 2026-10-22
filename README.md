@@ -72,7 +72,7 @@ The app can be installed on VetEdge, RetailEdge, EduEdge, or another product sit
 
 ## Product integration
 
-Load `edgeui.bundle.js` before the product bundle, then mount the product-owned root component:
+Load `edgesuite_ui.bundle.js` before the product bundle, then mount the product-owned root component:
 
 ```javascript
 const app = window.EdgeSuiteUI.createEdgeApp(ProductPage, props);
