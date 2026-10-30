@@ -80,7 +80,7 @@ const menuItems = [
 
 ## Product menu
 
-Register the global product menu after `edgeui.bundle.js` is available:
+Register the global product menu after `edgesuite_ui.bundle.js` is available:
 
 ```javascript
 window.EdgeSuiteUI.registerProductMenu({
