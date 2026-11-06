@@ -2,7 +2,7 @@ name: CI
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, agent/frappe-v1650-ui-canary]
   push:
     branches: [main]
   workflow_dispatch:
@@ -21,6 +21,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
         with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
       - uses: actions/setup-python@v6
         with:
@@ -87,6 +88,14 @@ jobs:
             edgesuite_ui/tests/test_theme_runtime_contract.py \
             edgesuite_ui/tests/test_theme_visual_compat_contract.py \
             edgesuite_ui/tests/test_theme_controls_contract.py \
+            edgesuite_ui/tests/test_printing_contract.py \
+            edgesuite_ui/tests/test_printing_escpos_contract.py \
+            edgesuite_ui/tests/test_printing_device_binding_contract.py \
+            edgesuite_ui/tests/test_print_profile_contract.py \
+            edgesuite_ui/tests/test_printing_setup_component_contract.py \
+            edgesuite_ui/tests/test_printing_page_contract.py \
+            edgesuite_ui/tests/test_printing_web_bundle_contract.py \
+            edgesuite_ui/tests/test_virtual_printer_contract.py \
             2>&1 | tee contract-tests.log
       - name: Upload contract diagnostics
         if: steps.contracts.outcome == 'failure'
@@ -103,6 +112,8 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - uses: actions/setup-node@v5
         with:
           node-version: "24"
@@ -118,6 +129,8 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - uses: actions/setup-node@v5
         with:
           node-version: "24"
@@ -128,12 +141,12 @@ jobs:
         run: npm install --no-save --package-lock=false @playwright/test@1.55.0
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
-      - name: Run EdgeSuite theme, navigation, access, and Frappe dialog browser QA
-        run: npx playwright test edgesuite_ui/tests/browser/theme_browser.spec.mjs edgesuite_ui/tests/browser/navigation_route_browser.spec.mjs edgesuite_ui/tests/browser/desk_access_browser.spec.mjs edgesuite_ui/tests/browser/frappe_dialog_theme_browser.spec.mjs --reporter=line --workers=1
+      - name: Run EdgeSuite theme, navigation, Smart Date, access, and Frappe dialog browser QA
+        run: npx playwright test edgesuite_ui/tests/browser/theme_browser.spec.mjs edgesuite_ui/tests/browser/navigation_route_browser.spec.mjs edgesuite_ui/tests/browser/navigation_history_browser.spec.mjs edgesuite_ui/tests/browser/smart_date_browser.spec.mjs edgesuite_ui/tests/browser/desk_access_browser.spec.mjs edgesuite_ui/tests/browser/frappe_dialog_theme_browser.spec.mjs edgesuite_ui/tests/browser/shell_information_bar_browser.spec.mjs --reporter=line --workers=1
 
   frappe-v16:
     name: Frappe v16 integration
-    if: github.event_name == 'workflow_dispatch' || github.head_ref == 'qa/edgesuite-ui-full-implementation-2026-08-29'
+    if: github.event_name == 'workflow_dispatch' || github.head_ref == 'qa/edgesuite-ui-full-implementation-2026-08-29' || github.head_ref == 'agent/frappe-v1650-ui-canary' || github.head_ref == 'feat/browser-usb-printing-20261012'
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     services:
@@ -159,6 +172,8 @@ jobs:
           --health-retries=10
     steps:
       - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - uses: actions/setup-python@v6
         with:
           python-version: "3.14"
@@ -176,17 +191,19 @@ jobs:
       - name: Create clean Frappe v16 bench
         run: |
           bench init \
-            --frappe-branch version-16 \
+            --frappe-branch v16.52.0 \
             --python "$(command -v python)" \
             --skip-assets \
             --skip-redis-config-generation \
             frappe-bench
           cd frappe-bench
+          test "$(git -C apps/frappe rev-parse HEAD)" = "4515014c87ece6cb20ee91d2cfb121c5cbd1ff4a"
           bench set-config -g db_host 127.0.0.1
           bench set-config -g redis_cache redis://127.0.0.1:6379
           bench set-config -g redis_queue redis://127.0.0.1:6379
           bench set-config -g redis_socketio redis://127.0.0.1:6379
           bench get-app --skip-assets "file://$GITHUB_WORKSPACE"
+          test "$(git -C apps/edgesuite_ui rev-parse HEAD)" = "${{ github.event.pull_request.head.sha || github.sha }}"
       - name: Create site and install EdgeSuite UI only
         working-directory: frappe-bench
         run: |

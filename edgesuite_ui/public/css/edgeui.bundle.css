@@ -345,3 +345,41 @@
     right: 0;
   }
 }
+
+/* Shared native-Desk recovery and merchant communications strip. */
+.edge-shell-information-bar {
+  align-items: center;
+  background: var(--edge-color-surface);
+  border-bottom: 1px solid var(--edge-color-border);
+  color: var(--edge-color-ink-950);
+  display: flex;
+  gap: var(--edge-space-4, 1rem);
+  min-height: 2.75rem;
+  min-width: 0;
+  padding: .375rem clamp(1rem, 2.5vw, 1.75rem);
+}
+.edge-shell-information-bar__desk {
+  flex: 0 0 auto;
+  font-size: .8125rem;
+  min-height: 2rem;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.edge-shell-information-bar__communications {
+  align-items: baseline;
+  display: flex;
+  flex: 1 1 0;
+  flex-wrap: wrap;
+  font-size: .875rem;
+  gap: .25rem .75rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+@media print {
+  .edge-shell-information-bar { display: none !important; }
+}
+
+/* EdgeSuite owns this strip; native routes retain their original page header. */
+body.edge-suite-shell-focused .page-container:has(.edge-shell-information-bar) .page-head {
+  display: none !important;
+}

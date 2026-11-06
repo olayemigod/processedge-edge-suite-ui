@@ -192,13 +192,19 @@ test("resource query focuses matching submenu and keeps one section open", async
   await expect(clinical).toHaveClass(/is-collapsed/);
   await expect(reports).toHaveClass(/is-collapsed/);
 
-  // The active item and its parent section must expose theme focus state.
-  const activeColor = await appointments.evaluate((element) => getComputedStyle(element).color);
-  const sectionColor = await operations
-    .locator(".edge-sidebar__section-toggle")
-    .evaluate((element) => getComputedStyle(element).color);
-  expect(activeColor).not.toBe("rgb(65, 84, 105)");
-  expect(sectionColor).not.toBe("rgb(65, 84, 105)");
+  // The active item and its parent section must expose theme focus state once
+  // the CSS color transition has settled. Polling avoids sampling the neutral
+  // transition start immediately after the active classes are applied.
+  await expect
+    .poll(() => appointments.evaluate((element) => getComputedStyle(element).color))
+    .not.toBe("rgb(65, 84, 105)");
+  await expect
+    .poll(() =>
+      operations
+        .locator(".edge-sidebar__section-toggle")
+        .evaluate((element) => getComputedStyle(element).color),
+    )
+    .not.toBe("rgb(65, 84, 105)");
 });
 
 test("operational resources outrank similarly named reports", async ({ page }) => {
@@ -237,3 +243,37 @@ test("operational resources outrank similarly named reports", async ({ page }) =
   });
   await expect(activeLabel).toHaveText("Pet Grooming Appointment");
 });
+for (const theme of ["light", "dark"]) {
+  test(`v16 dock follows product focus and native navigation in ${theme} mode`, async ({ page }) => {
+    const css = await readFile(resolve(ROOT, "edgesuite_ui/public/css/edgeui_sidebar_focus.css"), "utf8");
+    await page.setContent(`<html data-theme="${theme}"><head><style>
+      .dock { display: flex; width: 64px; } .dock.hidden { display: none; }
+      .body-sidebar-container { display: flex; }
+      </style><style>${css}</style></head><body>
+      <div id="desk-dock" class="dock"><button>Apps</button></div>
+      <div class="body-sidebar-container">Native navigation</div><button id="content-action">Continue</button>
+      </body></html>`);
+    const dock = page.locator("#desk-dock");
+    await expect(dock).toBeVisible();
+    await page.evaluate(() => document.body.className = "edge-suite-shell-focused edge-suite-native-sidebar-hidden");
+    await expect(dock).toBeHidden();
+    await page.keyboard.press("Tab");
+    await expect(page.locator("#content-action")).toBeFocused();
+
+    // Advanced/native navigation must recover even if the legacy hide flag lingers.
+    await page.evaluate(() => document.body.className = "edge-suite-native-sidebar-hidden");
+    await expect(dock).toBeVisible();
+    await page.evaluate(() => document.body.className = "edge-shared-shell-active");
+    await expect(dock).toBeHidden();
+    // A native dock mounted after the product shell must also stay suppressed.
+    await dock.evaluate(node => node.replaceWith(node.cloneNode(true)));
+    await expect(page.locator("#desk-dock")).toBeHidden();
+    await page.evaluate(() => document.body.className = "");
+    await expect(page.locator("#desk-dock")).toBeVisible();
+    await page.evaluate(() => document.body.className = "edge-suite-shell-focused");
+    await expect(page.locator("#desk-dock")).toBeVisible();
+    // Native intentionally-hidden state belongs to Frappe and must remain intact.
+    await page.locator("#desk-dock").evaluate(node => node.classList.add("hidden"));
+    await expect(page.locator("#desk-dock")).toBeHidden();
+  });
+}

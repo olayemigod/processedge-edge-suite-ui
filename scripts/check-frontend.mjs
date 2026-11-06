@@ -11,6 +11,15 @@ const productContextEntrypoint = resolve(javascriptRoot, "edgeui/product_context
 const themeRuntimeEntrypoint = resolve(javascriptRoot, "edgeui/theme_runtime.js");
 const exportRuntimeEntrypoint = resolve(javascriptRoot, "edgeui/export_runtime.js");
 const exportComponentEntrypoint = resolve(javascriptRoot, "edgeui/export_components.js");
+const printingRuntimeEntrypoint = resolve(javascriptRoot, "edgeui/printing_runtime.js");
+const printingPageEntrypoint = resolve(
+  repositoryRoot,
+  "edgesuite_ui/edgesuite_ui/page/edge_printing/edge_printing.js",
+);
+const printProfileFormEntrypoint = resolve(
+  repositoryRoot,
+  "edgesuite_ui/edgesuite_ui/doctype/edge_print_profile/edge_print_profile.js",
+);
 
 async function javascriptFiles(directory) {
   const entries = await readdir(directory, { withFileTypes: true });
@@ -28,6 +37,18 @@ for (const path of await javascriptFiles(javascriptRoot)) {
   const result = spawnSync(process.execPath, ["--check", path], { stdio: "inherit" });
   if (result.status !== 0) process.exit(result.status ?? 1);
 }
+const printingPageSyntax = spawnSync(
+  process.execPath,
+  ["--check", printingPageEntrypoint],
+  { stdio: "inherit" },
+);
+if (printingPageSyntax.status !== 0) process.exit(printingPageSyntax.status ?? 1);
+const printProfileFormSyntax = spawnSync(
+  process.execPath,
+  ["--check", printProfileFormEntrypoint],
+  { stdio: "inherit" },
+);
+if (printProfileFormSyntax.status !== 0) process.exit(printProfileFormSyntax.status ?? 1);
 
 const productContextBuild = await build({
   entryPoints: [productContextEntrypoint],
@@ -158,6 +179,386 @@ if (exportRuntimeModule.EDGE_EXPORT_FORMATS.map((format) => format.value).join("
   throw new Error("Shared export formats should expose CSV, Excel, and Print / PDF.");
 }
 
+
+const printingRuntimeBuild = await build({
+  entryPoints: [printingRuntimeEntrypoint],
+  bundle: true,
+  format: "esm",
+  logLevel: "warning",
+  platform: "node",
+  write: false,
+});
+const printingRuntimeModule = await import(
+  `data:text/javascript;base64,${Buffer.from(printingRuntimeBuild.outputFiles[0].text).toString("base64")}`
+);
+
+const serialWrites = [];
+const serialPortListeners = new Map();
+let serialOpenOptions = null;
+let serialClosed = false;
+const fakeSerialPort = {
+  connected: false,
+  addEventListener(name, handler) {
+    serialPortListeners.set(name, handler);
+  },
+  removeEventListener(name, handler) {
+    if (serialPortListeners.get(name) === handler) serialPortListeners.delete(name);
+  },
+  readable: null,
+  writable: null,
+  async open(options) {
+    serialOpenOptions = options;
+    this.connected = true;
+    this.readable = {};
+    this.writable = {
+      getWriter() {
+        return {
+          async write(payload) {
+            serialWrites.push([...payload]);
+          },
+          releaseLock() {},
+        };
+      },
+    };
+  },
+  async close() {
+    serialClosed = true;
+    this.connected = false;
+    this.readable = null;
+    this.writable = null;
+  },
+  getInfo() {
+    return { bluetoothServiceClassId: "test-printer" };
+  },
+};
+const localPrintingStorage = new Map();
+const fakePrintingTarget = {
+  isSecureContext: true,
+  frappe: {
+    call({ method, args, callback }) {
+      const profile = {
+        name: "Default Receipt",
+        profile_name: "Default Receipt",
+        purpose: args?.purpose || "Receipt",
+        product_key: args?.product_key || "",
+        scope_type: "Global",
+        scope_value: "",
+        priority: 0,
+        transport: "Serial",
+        protocol: "ESC/POS",
+        paper_width: "80",
+        characters_per_line: 48,
+        baud_rate: 19200,
+        text_encoding: "ASCII Safe",
+        auto_cut: 1,
+        cut_mode: "Partial",
+        cash_drawer: 0,
+        drawer_pin: 0,
+        feed_lines: 3,
+        copies: 1,
+        print_logo: 0,
+        print_qr: 1,
+      };
+      callback({
+        message: method.endsWith("get_active_print_profiles") ? [profile] : profile,
+      });
+    },
+  },
+  localStorage: {
+    getItem(key) {
+      return localPrintingStorage.has(key) ? localPrintingStorage.get(key) : null;
+    },
+    setItem(key, value) {
+      localPrintingStorage.set(key, String(value));
+    },
+    removeItem(key) {
+      localPrintingStorage.delete(key);
+    },
+  },
+  navigator: {
+    serial: {
+      async requestPort() {
+        return fakeSerialPort;
+      },
+      async getPorts() {
+        return [fakeSerialPort];
+      },
+    },
+  },
+  print() {},
+};
+const profileAdapter = printingRuntimeModule.createEdgePrintAdapter({
+  target: fakePrintingTarget,
+});
+const resolvedProfile = await profileAdapter.profiles.resolve({
+  purpose: "Receipt",
+  productKey: "retail",
+});
+if (
+  resolvedProfile?.name !== "Default Receipt" ||
+  resolvedProfile.paperWidth !== 80 ||
+  resolvedProfile.baudRate !== 19200 ||
+  resolvedProfile.textEncoding !== "ascii-safe"
+) {
+  throw new Error("Shared print profile client should normalize server policy for browser use.");
+}
+const safeEncoder = profileAdapter.profiles.textEncoder(resolvedProfile);
+const safeText = new TextDecoder().decode(safeEncoder("₦ café — test"));
+if (safeText !== "NGN cafe - test") {
+  throw new Error("ASCII-safe printing should replace the naira sign and unsupported Unicode.");
+}
+const profileConnection = profileAdapter.profiles.connectionOptions(resolvedProfile);
+if (profileConnection?.openOptions?.baudRate !== 19200) {
+  throw new Error("Serial print profiles should produce Web Serial connection options.");
+}
+
+const printingCapabilities = printingRuntimeModule
+  .createPrintManager({ target: fakePrintingTarget })
+  .detectCapabilities();
+if (!printingCapabilities.webSerial || !printingCapabilities.systemPrint) {
+  throw new Error("Shared printing capability detection should expose Web Serial and system print.");
+}
+const insecurePrintingCapabilities = printingRuntimeModule
+  .createPrintManager({ target: { ...fakePrintingTarget, isSecureContext: false } })
+  .detectCapabilities();
+if (insecurePrintingCapabilities.webSerial) {
+  throw new Error("Direct serial printing must fail closed outside a secure context.");
+}
+if (insecurePrintingCapabilities.serialReason !== "insecure_context") {
+  throw new Error("Printing capability detection should explain insecure-context serial failures.");
+}
+const unsupportedPrintingCapabilities = printingRuntimeModule
+  .createPrintManager({
+    target: {
+      ...fakePrintingTarget,
+      navigator: {},
+    },
+  })
+  .detectCapabilities();
+if (
+  unsupportedPrintingCapabilities.webSerial ||
+  unsupportedPrintingCapabilities.serialReason !== "api_unavailable"
+) {
+  throw new Error("Printing capability detection should explain missing Web Serial support.");
+}
+const printingManager = printingRuntimeModule.createPrintManager({ target: fakePrintingTarget });
+const authorizedPorts = await printingManager.getTransport("serial").authorizedPorts();
+if (authorizedPorts.length !== 1 || authorizedPorts[0] !== fakeSerialPort) {
+  throw new Error("Shared serial transport should expose previously authorized ports.");
+}
+await printingManager.getTransport("serial").requestDevice();
+await printingManager.connect("serial", { openOptions: { baudRate: 19200 } });
+if (serialOpenOptions?.baudRate !== 19200) {
+  throw new Error("Shared serial transport should respect configured baud rate.");
+}
+const writeResult = await printingManager.write(Uint8Array.from([0x1b, 0x40, 0x0a]));
+if (
+  writeResult.bytesWritten !== 3 ||
+  serialWrites[0]?.join(",") !== "27,64,10" ||
+  writeResult.completedState !== "printed" ||
+  !writeResult.status?.connected
+) {
+  throw new Error("Shared serial transport should write bytes and return a connected success status.");
+}
+if (printingManager.getStatus("serial").state !== "connected") {
+  throw new Error("Shared serial transport should return to connected state after a successful write.");
+}
+await printingManager.disconnect("serial");
+if (!serialClosed || printingManager.getStatus("serial").state !== "disconnected") {
+  throw new Error("Shared serial transport should close the selected printer cleanly.");
+}
+
+let activeQueuedWrites = 0;
+let maxQueuedWrites = 0;
+const queuedOrder = [];
+const queuedManager = printingRuntimeModule.createPrintManager({ target: fakePrintingTarget });
+queuedManager.registerTransport("queued-test", {
+  isSupported: () => true,
+  connect: async () => ({}),
+  disconnect: async () => ({}),
+  getStatus: () => ({ state: "connected", connected: true }),
+  async write(payload) {
+    activeQueuedWrites += 1;
+    maxQueuedWrites = Math.max(maxQueuedWrites, activeQueuedWrites);
+    queuedOrder.push(`start:${payload[0]}`);
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    queuedOrder.push(`end:${payload[0]}`);
+    activeQueuedWrites -= 1;
+    return { bytesWritten: payload.byteLength };
+  },
+});
+await Promise.all([
+  queuedManager.write(Uint8Array.from([1]), { transport: "queued-test" }),
+  queuedManager.write(Uint8Array.from([2]), { transport: "queued-test" }),
+]);
+if (
+  maxQueuedWrites !== 1 ||
+  queuedOrder.join("|") !== "start:1|end:1|start:2|end:2"
+) {
+  throw new Error("Print manager must serialize concurrent writes per transport.");
+}
+
+serialWrites.length = 0;
+serialClosed = false;
+const chunkingAdapter = printingRuntimeModule.createEdgePrintAdapter({ target: fakePrintingTarget });
+const chunkingTransport = chunkingAdapter.createSerialTransport({ writeChunkSize: 2 });
+chunkingTransport.usePort(fakeSerialPort);
+await chunkingTransport.connect({ openOptions: { baudRate: 19200 } });
+const chunkedWrite = await chunkingTransport.write(Uint8Array.from([1, 2, 3, 4, 5]));
+if (
+  chunkedWrite.bytesWritten !== 5 ||
+  chunkedWrite.chunksWritten !== 3 ||
+  chunkedWrite.chunkSize !== 2 ||
+  serialWrites.map((row) => row.join(",")).join("|") !== "1,2|3,4|5"
+) {
+  throw new Error("Shared serial transport should preserve bytes across configured write chunks.");
+}
+await chunkingTransport.disconnect();
+
+serialClosed = false;
+const disconnectAdapter = printingRuntimeModule.createEdgePrintAdapter({ target: fakePrintingTarget });
+const disconnectTransport = disconnectAdapter.createSerialTransport();
+disconnectTransport.usePort(fakeSerialPort);
+await disconnectTransport.connect({ openOptions: { baudRate: 19200 } });
+serialPortListeners.get("disconnect")?.();
+if (
+  disconnectTransport.getStatus().state !== "disconnected" ||
+  disconnectTransport.getStatus().connected
+) {
+  throw new Error("Physical serial disconnect events should clear the connected printer state.");
+}
+await disconnectTransport.disconnect();
+
+const receipt58 = {
+  paper: 58,
+  blocks: [
+    { type: "text", text: "EDGE TEST", align: "center", bold: true },
+    { type: "rule" },
+    {
+      type: "row",
+      gap: 1,
+      columns: [
+        { text: "Item", width: 18 },
+        { text: "Qty", width: 4, align: "right" },
+        { text: "Total", align: "right" },
+      ],
+    },
+    { type: "qr", value: "https://example.com/receipt/1", size: 4 },
+    { type: "barcode", value: "ACC-SINV-0001", symbology: "CODE128" },
+    { type: "image", width: 8, height: 1, data: [0b10101010] },
+    { type: "drawer", pin: 0, onMs: 100, offMs: 200 },
+    { type: "feed", lines: 2 },
+    { type: "cut", mode: "partial" },
+  ],
+};
+const normalized58 = printingRuntimeModule
+  .createEdgePrintAdapter({ target: fakePrintingTarget })
+  .normalizeReceipt(receipt58);
+if (normalized58.paper.widthMm !== 58 || normalized58.paper.charactersPerLine !== 32) {
+  throw new Error("Shared receipt normalization must preserve the approved 58mm profile.");
+}
+const normalized80 = printingRuntimeModule
+  .createEdgePrintAdapter({ target: fakePrintingTarget })
+  .normalizeReceipt({ paper: 80, blocks: [] });
+if (normalized80.paper.charactersPerLine !== 48) {
+  throw new Error("Shared receipt normalization must preserve the approved 80mm profile.");
+}
+
+serialClosed = false;
+await printingManager.getTransport("serial").usePort(fakeSerialPort);
+await printingManager.connect("serial", { openOptions: { baudRate: 19200 } });
+const receiptResult = await printingManager.printReceipt(receipt58);
+if (receiptResult.documentType !== "receipt" || receiptResult.bytesWritten <= 20) {
+  throw new Error("Shared print manager should encode and write normalized receipts.");
+}
+const receiptBytes = serialWrites.at(-1);
+if (receiptBytes?.[0] !== 0x1b || receiptBytes?.[1] !== 0x40) {
+  throw new Error("ESC/POS receipts must initialize the printer before document content.");
+}
+const receiptText = new TextDecoder().decode(Uint8Array.from(receiptBytes));
+if (!receiptText.includes("EDGE TEST") || !receiptText.includes("ACC-SINV-0001")) {
+  throw new Error("ESC/POS receipt encoding should contain normalized text and CODE128 data.");
+}
+const hasCut = receiptBytes.some(
+  (value, index) => value === 0x1d && receiptBytes[index + 1] === 0x56,
+);
+const hasDrawer = receiptBytes.some(
+  (value, index) => value === 0x1b && receiptBytes[index + 1] === 0x70,
+);
+const hasQr = receiptBytes.some(
+  (value, index) =>
+    value === 0x1d &&
+    receiptBytes[index + 1] === 0x28 &&
+    receiptBytes[index + 2] === 0x6b,
+);
+const hasRaster = receiptBytes.some(
+  (value, index) =>
+    value === 0x1d &&
+    receiptBytes[index + 1] === 0x76 &&
+    receiptBytes[index + 2] === 0x30,
+);
+if (!hasCut || !hasDrawer || !hasQr || !hasRaster) {
+  throw new Error("ESC/POS receipts should encode cut, drawer, QR, and raster-image primitives.");
+}
+
+let overflowRejected = false;
+try {
+  printingRuntimeModule
+    .createEdgePrintAdapter({ target: fakePrintingTarget })
+    .normalizeReceipt({
+      paper: 58,
+      blocks: [
+        {
+          type: "row",
+          gap: 2,
+          columns: [
+            { text: "A", width: 20 },
+            { text: "B", width: 20 },
+          ],
+        },
+      ],
+    });
+} catch (error) {
+  overflowRejected = error instanceof RangeError;
+}
+if (!overflowRejected) {
+  throw new Error("Receipt normalization must reject rows that exceed the paper profile.");
+}
+await printingManager.disconnect("serial");
+
+await printingManager.disconnect("serial");
+
+const bindingAdapter = printingRuntimeModule.createEdgePrintAdapter({ target: fakePrintingTarget });
+const selected = await bindingAdapter.devices.requestAndBindSerial("default_receipt");
+if (selected.binding.profileKey !== "default_receipt") {
+  throw new Error("Device binding should persist the selected printer against a profile key.");
+}
+const storedBinding = bindingAdapter.bindingStore.get("default_receipt");
+if (
+  storedBinding?.portInfo?.bluetoothServiceClassId !== "test-printer" ||
+  storedBinding.transport !== "serial"
+) {
+  throw new Error("Device binding should persist only serial transport identity metadata.");
+}
+const restoredAdapter = printingRuntimeModule.createEdgePrintAdapter({ target: fakePrintingTarget });
+const restored = await restoredAdapter.devices.restoreSerial("default_receipt");
+if (!restored || restored.port !== fakeSerialPort) {
+  throw new Error("A new EdgeSuite runtime should restore a uniquely matching authorized printer.");
+}
+await restoredAdapter.devices.connectBoundSerial("default_receipt", {
+  openOptions: { baudRate: 19200 },
+});
+if (!restoredAdapter.getStatus("serial").connected) {
+  throw new Error("A restored printer binding should reconnect through the shared transport.");
+}
+await restoredAdapter.disconnect("serial");
+if (!restoredAdapter.devices.forget("default_receipt")) {
+  throw new Error("Printer bindings should be explicitly forgettable on the local device.");
+}
+if (restoredAdapter.bindingStore.get("default_receipt") !== null) {
+  throw new Error("Forgotten printer bindings must not remain in local device storage.");
+}
+
 const exportComponentSource = await readFile(exportComponentEntrypoint, "utf8");
 if (!exportComponentSource.includes("EdgeExportMenu") || !exportComponentSource.includes("loadDataset")) {
   throw new Error("Shared EdgeExportMenu must support on-demand dataset loading.");
@@ -165,6 +566,9 @@ if (!exportComponentSource.includes("EdgeExportMenu") || !exportComponentSource.
 const runtimeSource = await readFile(entrypoint, "utf8");
 if (!runtimeSource.includes('runtime.registerAdapter("export", edgeExportAdapter)')) {
   throw new Error("EdgeSuite UI runtime must expose the shared export adapter.");
+}
+if (!runtimeSource.includes('runtime.registerAdapter("print", edgePrintAdapter)') || !runtimeSource.includes("runtime.print = edgePrintAdapter")) {
+  throw new Error("EdgeSuite UI runtime must expose the shared print adapter.");
 }
 
 await build({
@@ -202,4 +606,4 @@ await build({
   write: false,
 });
 
-console.log("Frontend syntax, product routes, theme resolution, shared export runtime, runtime bundle, and Vue bridge validation passed.");
+console.log("Frontend syntax, product routes, theme resolution, shared export runtime, shared printing runtime, runtime bundle, and Vue bridge validation passed.");

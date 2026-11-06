@@ -8,3 +8,12 @@ body.edge-suite-native-sidebar-hidden:not(.edge-suite-shell-focused) .body-sideb
 body.edge-suite-shell-focused.edge-suite-native-sidebar-hidden .body-sidebar-container {
   display: none !important;
 }
+
+
+/* v16.50+ mounts the native dock beside the sidebar container. Scope its
+   suppression to the visible product/shared shell; never rewrite Dock state.
+   Removing the shell classes restores Frappe's own display and pin settings. */
+body.edge-suite-shell-focused.edge-suite-native-sidebar-hidden #desk-dock,
+body.edge-shared-shell-active #desk-dock {
+  display: none !important;
+}

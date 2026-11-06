@@ -72,7 +72,7 @@ The app can be installed on VetEdge, RetailEdge, EduEdge, or another product sit
 
 ## Product integration
 
-Load `edgeui.bundle.js` before the product bundle, then mount the product-owned root component:
+Load `edgesuite_ui.bundle.js` before the product bundle, then mount the product-owned root component:
 
 ```javascript
 const app = window.EdgeSuiteUI.createEdgeApp(ProductPage, props);
@@ -115,6 +115,17 @@ The shared `EdgeReportExportDialog` provides XLSX/CSV/PDF selection, current-pag
 Generated downloads are validated before saving so empty responses, HTML error pages masquerading as files, invalid PDF/XLSX signatures and mismatched MIME types are rejected instead of being presented as successful downloads.
 
 See [`docs/reporting-standard-v1.md`](docs/reporting-standard-v1.md) for the reporting, presentation, performance and export contract.
+
+## Shared device printing
+
+EdgeSuite exposes a product-neutral printing adapter at `window.EdgeSuiteUI.print` and
+`window.EdgeSuiteUI.getAdapter("print")`. The initial V1 foundation provides secure-context
+capability detection and a Web Serial transport for authorized local printers while keeping
+product receipt data and workflow decisions inside each product app.
+
+Product applications must not call browser serial APIs directly. See
+[`docs/printing-platform-v1.md`](docs/printing-platform-v1.md) for the ownership boundary,
+transport contract, failure model, and staged implementation scope.
 
 ## Post-MVP UI modernization
 

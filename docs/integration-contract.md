@@ -10,7 +10,7 @@ Install `edgesuite_ui` on the same Frappe site as the product application and lo
 
 ```javascript
 await new Promise((resolve, reject) => {
-  frappe.require("edgeui.bundle.js", resolve, reject);
+  frappe.require("edgesuite_ui.bundle.js", resolve, reject);
 });
 
 if (!window.EdgeSuiteUI?.createEdgeApp) {

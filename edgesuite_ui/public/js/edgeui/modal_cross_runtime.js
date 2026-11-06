@@ -16,6 +16,13 @@ function dialogElement(instance) {
   return root?.querySelector?.(".edge-modal") || null;
 }
 
+function resetModalBodyScroll(root) {
+  const body = root?.querySelector?.(".edge-modal__body");
+  if (!body) return;
+  body.scrollTop = 0;
+  body.scrollLeft = 0;
+}
+
 export function applyModalCrossRuntimeCompatibility(modalComponents = {}) {
   const EdgeModal = modalComponents.EdgeModal;
   if (!EdgeModal || EdgeModal.__edgeCrossRuntimeCompatible) return modalComponents;
@@ -29,10 +36,12 @@ export function applyModalCrossRuntimeCompatibility(modalComponents = {}) {
       return dialogElement(this);
     },
     activate() {
+      const wasBodyLocked = Boolean(this.bodyLocked);
       originalActivate?.call(this);
       this.$nextTick(() => {
         this.portalToBody?.();
         const root = this.dialogElement();
+        if (!wasBodyLocked && this.bodyLocked) resetModalBodyScroll(root);
         const target = root?.querySelector("[data-edge-autofocus]") || focusableElements(root)[0];
         target?.focus?.();
       });
@@ -62,7 +71,7 @@ export function applyModalCrossRuntimeCompatibility(modalComponents = {}) {
   // Keep EdgeModal's original render function. Replacing it here strips or
   // invalidates slot VNodes when product pages and EdgeSuite UI are mounted
   // through different Vue entry points, which results in an empty dialog body.
-  // The compatibility layer only augments focus and portal behaviour.
+  // The compatibility layer only augments focus, portal, and fresh-open scroll behaviour.
   EdgeModal.__edgeCrossRuntimeCompatible = true;
   return modalComponents;
 }

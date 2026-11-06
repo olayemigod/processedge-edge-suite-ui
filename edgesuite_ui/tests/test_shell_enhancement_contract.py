@@ -162,3 +162,17 @@ def test_navigation_shell_is_shared_theme_aware_and_persistent():
 	assert "edgeui_navigation_shell.css" in hooks
 	assert "edgeui_navigation_shell.js" in hooks
 	assert "#1677" not in styles
+
+
+def test_navigation_shell_recovers_collapse_toggle_after_product_shell_rerender():
+	runtime = read(NAVIGATION_RUNTIME)
+
+	for contract in (
+		"shellsNeedingRepair = new Set()",
+		"record.target?.closest?.(SHELL_SELECTOR)",
+		"ownerShell?.classList?.contains(ENHANCED_CLASS)",
+		"!brand.querySelector(`.${TOGGLE_CLASS}`)",
+		"shellsNeedingRepair.add(ownerShell)",
+		"shellsNeedingRepair.forEach(installShell)",
+	):
+		assert contract in runtime
