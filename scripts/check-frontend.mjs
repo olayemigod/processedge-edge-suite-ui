@@ -232,6 +232,19 @@ const fakeSerialPort = {
   },
 };
 const localPrintingStorage = new Map();
+let fakeBrowserLockHeld = false;
+const fakeBrowserLocks = {
+  async request(name, options, callback) {
+    if (fakeBrowserLockHeld && options.ifAvailable) return callback(null);
+    if (fakeBrowserLockHeld) throw new Error("Shared serial browser lock is already held.");
+    fakeBrowserLockHeld = true;
+    try {
+      return await callback({ name, mode: options.mode });
+    } finally {
+      fakeBrowserLockHeld = false;
+    }
+  },
+};
 const fakePrintingTarget = {
   isSecureContext: true,
   frappe: {
@@ -276,6 +289,7 @@ const fakePrintingTarget = {
     },
   },
   navigator: {
+    locks: fakeBrowserLocks,
     serial: {
       async requestPort() {
         return fakeSerialPort;

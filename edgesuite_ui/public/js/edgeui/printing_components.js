@@ -69,8 +69,34 @@ export const EdgePrinterSetupCard = defineComponent({
   },
   mounted() {
     if (this.autoResolve) this.refresh().catch(() => {});
+    // Another tab may take ownership while this setup page is in the background.
+    // On return, refresh local status without silently reconnecting the port.
+    this._printerFocusSync = () => this.syncPrinterStatus();
+    globalThis?.addEventListener?.("focus", this._printerFocusSync);
+    globalThis?.document?.addEventListener?.("visibilitychange", this._printerFocusSync);
+  },
+  beforeUnmount() {
+    globalThis?.removeEventListener?.("focus", this._printerFocusSync);
+    globalThis?.document?.removeEventListener?.("visibilitychange", this._printerFocusSync);
   },
   methods: {
+    syncPrinterStatus() {
+      if (!this.profile || this.busy) return;
+      const transport = directTransport(this.profile);
+      if (!transport) return;
+      try {
+        const current = this.getAdapter().getStatus(transport);
+        if (
+          this.status?.state !== current?.state ||
+          Boolean(this.status?.connected) !== Boolean(current?.connected)
+        ) {
+          this.status = current;
+          this.emitStatus();
+        }
+      } catch (_error) {
+        // Browser visibility changes must never interrupt an active sale.
+      }
+    },
     getAdapter() {
       const adapter = runtimeAdapter(this);
       if (!adapter) throw new Error("EdgeSuite shared printing is unavailable.");
