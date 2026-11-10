@@ -1,5 +1,8 @@
 import assert from "node:assert/strict";
-import { resolve } from "node:path";
+import { resolve, join } from "node:path";
+import { mkdtemp, writeFile, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { pathToFileURL } from "node:url";
 import { build } from "esbuild";
 
 const root = resolve(import.meta.dirname, "..");
@@ -10,10 +13,10 @@ const bundled = await build({
   platform: "node",
   write: false,
 });
-const { createWebSerialTransport } = await import(
-  "data:text/javascript;base64," +
-  Buffer.from(bundled.outputFiles[0].text).toString("base64")
-);
+const tmpDir = await mkdtemp(join(tmpdir(), "edge-serial-tab-handoff-"));
+const modulePath = join(tmpDir, "transport.mjs");
+await writeFile(modulePath, bundled.outputFiles[0].text);
+const { createWebSerialTransport } = await import(pathToFileURL(modulePath).href);
 
 // Two independent tab contexts share the origin's browser locks and a
 // channel, but do not share JavaScript SerialPort objects.
@@ -163,3 +166,4 @@ await assert.rejects(
 );
 
 console.log("EdgeSuite serial tab ownership: handoff, busy, release, unsupported PASS");
+await rm(tmpDir, { recursive: true, force: true });
