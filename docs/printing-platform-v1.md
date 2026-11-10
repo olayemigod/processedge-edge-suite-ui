@@ -134,3 +134,79 @@ The diagnostic Test Print exercises width/wrapping, encoding, QR, CODE128, feed 
 Company/Branch-scoped profiles must declare a product key so the owning product can authorize
 that business context. Only truly Global or current-User profiles may remain product-neutral.
 Legacy blank-product Company/Branch rows are ignored at runtime until corrected.
+
+
+## Tab-safe Bluetooth serial ownership (10 November 2026)
+
+### Observed operator problem
+
+The same Windows MPT-II Bluetooth serial printer was opened in Devices & Printing
+and POSNext browser tabs on \`https://retail.local\`. Chrome showed Bluetooth
+RFCOMM \`0x2740\` (address in use) errors, and some attempts wrote bytes to the
+browser without producing physical output. Once physical printing worked, the
+operator reported that switching between tabs affected which page could print.
+
+The browser-owned \`SerialPort\` is **not** persisted or shared between tabs.
+Only the browser-granted device binding survives in origin storage.
+
+### Baseline and selected approach
+
+- **Frappe/ERPNext v16** continues to govern invoice permissions and offers
+  browser printing, CUPS network printing, and raw QZ Tray printing. Direct
+  Bluetooth receipt output remains the opt-in EdgeSuite Web Serial adapter,
+  not an override of ERPNext invoice or POSNext payment lifecycle.
+- **Chrome Web Serial** supports Bluetooth Classic RFCOMM and allows
+  \`navigator.serial.getPorts()\` to recover prior site authorization.
+- **Web Locks** provides one exclusive origin-scoped lease for the active
+  serial port. **BroadcastChannel** asks the idle owner to close its port
+  before another tab reconnects. Each receiving tab still restores its own
+  previously authorized port and verifies the existing profile binding.
+  Neither browser API shares a \`SerialPort\` or bypasses the first user grant.
+- A handoff is **never** granted while a serial write, open, or close is in
+  progress. If the other tab cannot release the port promptly, the new tab
+  gets an actionable error instead of blindly attempting a competing open.
+- Switching tab focus alone **does not** disconnect the printer. A requesting
+  tab takes over only when it needs to connect. Navigating away attempts to
+  release the idle port. Browser tab termination also releases Web Locks.
+- Browsers without Web Locks fail closed for Web Serial. The existing
+  system/browser printing and supported QZ Tray routes remain independent.
+  Native Windows/other applications can still hold the Bluetooth socket and
+  are outside the same-origin Web Locks protocol.
+
+### Why not a background worker or a new POS printer driver
+
+Cross-tab device ownership is a shared transport concern. The smallest safe
+first release coordinates page-local Web Serial transports; it does not build
+a permanent privileged background service, copy receipt bytes between tabs,
+or move POS business logic into EdgeSuite. A persistent print broker, dedicated
+device companion, or QZ Tray remains a future option if hardware/browser
+reliability proves the native device API insufficient.
+
+References:
+
+- https://developer.mozilla.org/en-US/docs/Web/API/Web_Locks_API
+- https://developer.mozilla.org/en-US/docs/Web/API/Broadcast_Channel_API
+- https://developer.chrome.com/docs/capabilities/serial
+- https://developer.chrome.com/blog/bluetooth-rfcomm-updates-web-serial
+- https://docs.frappe.io/framework/user/en/printing/raw-and-network-printing
+
+### Acceptance gates
+
+1. Same-origin setup tab connects MPT-II; POSNext can take over when
+   setup is idle, without manual Disconnect or an extra device chooser.
+2. Switching tab focus while POSNext holds the port does not interrupt
+   a normal completed print.
+3. A second tab cannot take over during an in-flight print; no duplicate
+   print, no concurrent \`SerialPort.open()\`, no wrong printer dispatch.
+4. Reconnection matches the exact server-resolved Company/Branch
+   Print Profile and device binding. Ambiguous identities fail closed.
+5. Close/refresh the owning tab and verify a previously authorized tab can
+   reconnect safely. Test physical paper output, not only \`bytesWritten\`.
+6. Unsupported coordination and unexpected Bluetooth socket failures
+   produce actionable user feedback. Check browser/QZ/native alternatives.
+7. Validate dark/light setup states, cashier/manager personas, and POSNext
+   receipt payload independently; preserve submitted invoice/payment state.
+
+This code-level change requires a new EdgeSuite asset build and an exact-head
+two-tab physical browser smoke on the target device. Passing CI alone is not
+a release authorization.
