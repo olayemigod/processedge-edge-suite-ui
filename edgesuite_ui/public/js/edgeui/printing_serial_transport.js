@@ -5,6 +5,7 @@ import {
   normalizePrintBytes,
 } from "./printing_contract";
 import { detectPrintCapabilities } from "./printing_capabilities";
+import { createSerialTabLease } from "./printing_tab_lease";
 
 function normalizedOpenOptions(defaults, overrides) {
   const options = { ...(defaults || {}), ...(overrides || {}) };
@@ -51,9 +52,23 @@ export function createWebSerialTransport({
   let state = detectPrintCapabilities(target).webSerial
     ? EDGE_PRINT_STATES.NOT_CONFIGURED
     : EDGE_PRINT_STATES.UNSUPPORTED;
+  let opening = false;
+  let writing = false;
+  let disconnecting = null;
+  const tabLease = createSerialTabLease({
+    target,
+    onHandoffRequested: async () => {
+      // Never hand off the port while a job, open, or close is in progress.
+      if (!tabLease.isHeld() || opening || writing || disconnecting) return;
+      await disconnect();
+    },
+  });
 
   function onPortDisconnect() {
-    if (port) state = EDGE_PRINT_STATES.DISCONNECTED;
+    if (!port) return;
+    state = EDGE_PRINT_STATES.DISCONNECTED;
+    // Physical disconnect makes the exclusive port lease unnecessary.
+    void tabLease.release().catch(() => undefined);
   }
 
   function detachPortEvents(currentPort = port) {
@@ -83,7 +98,14 @@ export function createWebSerialTransport({
     if (!nextPort || typeof nextPort !== "object") {
       throw new TypeError("A SerialPort object is required.");
     }
-    if (port !== nextPort) detachPortEvents(port);
+    if (port === nextPort) return port;
+    if (port && (port.readable || port.writable)) {
+      throw new EdgePrintError(
+        "SERIAL_SWITCH_REQUIRES_DISCONNECT",
+        "Disconnect the current receipt printer before choosing another printer.",
+      );
+    }
+    detachPortEvents(port);
     port = nextPort;
     attachPortEvents(port);
     state = EDGE_PRINT_STATES.DISCONNECTED;
@@ -119,8 +141,18 @@ export function createWebSerialTransport({
       );
     }
 
+    if (writing || disconnecting) {
+      throw new EdgePrintError(
+        "SERIAL_BUSY",
+        "The receipt printer is busy. Finish the current operation before reconnecting.",
+      );
+    }
+    opening = true;
     state = EDGE_PRINT_STATES.CONNECTING;
     try {
+      // The exclusive browser-wide lease is held for the entire open-port
+      // lifetime, not merely the duration of port.open().
+      await tabLease.acquire();
       if (!port.readable && !port.writable) {
         await port.open(normalizedOpenOptions(defaultOpenOptions, openOptions));
       }
@@ -131,14 +163,29 @@ export function createWebSerialTransport({
       return getStatus();
     } catch (error) {
       state = EDGE_PRINT_STATES.FAILED;
+      if (!port?.readable && !port?.writable) await tabLease.release();
+      if (
+        error?.code === "SERIAL_TAB_IN_USE" ||
+        error?.code === "SERIAL_TAB_COORDINATION_UNAVAILABLE"
+      ) {
+        throw error;
+      }
       throw new EdgePrintError("SERIAL_CONNECT_FAILED", "The printer could not be connected.", {
         cause: error,
       });
+    } finally {
+      opening = false;
     }
   }
 
   async function write(bytes) {
     assertSupported();
+    if (!tabLease.isHeld()) {
+      throw new EdgePrintError(
+        "SERIAL_TAB_NOT_OWNER",
+        "This browser tab does not own the receipt printer connection. Reconnect before printing.",
+      );
+    }
     if (!port?.writable || typeof port.writable.getWriter !== "function") {
       state = EDGE_PRINT_STATES.DISCONNECTED;
       throw new EdgePrintError("SERIAL_NOT_CONNECTED", "Connect the printer before printing.");
@@ -146,6 +193,7 @@ export function createWebSerialTransport({
 
     const payload = normalizePrintBytes(bytes);
     const writer = port.writable.getWriter();
+    writing = true;
     state = EDGE_PRINT_STATES.PRINTING;
     try {
       let chunksWritten = 0;
@@ -176,28 +224,41 @@ export function createWebSerialTransport({
       });
     } finally {
       writer.releaseLock();
+      writing = false;
     }
   }
 
   async function disconnect() {
-    if (!port) {
-      state = detectPrintCapabilities(target).webSerial
-        ? EDGE_PRINT_STATES.NOT_CONFIGURED
-        : EDGE_PRINT_STATES.UNSUPPORTED;
-      return getStatus();
+    if (writing) {
+      throw new EdgePrintError(
+        "SERIAL_PRINT_IN_PROGRESS",
+        "The receipt printer is currently printing. Complete that job before disconnecting.",
+      );
     }
-
-    try {
-      if ((port.readable || port.writable) && typeof port.close === "function") {
-        await port.close();
+    if (disconnecting) return disconnecting;
+    disconnecting = (async () => {
+      try {
+        if (port && (port.readable || port.writable) && typeof port.close === "function") {
+          await port.close();
+        }
+        state = port
+          ? EDGE_PRINT_STATES.DISCONNECTED
+          : detectPrintCapabilities(target).webSerial
+            ? EDGE_PRINT_STATES.NOT_CONFIGURED
+            : EDGE_PRINT_STATES.UNSUPPORTED;
+        await tabLease.release();
+        return getStatus();
+      } catch (error) {
+        state = EDGE_PRINT_STATES.FAILED;
+        throw new EdgePrintError("SERIAL_DISCONNECT_FAILED", "The printer could not be disconnected.", {
+          cause: error,
+        });
       }
-      state = EDGE_PRINT_STATES.DISCONNECTED;
-      return getStatus();
-    } catch (error) {
-      state = EDGE_PRINT_STATES.FAILED;
-      throw new EdgePrintError("SERIAL_DISCONNECT_FAILED", "The printer could not be disconnected.", {
-        cause: error,
-      });
+    })();
+    try {
+      return await disconnecting;
+    } finally {
+      disconnecting = null;
     }
   }
 
@@ -238,6 +299,12 @@ export function createWebSerialTransport({
       portInfo,
     });
   }
+
+  // Page navigation/closure should relinquish an idle printer where possible.
+  // Switching to a different visible tab is NOT a pagehide navigation.
+  target?.addEventListener?.("pagehide", () => {
+    if (!writing) void disconnect().catch(() => undefined);
+  });
 
   return Object.freeze({
     name: EDGE_PRINT_TRANSPORTS.SERIAL,
