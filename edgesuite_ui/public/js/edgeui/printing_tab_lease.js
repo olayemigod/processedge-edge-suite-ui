@@ -13,7 +13,17 @@ export function createSerialTabLease({
 } = {}) {
   const locks = target?.navigator?.locks;
   const Broadcast = target?.BroadcastChannel;
-  const channel = typeof Broadcast === "function" ? new Broadcast(CHANNEL_NAME) : null;
+  // Do not create a live channel in Node SSR/tests, insecure pages, or a
+  // browser with no Web Serial/Web Locks. An idle BroadcastChannel can
+  // otherwise keep a Node process alive with no actual device to coordinate.
+  const canCoordinate = Boolean(
+    target?.isSecureContext &&
+    target?.navigator?.serial &&
+    typeof locks?.request === "function",
+  );
+  const channel = canCoordinate && typeof Broadcast === "function"
+    ? new Broadcast(CHANNEL_NAME)
+    : null;
   let held = false;
   let releaseCurrent = null;
   let activeTask = null;
