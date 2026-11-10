@@ -53,6 +53,7 @@ export function createWebSerialTransport({
     ? EDGE_PRINT_STATES.NOT_CONFIGURED
     : EDGE_PRINT_STATES.UNSUPPORTED;
   let opening = false;
+  let connecting = null;
   let writing = false;
   let disconnecting = null;
   const tabLease = createSerialTabLease({
@@ -130,7 +131,7 @@ export function createWebSerialTransport({
     }
   }
 
-  async function connect({ port: requestedPort = null, openOptions = {} } = {}) {
+  async function connectAttempt({ port: requestedPort = null, openOptions = {} } = {}) {
     assertSupported();
     if (requestedPort) usePort(requestedPort);
     if (!port) {
@@ -175,6 +176,19 @@ export function createWebSerialTransport({
       });
     } finally {
       opening = false;
+    }
+  }
+
+  async function connect(options = {}) {
+    // Manual reconnect, auto-print and a user click can race in one tab.
+    // Share one open attempt rather than calling SerialPort.open() twice.
+    if (connecting) return connecting;
+    const task = connectAttempt(options);
+    connecting = task;
+    try {
+      return await task;
+    } finally {
+      if (connecting === task) connecting = null;
     }
   }
 
