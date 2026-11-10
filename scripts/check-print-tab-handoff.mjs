@@ -104,6 +104,17 @@ function tab() {
   return { target, events, transport: createWebSerialTransport({ target }) };
 }
 
+// Two callers in one browser tab must share a single SerialPort.open().
+const simultaneous = tab();
+simultaneous.transport.usePort(port("SINGLEFLIGHT"));
+const [firstConnect, secondConnect] = await Promise.all([
+  simultaneous.transport.connect(),
+  simultaneous.transport.connect(),
+]);
+assert.equal(firstConnect.connected && secondConnect.connected, true);
+assert.equal(physicalOwner, "SINGLEFLIGHT");
+await simultaneous.transport.disconnect();
+
 const a = tab();
 const b = tab();
 a.transport.usePort(port("A"));
